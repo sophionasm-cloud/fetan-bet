@@ -481,9 +481,6 @@ button { font: inherit; cursor: pointer; }
   color: var(--gold-dark);
 }
 
-/* ---- HERO (auth page fallback) ---- */
-.hero { display: none; }
-
 /* ---- AUTH TABS (Login / Register toggle) ---- */
 .auth-tabs {
   display: flex;
