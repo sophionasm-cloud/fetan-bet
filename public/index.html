@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="am">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ፍጣን ቤት | Fetan Bet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="games.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand" id="brandBtn" style="cursor:pointer">
+      <span class="logo">ፍ</span>
+      <span>
+        <span id="brandName">ፍጣን ቤት</span>
+        <span class="brand-sub">Fetan Bet</span>
+      </span>
+    </div>
+    <div class="top-right">
+      <span id="balanceBox" class="balance" hidden></span>
+      <button id="quickDepositBtn" class="chip chip-gold" hidden>+ <span id="depTxt">Deposit</span></button>
+      <button id="headerLoginBtn" class="chip" hidden></button>
+      <button id="headerRegBtn" class="chip chip-gold" hidden></button>
+      <button id="langBtn" class="chip">EN</button>
+      <button id="logoutBtn" class="chip" hidden></button>
+    </div>
+  </header>
+  <div class="stripe"></div>
+  <nav id="nav" class="tabs" hidden></nav>
+  <main id="app"></main>
+  <div id="toast" class="toast" hidden></div>
+  <script src="games.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

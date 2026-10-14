@@ -1,0 +1,20 @@
+{
+  "name": "fetan-bet",
+  "version": "1.0.0",
+  "description": "\u134d\u1323\u1295 \u1264\u1275 (Fetan Bet) - virtual-credit demo platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "test": "node --no-warnings test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
