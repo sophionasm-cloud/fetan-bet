@@ -251,30 +251,80 @@ function minesCashout(userId) {
   })();
 }
 
-// ---------- Plinko (10 rows, 11 buckets) ----------
-const PLINKO_ROWS = 10;
-const PLINKO_MULTS = [8, 3, 1.5, 0.7, 0.4, 0.3, 0.4, 0.7, 1.5, 3, 8];
+// ---------- Plinko (Stake reference: 8-16 rows, Low/Medium/High risk) ----------
+const PLINKO_PAYOUTS = {
+  8: {
+    low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
+    medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
+    high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29],
+  },
+  9: {
+    low: [5.6, 2, 1.6, 1, 0.7, 0.7, 1, 1.6, 2, 5.6],
+    medium: [18, 4, 1.7, 0.9, 0.5, 0.5, 0.9, 1.7, 4, 18],
+    high: [43, 7, 2, 0.6, 0.2, 0.2, 0.6, 2, 7, 43],
+  },
+  10: {
+    low: [8.9, 3, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 3, 8.9],
+    medium: [22, 5, 2, 1.4, 0.6, 0.4, 0.6, 1.4, 2, 5, 22],
+    high: [76, 10, 3, 0.9, 0.3, 0.2, 0.3, 0.9, 3, 10, 76],
+  },
+  11: {
+    low: [8.4, 3, 1.9, 1.3, 1, 0.7, 0.7, 1, 1.3, 1.9, 3, 8.4],
+    medium: [24, 6, 3, 1.8, 0.7, 0.5, 0.5, 0.7, 1.8, 3, 6, 24],
+    high: [120, 14, 5.2, 1.4, 0.4, 0.2, 0.2, 0.4, 1.4, 5.2, 14, 120],
+  },
+  12: {
+    low: [10, 3, 1.6, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 1.6, 3, 10],
+    medium: [33, 11, 4, 2, 1.1, 0.6, 0.3, 0.6, 1.1, 2, 4, 11, 33],
+    high: [170, 24, 8.1, 2, 0.7, 0.2, 0.2, 0.2, 0.7, 2, 8.1, 24, 170],
+  },
+  13: {
+    low: [8.1, 4, 3, 1.9, 1.2, 0.9, 0.7, 0.7, 0.9, 1.2, 1.9, 3, 4, 8.1],
+    medium: [43, 13, 6, 3, 1.3, 0.7, 0.4, 0.4, 0.7, 1.3, 3, 6, 13, 43],
+    high: [260, 37, 11, 4, 1, 0.2, 0.2, 0.2, 0.2, 1, 4, 11, 37, 260],
+  },
+  14: {
+    low: [7.1, 4, 1.9, 1.4, 1.3, 1.1, 1, 0.5, 1, 1.1, 1.3, 1.4, 1.9, 4, 7.1],
+    medium: [58, 15, 7, 4, 1.9, 1, 0.5, 0.2, 0.5, 1, 1.9, 4, 7, 15, 58],
+    high: [420, 56, 18, 5, 1.9, 0.3, 0.2, 0.2, 0.2, 0.3, 1.9, 5, 18, 56, 420],
+  },
+  15: {
+    low: [15, 8, 3, 2, 1.5, 1.1, 1, 0.7, 0.7, 1, 1.1, 1.5, 2, 3, 8, 15],
+    medium: [88, 18, 11, 5, 3, 1.3, 0.5, 0.3, 0.3, 0.5, 1.3, 3, 5, 11, 18, 88],
+    high: [620, 83, 27, 8, 3, 0.5, 0.2, 0.2, 0.2, 0.2, 0.5, 3, 8, 27, 83, 620],
+  },
+  16: {
+    low: [16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, 1, 1.1, 1.2, 1.4, 1.4, 2, 9, 16],
+    medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110],
+    high: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000],
+  },
+};
 
-function plinko(userId, bet) {
+function plinko(userId, bet, rows = 10, risk = 'medium') {
   checkBet(bet);
+  const rowCount = Number(rows) >= 8 && Number(rows) <= 16 ? Number(rows) : 10;
+  const riskLevel = ['low', 'medium', 'high'].includes(risk) ? risk : 'medium';
+  const table = PLINKO_PAYOUTS[rowCount] ? PLINKO_PAYOUTS[rowCount][riskLevel] : PLINKO_PAYOUTS[10].medium;
+
   return db.transaction(() => {
     const roundId = saveRound(userId, 'plinko', bet, 0, {});
     postLedger({ userId, delta: -bet, type: 'bet', refType: 'round', refId: roundId });
 
     const steps = [];
     let bucket = 0;
-    for (let r = 0; r < PLINKO_ROWS; r++) {
+    for (let r = 0; r < rowCount; r++) {
       const step = rnd(2); // 0 = bounce left, 1 = bounce right
       steps.push(step);
       bucket += step;
     }
 
-    const mult = PLINKO_MULTS[bucket];
+    const mult = table[bucket] !== undefined ? table[bucket] : 1;
     const payout = Math.floor(bet * mult);
     if (payout > 0) postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: roundId });
-    db.prepare('UPDATE game_rounds SET payout=?, detail=? WHERE id=?').run(payout, JSON.stringify({ bucket, mult, steps }), roundId);
+    db.prepare('UPDATE game_rounds SET payout=?, detail=? WHERE id=?')
+      .run(payout, JSON.stringify({ bucket, mult, steps, rows: rowCount, risk: riskLevel }), roundId);
     const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
-    return { bucket, mult, payout, balance, steps };
+    return { bucket, mult, payout, balance, steps, rows: rowCount, risk: riskLevel };
   })();
 }
 

@@ -167,7 +167,7 @@ window.Games = (function () {
   }
 
   // =========================================================
-  // MINES (Diamond Hunt — Stake Style)
+  // MINES (Diamond Hunt — Stake Reference / TechnoVisionDev)
   // =========================================================
   function mines(body, stage) {
     const { t, esc } = C;
@@ -179,29 +179,51 @@ window.Games = (function () {
       <div id="mbet"></div>
       <div style="display:flex;gap:12px;align-items:center;justify-content:center;margin:10px 0">
         <label style="color:#aaa;font-size:13px;font-weight:600">${esc(t('mines_count'))}:</label>
-        <select id="mine-count" style="width:80px;background:#1a1a2a;color:#fff;border:1px solid #444;border-radius:8px;padding:6px 8px;font-size:14px;font-weight:700">
+        <select id="mine-count" style="width:84px;background:#1a1a2a;color:#fff;border:1px solid #444;border-radius:8px;padding:6px 8px;font-size:14px;font-weight:700">
+          <option value="1">1</option>
+          <option value="2">2</option>
           <option value="3">3</option>
+          <option value="4">4</option>
           <option value="5" selected>5</option>
           <option value="8">8</option>
+          <option value="10">10</option>
           <option value="12">12</option>
+          <option value="15">15</option>
           <option value="20">20</option>
+          <option value="24">24</option>
         </select>
       </div>
       <div class="mines-info">
         <span>${esc(t('mines_safe'))}: <span class="val" id="msafe">20</span></span>
         <span>${esc(t('mines_mult'))}: <span class="val" id="mmult">×1.00</span></span>
       </div>
-      <div class="mines-grid" id="mgrid"></div>
-      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+      <div class="mines-wrap">
+        <div class="mines-grid" id="mgrid"></div>
+        <div id="mmodal-slot"></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:14px">
         <button class="bigbtn green" id="mstart" style="flex:1;max-width:180px">${esc(t('start'))}</button>
-        <button class="bigbtn" id="mcash" disabled style="flex:1;max-width:180px">${esc(t('cashout'))}</button>
+        <button class="bigbtn" id="mcash" disabled style="flex:1;max-width:200px">${esc(t('cashout'))}</button>
       </div>
       <div class="msg" id="mmsg"></div>`;
 
     const bet = betBar($('mbet'));
 
+    function showCashoutModal(mult, payout) {
+      const slot = $('mmodal-slot');
+      if (!slot) return;
+      slot.innerHTML = `
+        <div class="mines-modal">
+          <h1 class="mines-modal-mult">×${Number(mult).toFixed(2)}</h1>
+          <div class="mines-modal-divider"></div>
+          <p class="mines-modal-win">+${C.fmt(payout)}</p>
+        </div>`;
+      setTimeout(() => { if (slot) slot.innerHTML = ''; }, 3200);
+    }
+
     function buildGrid(locked = false) {
       const grid = $('mgrid');
+      if (!grid) return;
       grid.innerHTML = '';
       for (let i = 0; i < GRID; i++) {
         const btn = document.createElement('button');
@@ -262,15 +284,19 @@ window.Games = (function () {
         C.setBalance(r.balance);
         if (r.mine) {
           cells[idx].textContent = '💣';
-          cells[idx].classList.add('revealed-mine');
+          cells[idx].className = 'mine-cell revealed-mine';
           sfx.boom();
           say($('mmsg'), `💥 ${esc(t('crashed'))}`, 'lose');
           if (r.mines) r.mines.forEach((mi) => {
-            cells[mi].textContent = '💣'; cells[mi].classList.add('revealed-mine');
+            if (mi !== idx) {
+              cells[mi].textContent = '💣';
+              cells[mi].className = 'mine-cell revealed-mine revealed-dim';
+            }
           });
           for (let i = 0; i < GRID; i++) {
             if (!revealed[i] && !(r.mines || []).includes(i)) {
-              cells[i].textContent = '💎'; cells[i].classList.add('revealed-safe');
+              cells[i].textContent = '💎';
+              cells[i].className = 'mine-cell revealed-safe revealed-dim';
             }
           }
           sfx.lose();
@@ -281,7 +307,7 @@ window.Games = (function () {
           $('mine-count').disabled = false;
         } else {
           cells[idx].textContent = '💎';
-          cells[idx].classList.add('revealed-safe');
+          cells[idx].className = 'mine-cell revealed-safe';
           revealed[idx] = true;
           sfx.reveal();
           currentMult = r.mult;
@@ -292,6 +318,7 @@ window.Games = (function () {
           if (r.safe_left === 0) {
             say($('mmsg'), `🏆 ${esc(t('big_win'))} +${C.fmt(r.payout || r.potential)}`, 'win');
             sfx.win(); coinRain(stage);
+            showCashoutModal(r.mult, r.payout || r.potential);
             gameActive = false;
             bet.lock(false);
             $('mstart').disabled = false;
@@ -314,6 +341,8 @@ window.Games = (function () {
       if (busy) return; busy = true;
       const mineCount = Number($('mine-count').value);
       $('mstart').disabled = true;
+      const modalSlot = $('mmodal-slot');
+      if (modalSlot) modalSlot.innerHTML = '';
       try {
         const r = await C.api('/games/mines/start', { bet: bet.get(), mines: mineCount });
         C.setBalance(r.balance);
@@ -340,11 +369,22 @@ window.Games = (function () {
         C.setBalance(r.balance);
         say($('mmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} 🎉`, 'win');
         sfx.win();
+        showCashoutModal(r.mult, r.payout);
         if (r.mult >= 2) coinRain(stage);
         if (r.mines) r.mines.forEach((mi) => {
           const cells = $('mgrid').querySelectorAll('.mine-cell');
-          cells[mi].textContent = '💣'; cells[mi].classList.add('revealed-mine');
+          if (!cells[mi].classList.contains('revealed-safe')) {
+            cells[mi].textContent = '💣';
+            cells[mi].className = 'mine-cell revealed-mine revealed-dim';
+          }
         });
+        for (let i = 0; i < GRID; i++) {
+          const cells = $('mgrid').querySelectorAll('.mine-cell');
+          if (!revealed[i] && !(r.mines || []).includes(i)) {
+            cells[i].textContent = '💎';
+            cells[i].className = 'mine-cell revealed-safe revealed-dim';
+          }
+        }
         gameActive = false;
         bet.lock(false);
         $('mstart').disabled = false;
@@ -358,125 +398,223 @@ window.Games = (function () {
   }
 
   // =========================================================
-  // PLINKO (Stake-Style Peg Pyramid)
+  // PLINKO (Stake Reference / AnsonH)
   // =========================================================
+  const PLINKO_TABLES = {
+    8: {
+      low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
+      medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
+      high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29],
+    },
+    10: {
+      low: [8.9, 3, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 3, 8.9],
+      medium: [22, 5, 2, 1.4, 0.6, 0.4, 0.6, 1.4, 2, 5, 22],
+      high: [76, 10, 3, 0.9, 0.3, 0.2, 0.3, 0.9, 3, 10, 76],
+    },
+    12: {
+      low: [10, 3, 1.6, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 1.6, 3, 10],
+      medium: [33, 11, 4, 2, 1.1, 0.6, 0.3, 0.6, 1.1, 2, 4, 11, 33],
+      high: [170, 24, 8.1, 2, 0.7, 0.2, 0.2, 0.2, 0.7, 2, 8.1, 24, 170],
+    },
+    14: {
+      low: [7.1, 4, 1.9, 1.4, 1.3, 1.1, 1, 0.5, 1, 1.1, 1.3, 1.4, 1.9, 4, 7.1],
+      medium: [58, 15, 7, 4, 1.9, 1, 0.5, 0.2, 0.5, 1, 1.9, 4, 7, 15, 58],
+      high: [420, 56, 18, 5, 1.9, 0.3, 0.2, 0.2, 0.2, 0.3, 1.9, 5, 18, 56, 420],
+    },
+    16: {
+      low: [16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, 1, 1.1, 1.2, 1.4, 1.4, 2, 9, 16],
+      medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110],
+      high: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000],
+    },
+  };
+
+  function getBinColors(count) {
+    const colors = [];
+    const mid = (count - 1) / 2;
+    for (let i = 0; i < count; i++) {
+      const dist = Math.abs(i - mid) / mid; // 0 at center, 1 at edges
+      if (dist > 0.75) colors.push('#dc2626');       // Red
+      else if (dist > 0.5) colors.push('#ea580c');   // Orange
+      else if (dist > 0.25) colors.push('#d97706');  // Amber
+      else colors.push('#334155');                   // Slate
+    }
+    return colors;
+  }
+
   function plinko(body, stage) {
     const { t, esc } = C;
-    const ROWS = 10;
-    const BUCKETS = ROWS + 1; // 11
-    const W = Math.min(380, window.innerWidth - 60), H = 340;
-    const bMults = [8, 3, 1.5, 0.7, 0.4, 0.3, 0.4, 0.7, 1.5, 3, 8];
-    const bColors = ['#dc2626','#ea580c','#c9a227','#4b5563','#374151','#1f2937','#374151','#4b5563','#c9a227','#ea580c','#dc2626'];
+    let selectedRows = 10;
+    let selectedRisk = 'medium';
+    const recentWins = [];
+
+    const W = Math.min(380, window.innerWidth - 60);
+    const H = 350;
 
     body.innerHTML = `
       <div id="pbet"></div>
+      <div class="plinko-controls">
+        <label>
+          ${esc(t('risk') || 'Risk')}:
+          <select id="p-risk">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label>
+          ${esc(t('rows') || 'Rows')}:
+          <select id="p-rows">
+            <option value="8">8</option>
+            <option value="10" selected>10</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+          </select>
+        </label>
+      </div>
+      <div class="plinko-recent" id="p-recent"></div>
       <div class="plinko-canvas-wrap">
         <canvas id="plinko-canvas" width="${W}" height="${H}"></canvas>
       </div>
-      <div class="plinko-buckets" id="plinko-buckets" style="max-width:${W}px">
-        ${bMults.map((m, i) => `
-          <div class="plinko-bucket" style="background:${bColors[i]};color:#fff;font-size:11px">
-            ×${m}
-          </div>
-        `).join('')}
-      </div>
+      <div class="plinko-buckets" id="plinko-buckets" style="max-width:${W}px"></div>
       <button class="bigbtn" id="pdrop" style="margin-top:14px">⚡ ${esc(t('plinko_drop'))}</button>
       <div class="msg" id="pmsg"></div>`;
 
     const cv = $('plinko-canvas');
     const ctx = cv.getContext('2d');
-    const padX = 22, padY = 28;
-    const colSpacing = (W - padX * 2) / (BUCKETS - 1);
-    const rowSpacing = (H - padY - 50) / (ROWS + 1);
+    let pegRows = [];
+    let bucketsCount = selectedRows + 1;
+    let colSpacing = 0, rowSpacing = 0;
+    const padX = 20, padY = 24;
 
-    // Build triangular pegs
-    const pegRows = [];
-    for (let r = 0; r < ROWS; r++) {
-      const pegsInRow = r + 2;
-      const rowY = padY + (r + 1) * rowSpacing;
-      const startX = W / 2 - ((pegsInRow - 1) / 2) * colSpacing;
-      const rowList = [];
-      for (let c = 0; c < pegsInRow; c++) {
-        rowList.push({ x: startX + c * colSpacing, y: rowY });
+    function buildGeometry() {
+      bucketsCount = selectedRows + 1;
+      colSpacing = (W - padX * 2) / (bucketsCount - 1);
+      rowSpacing = (H - padY - 45) / (selectedRows + 1);
+
+      pegRows = [];
+      for (let r = 0; r < selectedRows; r++) {
+        const pegsInRow = r + 2;
+        const rowY = padY + (r + 1) * rowSpacing;
+        const startX = W / 2 - ((pegsInRow - 1) / 2) * colSpacing;
+        const rowList = [];
+        for (let c = 0; c < pegsInRow; c++) {
+          rowList.push({ x: startX + c * colSpacing, y: rowY });
+        }
+        pegRows.push(rowList);
       }
-      pegRows.push(rowList);
+
+      // Render bottom buckets
+      const mults = PLINKO_TABLES[selectedRows][selectedRisk];
+      const colors = getBinColors(bucketsCount);
+      const host = $('plinko-buckets');
+      host.innerHTML = mults.map((m, i) => `
+        <div class="plinko-bucket" id="p-bk-${i}" style="background:${colors[i]};color:#fff;font-size:${selectedRows >= 14 ? '9px' : '11px'}">
+          ×${m}
+        </div>
+      `).join('');
+    }
+
+    function renderRecent() {
+      const el = $('p-recent');
+      if (!el) return;
+      el.innerHTML = recentWins.slice(-6).map((item) => `
+        <span class="plinko-pill" style="background:${item.color}">${item.mult}×</span>
+      `).join('');
     }
 
     function drawBoard(ball = null, activeBucket = -1, pulsePeg = null) {
       ctx.clearRect(0, 0, W, H);
-      // Background gradient
-      const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, '#0a101d'); bg.addColorStop(1, '#05080f');
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
 
-      // Pegs
+      // Canvas background gradient
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0a101d');
+      bg.addColorStop(1, '#05080f');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Triangular pegs
+      const pegR = selectedRows >= 14 ? 3 : 3.8;
       pegRows.forEach((row, ri) => {
         row.forEach((p, ci) => {
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, pegR, 0, Math.PI * 2);
           const isPulse = pulsePeg && pulsePeg.r === ri && pulsePeg.c === ci;
           ctx.fillStyle = isPulse ? '#ffffff' : '#c9a227';
-          if (isPulse) { ctx.shadowColor = '#fff'; ctx.shadowBlur = 10; }
+          if (isPulse) {
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 12;
+          }
           ctx.fill();
           ctx.shadowBlur = 0;
         });
       });
 
-      // Bucket divider lines
-      for (let b = 0; b <= BUCKETS; b++) {
+      // Bottom bin dividers
+      for (let b = 0; b <= bucketsCount; b++) {
         const bx = padX + b * colSpacing - colSpacing / 2;
-        ctx.strokeStyle = '#2d3748'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(bx, H - 42); ctx.lineTo(bx, H - 2); ctx.stroke();
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(bx, H - 36);
+        ctx.lineTo(bx, H);
+        ctx.stroke();
       }
 
       // Winning bucket highlight
       if (activeBucket >= 0) {
         const bx = padX + activeBucket * colSpacing - colSpacing / 2;
         ctx.fillStyle = 'rgba(201,162,39,0.35)';
-        ctx.fillRect(bx + 1, H - 42, colSpacing - 2, 40);
+        ctx.fillRect(bx + 1, H - 36, colSpacing - 2, 36);
       }
 
       // Ball
       if (ball) {
         ctx.beginPath();
-        ctx.arc(ball.x, ball.y, 7.5, 0, Math.PI * 2);
-        const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, 7.5);
-        grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#fbbf24');
+        const ballR = selectedRows >= 14 ? 5.5 : 6.8;
+        ctx.arc(ball.x, ball.y, ballR, 0, Math.PI * 2);
+        const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, ballR);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(1, '#ef4444');
         ctx.fillStyle = grad;
-        ctx.shadowColor = 'rgba(251,191,36,0.6)'; ctx.shadowBlur = 8;
-        ctx.fill(); ctx.shadowBlur = 0;
+        ctx.shadowColor = 'rgba(239,68,68,0.7)';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
     }
 
     async function runBall(steps, targetBucket) {
       return new Promise((res) => {
-        // Calculate bounce trajectory through the 10 rows
-        const path = [{ x: W / 2, y: 12 }];
+        const path = [{ x: W / 2, y: 10 }];
         let curCol = 0;
-        for (let r = 0; r < ROWS; r++) {
+        for (let r = 0; r < selectedRows; r++) {
           const rowPegs = pegRows[r];
           const peg = rowPegs[Math.min(curCol, rowPegs.length - 1)];
           path.push({ x: peg.x, y: peg.y, r, c: curCol });
           if (steps[r] === 1) curCol++;
         }
-        // Final bucket bottom center
         const finalX = padX + targetBucket * colSpacing;
-        path.push({ x: finalX, y: H - 20 });
+        path.push({ x: finalX, y: H - 18 });
 
         let seg = 0, progress = 0;
-        const SEG_FRAMES = 14;
+        const SEG_FRAMES = 12;
         let lastPulse = null;
 
         function stepFrame() {
           if (seg >= path.length - 1) {
             drawBoard(path[path.length - 1], targetBucket, null);
+            const bk = $(`p-bk-${targetBucket}`);
+            if (bk) {
+              bk.classList.add('hit');
+              setTimeout(() => bk.classList.remove('hit'), 450);
+            }
             res(); return;
           }
           const p0 = path[seg], p1 = path[seg + 1];
           progress += 1 / SEG_FRAMES;
-          const ease = progress * progress * (3 - 2 * progress); // smooth easing
-          // Slight arc bouncing
-          const arc = Math.sin(progress * Math.PI) * 6;
+          const ease = progress * progress * (3 - 2 * progress);
+          const arc = Math.sin(progress * Math.PI) * 5;
           const bx = p0.x + (p1.x - p0.x) * ease;
           const by = p0.y + (p1.y - p0.y) * ease - arc;
 
@@ -494,29 +632,61 @@ window.Games = (function () {
       });
     }
 
+    buildGeometry();
     drawBoard();
     const bet = betBar($('pbet'));
+
+    $('p-rows').onchange = (e) => {
+      selectedRows = Number(e.target.value);
+      buildGeometry();
+      drawBoard();
+    };
+    $('p-risk').onchange = (e) => {
+      selectedRisk = e.target.value;
+      buildGeometry();
+      drawBoard();
+    };
 
     $('pdrop').onclick = async () => {
       const btn = $('pdrop');
       if (btn.disabled) return;
-      btn.disabled = true; bet.lock(true); say($('pmsg'), '');
+      btn.disabled = true;
+      bet.lock(true);
+      $('p-rows').disabled = true;
+      $('p-risk').disabled = true;
+      say($('pmsg'), '');
       try {
-        const r = await C.api('/games/plinko', { bet: bet.get() });
+        const r = await C.api('/games/plinko', {
+          bet: bet.get(),
+          rows: selectedRows,
+          risk: selectedRisk,
+        });
         C.setBalance(r.balance);
-        const steps = r.steps || Array.from({ length: ROWS }, () => Math.round(Math.random()));
-        const target = typeof r.bucket === 'number' ? r.bucket : 5;
+        const steps = r.steps || Array.from({ length: selectedRows }, () => Math.round(Math.random()));
+        const target = typeof r.bucket === 'number' ? r.bucket : Math.floor(bucketsCount / 2);
         await runBall(steps, target);
+
+        const colors = getBinColors(bucketsCount);
+        recentWins.push({ mult: r.mult, color: colors[target] || '#d97706' });
+        renderRecent();
+
         if (r.payout) {
           say($('pmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} (×${r.mult}) 🎉`, 'win');
           sfx.win();
           if (r.mult >= 2) coinRain(stage);
         } else {
-          say($('pmsg'), `${esc(t('lose'))} (×${r.mult})`, 'lose'); sfx.lose();
+          say($('pmsg'), `${esc(t('lose'))} (×${r.mult})`, 'lose');
+          sfx.lose();
         }
-        await sleep(1500); drawBoard();
-      } catch (e) { C.fail(e); }
-      btn.disabled = false; bet.lock(false);
+        await sleep(1200);
+        drawBoard();
+      } catch (e) {
+        C.fail(e);
+      }
+      btn.disabled = false;
+      bet.lock(false);
+      $('p-rows').disabled = false;
+      $('p-risk').disabled = false;
     };
   }
 
@@ -748,34 +918,69 @@ window.Games = (function () {
       const rim = g.createRadialGradient(cx, cy, 118, cx, cy, 162);
       rim.addColorStop(0, '#7a4820'); rim.addColorStop(1, '#1e0c02');
       g.fillStyle = rim; g.beginPath(); g.arc(cx, cy, 162, 0, 7); g.fill();
+
+      // Pockets background
       for (let i = 0; i < 37; i++) {
         const n = ORDER[i], a0 = wheelA + i * seg - Math.PI / 2;
-        g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 148, a0, a0 + seg); g.closePath();
-        g.fillStyle = n === 0 ? '#0a8a3a' : REDS.has(n) ? '#c1121f' : '#111';
+        g.beginPath();
+        g.moveTo(cx, cy);
+        g.arc(cx, cy, 148, a0, a0 + seg);
+        g.closePath();
+        g.fillStyle = n === 0 ? '#0a8a3a' : REDS.has(n) ? '#c1121f' : '#111111';
         g.fill();
-        g.strokeStyle = '#c9a227'; g.lineWidth = 0.8; g.stroke();
+
+        // Pocket number with player-facing readable orientation
         const midA = a0 + seg / 2;
-        const tx = cx + Math.cos(midA) * 123;
-        const ty = cy + Math.sin(midA) * 123;
+        const tx = cx + Math.cos(midA) * 122;
+        const ty = cy + Math.sin(midA) * 122;
         g.save();
         g.translate(tx, ty);
-        g.rotate(midA + Math.PI / 2);
-        g.fillStyle = '#fff';
-        g.font = `bold ${S < 300 ? 10 : 12}px Inter,sans-serif`;
+        let rot = midA + Math.PI / 2;
+        // Keep numbers readable so they are never inverted/upside-down on the bottom half
+        if (Math.sin(midA) > 0) {
+          rot += Math.PI;
+        }
+        g.rotate(rot);
+        g.fillStyle = '#ffffff';
+        g.font = `bold ${S < 300 ? 9.5 : 11}px Inter, sans-serif`;
         g.textAlign = 'center';
         g.textBaseline = 'middle';
         g.fillText(String(n), 0, 0);
         g.restore();
       }
+
+      // Golden fret separators between pockets
+      for (let i = 0; i < 37; i++) {
+        const a = wheelA + i * seg - Math.PI / 2;
+        g.beginPath();
+        g.moveTo(cx + Math.cos(a) * 96, cy + Math.sin(a) * 96);
+        g.lineTo(cx + Math.cos(a) * 148, cy + Math.sin(a) * 148);
+        g.strokeStyle = '#c9a227';
+        g.lineWidth = 1;
+        g.stroke();
+      }
+
+      // Outer & inner gold rims
+      g.beginPath(); g.arc(cx, cy, 148, 0, Math.PI * 2);
+      g.strokeStyle = '#c9a227'; g.lineWidth = 2; g.stroke();
+
       g.fillStyle = '#0d1d14'; g.beginPath(); g.arc(cx, cy, 96, 0, 7); g.fill();
+      g.beginPath(); g.arc(cx, cy, 96, 0, Math.PI * 2);
+      g.strokeStyle = '#c9a227'; g.lineWidth = 2; g.stroke();
+
+      // Center gold turret / hub
       const hub = g.createRadialGradient(cx - 8, cy - 8, 4, cx, cy, 56);
       hub.addColorStop(0, '#ffe58a'); hub.addColorStop(1, '#8a6200');
       g.fillStyle = hub; g.beginPath(); g.arc(cx, cy, 50, 0, 7); g.fill();
       g.fillStyle = '#1a0e00'; g.font = 'bold 20px Noto Sans Ethiopic,sans-serif';
       g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText('ፍ', cx, cy);
+
+      // Top indicator pointer
       g.fillStyle = '#c9a227';
       g.beginPath(); g.moveTo(cx - 9, 2); g.lineTo(cx + 9, 2); g.lineTo(cx, 20); g.closePath(); g.fill();
+
+      // Ball
       const bx = cx + ballR * Math.sin(ballA), by = cy - ballR * Math.cos(ballA);
       g.shadowColor = 'rgba(0,0,0,0.7)'; g.shadowBlur = 8;
       g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 7, 0, 7); g.fill();
@@ -862,20 +1067,34 @@ window.Games = (function () {
     [0, 1, 2].forEach(paint);
 
     function spinReel(i, finalSym, dur) {
+      const strip = $('st' + i);
+      const symEl = strip.querySelector('.sym');
+      const actualH = symEl ? symEl.offsetHeight : SYM_H;
+
       const items = [...cur[i]];
       const n = 18 + i * 6;
       for (let k = 0; k < n; k++) items.push(rs());
       const top = rs(), bot = rs();
       items.push(top, finalSym, bot);
-      const strip = $('st' + i);
+
       strip.innerHTML = items.map((s) => `<div class="sym">${s}</div>`).join('');
       strip.style.transition = 'none';
       strip.style.transform = 'translateY(0)';
       void strip.offsetHeight;
+
+      const symH = strip.querySelector('.sym') ? strip.querySelector('.sym').offsetHeight : actualH;
       strip.style.transition = `transform ${dur}ms cubic-bezier(.1,.8,.15,1)`;
-      strip.style.transform = `translateY(${-(items.length - 3) * SYM_H}px)`;
+      strip.style.transform = `translateY(${-(items.length - 3) * symH}px)`;
       cur[i] = [top, finalSym, bot];
-      return sleep(dur + 80).then(() => sfx.hop());
+
+      return sleep(dur + 80).then(() => {
+        sfx.hop();
+        // Reset cleanly to the 3 final symbols at translateY(0)
+        // so no leftover offset or media-query scale can ever cause symbols to disappear!
+        strip.style.transition = 'none';
+        strip.innerHTML = cur[i].map((s) => `<div class="sym">${s}</div>`).join('');
+        strip.style.transform = 'translateY(0)';
+      });
     }
 
     let busy = false;

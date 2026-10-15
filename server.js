@@ -218,7 +218,7 @@ app.get('/api/games/mines', ...g((req) => games.minesState(req.user.id)));
 app.post('/api/games/mines/start', ...g((req) => games.minesStart(req.user.id, Number(req.body.bet), req.body.mines)));
 app.post('/api/games/mines/step', ...g((req) => games.minesStep(req.user.id, req.body.cell)));
 app.post('/api/games/mines/cashout', ...g((req) => games.minesCashout(req.user.id)));
-app.post('/api/games/plinko', ...g((req) => games.plinko(req.user.id, Number(req.body.bet))));
+app.post('/api/games/plinko', ...g((req) => games.plinko(req.user.id, Number(req.body.bet), req.body.rows, req.body.risk)));
 
 // ---------- admin ----------
 const admin = [auth, need('admin')];
