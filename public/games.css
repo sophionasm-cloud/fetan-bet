@@ -852,6 +852,369 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* ============================================================
+   KENO
+   ============================================================ */
+.gcard.g-keno {
+  background: linear-gradient(145deg, #003d30 0%, #001714 60%, #000d09 100%);
+  border-color: #00c896;
+}
+.gcard.g-keno .btn { background: #10b981; color: #003322; }
+
+.keno-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0 8px;
+  gap: 10px;
+}
+.keno-info {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.keno-board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.keno-num {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.12s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 0;
+  user-select: none;
+}
+.keno-num:hover {
+  background: #2d4a6e;
+  color: #fff;
+  transform: scale(1.1);
+}
+.keno-num.selected {
+  background: #c9a227;
+  color: #000;
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.35);
+  transform: scale(1.08);
+}
+.keno-num.drawn {
+  background: #0f1f2e;
+  color: #475569;
+  cursor: default;
+}
+.keno-num.hit {
+  background: #10b981;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(16,185,129,0.6);
+  transform: scale(1.12);
+}
+.keno-paytable {
+  background: #0d1623;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.keno-pay-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.keno-pay-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.keno-pay-chip {
+  background: #1e293b;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.keno-pay-chip b { color: #c9a227; }
+.keno-drawn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 12px;
+  min-height: 28px;
+}
+.keno-drawn-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+}
+.keno-ball {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 4px;
+  animation: ballDrop 0.2s ease-out;
+}
+.keno-ball.hit {
+  background: #10b981;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(16,185,129,0.5);
+}
+@keyframes ballDrop {
+  0%   { transform: scale(0.4) translateY(-10px); opacity: 0; }
+  70%  { transform: scale(1.15) translateY(2px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* ============================================================
+   ETHIOPIAN BINGO (ቢንጎ ሜዳ)
+   ============================================================ */
+.gcard.g-bingo {
+  background: linear-gradient(145deg, #1a0a3e 0%, #08021a 60%, #040010 100%);
+  border-color: #7c3aed;
+}
+.gcard.g-bingo .btn { background: #7c3aed; color: #fff; }
+
+.bingo-layout {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.bingo-left {
+  flex: 1 1 280px;
+  min-width: 280px;
+}
+.bingo-right {
+  flex: 0 0 160px;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bingo-card-wrap {
+  margin-bottom: 12px;
+}
+.bingo-card {
+  background: #0d1623;
+  border: 2px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+.bingo-header {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: #7c3aed;
+}
+.bingo-col-head {
+  text-align: center;
+  padding: 8px 2px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  font-family: 'Noto Serif Ethiopic', serif, sans-serif;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+.bingo-col-head:nth-child(1) { background: rgba(193,18,31,0.7); }
+.bingo-col-head:nth-child(2) { background: rgba(30,64,175,0.7); }
+.bingo-col-head:nth-child(3) { background: rgba(4,120,87,0.7); }
+.bingo-col-head:nth-child(4) { background: rgba(146,64,14,0.7); }
+.bingo-col-head:nth-child(5) { background: rgba(107,33,168,0.7); }
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  padding: 6px;
+  background: #060e1a;
+}
+.bingo-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #1e293b;
+  border-radius: 6px;
+  cursor: default;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.bingo-cell.free { background: #c9a227; }
+.bingo-cell.marked:not(.free) {
+  background: #047857;
+  box-shadow: 0 0 8px rgba(4,120,87,0.6);
+}
+.bingo-cell.just-marked { animation: cellPop 0.4s ease-out; }
+@keyframes cellPop {
+  0%   { transform: scale(0.7); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.bingo-free {
+  font-size: 11px;
+  font-weight: 900;
+  color: #000;
+  font-family: 'Noto Serif Ethiopic', serif, sans-serif;
+  text-align: center;
+}
+.bingo-col-tag {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  line-height: 1;
+  font-family: 'Noto Serif Ethiopic', serif, sans-serif;
+}
+.bingo-num-big {
+  font-size: 15px;
+  font-weight: 800;
+  color: #e2e8f0;
+  line-height: 1;
+}
+.bingo-cell.marked .bingo-num-big { color: #fff; }
+.bingo-cell.marked .bingo-col-tag { color: rgba(255,255,255,0.6); }
+.bingo-called-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bingo-called-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.bingo-balls {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  min-height: 28px;
+  align-items: center;
+}
+.bingo-balls::-webkit-scrollbar { display: none; }
+.bingo-ball-called {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.bingo-ball-called.new-ball {
+  animation: ball-pop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes ball-pop {
+  0%   { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  70%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.bingo-multiplier-table {
+  background: #0d1623;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.bingo-pay-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bingo-pay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #64748b;
+  padding: 3px 0;
+  border-bottom: 1px solid #1e293b;
+}
+.bingo-pay-row:last-child { border-bottom: none; }
+.bingo-pay-mult {
+  font-weight: 800;
+  color: #c9a227;
+}
+.bingo-draw-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+  padding: 6px;
+  background: #0d1623;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+}
+.bingo-last-ball {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  font-family: 'Noto Serif Ethiopic', serif, sans-serif;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  transition: background 0.3s;
+  min-height: 80px;
+  width: 100%;
+  max-width: 120px;
+  margin: 0 auto;
+  text-align: center;
+}
+.bingo-last-ball.ball-pop {
+  animation: ball-pop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.bingo-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.bingo-controls .bigbtn.green {
+  background: linear-gradient(135deg, #10b981, #047857);
+}
+.bingo-controls .bigbtn.green:hover {
+  background: linear-gradient(135deg, #34d399, #059669);
+}
+.chip#bauto.on {
+  background: #7c3aed;
+  color: #fff;
+  border-color: #a855f7;
+}
+
 /* ---- RESPONSIVE ---- */
 @media (max-width: 600px) {
   .lobby { grid-template-columns: 1fr 1fr; gap: 10px; }

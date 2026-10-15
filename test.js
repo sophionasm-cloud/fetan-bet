@@ -111,6 +111,22 @@ const server = app.listen(0, async () => {
     const pk = await user('/games/plinko', { bet: 1000 });
     ok('plinko plays', pk.status === 200 && pk.data.bucket >= 0 && pk.data.bucket <= 10 && Array.isArray(pk.data.steps));
 
+    // Keno
+    const knBad = await user('/games/keno', { bet: 1000, picks: [] });
+    ok('keno empty picks rejected', knBad.data.error === 'INVALID');
+    const kn = await user('/games/keno', { bet: 1000, picks: [3, 7, 12, 25, 42] });
+    ok('keno plays', kn.status === 200 && Array.isArray(kn.data.drawn) && kn.data.drawn.length === 20 && typeof kn.data.matched === 'number');
+
+    // Bingo
+    const bg0 = await user('/games/bingo');
+    ok('bingo state retrieves', bg0.status === 200 && typeof bg0.data.active === 'boolean');
+    const bgStart = await user('/games/bingo/start', { bet: 1000 });
+    ok('bingo start works', bgStart.status === 200 && Array.isArray(bgStart.data.card) && bgStart.data.card.length === 5);
+    const bgCall = await user('/games/bingo/call', {});
+    ok('bingo call draws ball', bgCall.status === 200 && bgCall.data.drawn.length === 1 && bgCall.data.called >= 1 && bgCall.data.called <= 75);
+    const bgAbandon = await user('/games/bingo/abandon', {});
+    ok('bingo abandon cleans up active round', bgAbandon.status === 200 && (await user('/games/bingo')).data.active === false);
+
     // Ledger balance equals wallet balance for every user
     const bad = db.prepare(`SELECT w.user_id FROM wallets w
       WHERE w.balance != COALESCE((SELECT SUM(amount) FROM ledger l WHERE l.user_id = w.user_id), 0)`).all();

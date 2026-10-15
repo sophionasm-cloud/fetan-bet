@@ -219,6 +219,11 @@ app.post('/api/games/mines/start', ...g((req) => games.minesStart(req.user.id, N
 app.post('/api/games/mines/step', ...g((req) => games.minesStep(req.user.id, req.body.cell)));
 app.post('/api/games/mines/cashout', ...g((req) => games.minesCashout(req.user.id)));
 app.post('/api/games/plinko', ...g((req) => games.plinko(req.user.id, Number(req.body.bet), req.body.rows, req.body.risk)));
+app.post('/api/games/keno', ...g((req) => games.keno(req.user.id, Number(req.body.bet), req.body.picks)));
+app.get('/api/games/bingo', ...g((req) => games.bingoState(req.user.id)));
+app.post('/api/games/bingo/start', ...g((req) => games.bingoStart(req.user.id, Number(req.body.bet))));
+app.post('/api/games/bingo/call', ...g((req) => games.bingoCall(req.user.id)));
+app.post('/api/games/bingo/abandon', ...g((req) => games.bingoAbandon(req.user.id)));
 
 // ---------- admin ----------
 const admin = [auth, need('admin')];

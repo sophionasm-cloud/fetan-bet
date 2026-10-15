@@ -126,6 +126,18 @@ window.Games = (function () {
           <p>${esc(t('plinko_desc'))}</p>
           <button class="btn">${esc(t('play_now'))}</button>
         </div>
+        <div class="gcard g-keno" data-g="keno">
+          <span class="big">🎱</span>
+          <h3>${esc(t('keno_title'))}</h3>
+          <p>${esc(t('keno_desc'))}</p>
+          <button class="btn">${esc(t('play_now'))}</button>
+        </div>
+        <div class="gcard g-bingo" data-g="bingo">
+          <span class="big">🇪🇹</span>
+          <h3>${esc(t('bingo_title'))}</h3>
+          <p>${esc(t('bingo_desc'))}</p>
+          <button class="btn">${esc(t('play_now'))}</button>
+        </div>
         <div class="gcard g2" data-g="roulette">
           <span class="big">🎡</span>
           <h3>${esc(t('roulette_title'))}</h3>
@@ -151,6 +163,8 @@ window.Games = (function () {
       plinko:   '⚡ ' + C.t('plinko_title'),
       roulette: '🎡 ' + C.t('roulette_title'),
       star:     '🎰 ' + C.t('star_title'),
+      keno:     '🎱 ' + C.t('keno_title'),
+      bingo:    '🇪🇹 ' + C.t('bingo_title'),
     };
     app.innerHTML = `
       <div class="stage">
@@ -163,7 +177,7 @@ window.Games = (function () {
       </div>`;
     soundBtn($('sbtn'));
     $('gback').onclick = () => { stopFns.forEach((f) => f()); stopFns = []; C.reload(); };
-    ({ road, roulette, star, mines, plinko })[game]($('gbody'), app.querySelector('.stage'));
+    ({ road, roulette, star, mines, plinko, keno, bingo })[game]($('gbody'), app.querySelector('.stage'));
   }
 
   // =========================================================
@@ -1115,6 +1129,385 @@ window.Games = (function () {
       } catch (e) { C.fail(e); }
       busy = false; $('sgo').disabled = false; bet.lock(false);
     };
+  }
+
+  // =========================================================
+  // KENO (1-80 number board, pick 1-10, draw 20)
+  // =========================================================
+  // Payout table frontend mirror (for live display before draw)
+  const KENO_PAY_DISPLAY = {
+    1:  { 1: '3.8×' },
+    2:  { 2: '12×' },
+    3:  { 2: '2×', 3: '40×' },
+    4:  { 2: '1.5×', 3: '5×', 4: '100×' },
+    5:  { 3: '3×', 4: '20×', 5: '420×' },
+    6:  { 3: '2×', 4: '8×', 5: '80×', 6: '1600×' },
+    7:  { 3: '1.5×', 4: '5×', 5: '25×', 6: '320×', 7: '7000×' },
+    8:  { 4: '3.5×', 5: '12×', 6: '100×', 7: '1700×', 8: '10000×' },
+    9:  { 4: '2.5×', 5: '7×', 6: '50×', 7: '500×', 8: '4000×', 9: '30000×' },
+    10: { 5: '5×', 6: '25×', 7: '250×', 8: '2000×', 9: '10000×', 10: '100000×' },
+  };
+
+  function keno(body, stage) {
+    const { t, esc } = C;
+    let picks = new Set();
+    let busy = false;
+
+    body.innerHTML = `
+      <div id="kbet"></div>
+      <div class="keno-meta">
+        <span class="keno-info" id="kpick-info">
+          ${esc(t('keno_pick'))} (0/10)
+        </span>
+        <button class="chip" id="kclear" style="font-size:12px">${esc(t('keno_clear'))}</button>
+      </div>
+      <div class="keno-board" id="kboard"></div>
+      <div class="keno-paytable" id="kpay"></div>
+      <div class="keno-drawn-row" id="kdrawn"></div>
+      <button class="bigbtn" id="kdraw" disabled>🎱 ${esc(t('keno_draw'))}</button>
+      <div class="msg" id="kmsg"></div>`;
+
+    const bet = betBar($('kbet'));
+
+    // Build 80-number board
+    const board = $('kboard');
+    for (let n = 1; n <= 80; n++) {
+      const btn = document.createElement('button');
+      btn.className = 'keno-num';
+      btn.textContent = n;
+      btn.dataset.n = n;
+      btn.onclick = () => togglePick(n, btn);
+      board.appendChild(btn);
+    }
+
+    function togglePick(n, btn) {
+      if (busy) return;
+      if (picks.has(n)) {
+        picks.delete(n);
+        btn.classList.remove('selected');
+      } else {
+        if (picks.size >= 10) { say($('kmsg'), esc(t('keno_max')), 'lose'); return; }
+        picks.add(n);
+        btn.classList.add('selected');
+        sfx.tick();
+      }
+      say($('kmsg'), '');
+      $('kdraw').disabled = picks.size === 0;
+      $('kpick-info').textContent = `${esc(t('keno_picked'))}: ${picks.size}/10`;
+      renderPaytable();
+    }
+
+    function renderPaytable() {
+      const el = $('kpay');
+      if (picks.size === 0) { el.innerHTML = ''; return; }
+      const row = KENO_PAY_DISPLAY[picks.size] || {};
+      el.innerHTML = `
+        <div class="keno-pay-title">Paytable for ${picks.size} spot${picks.size > 1 ? 's' : ''}:</div>
+        <div class="keno-pay-row">
+          ${Object.entries(row).map(([match, mult]) => `
+            <span class="keno-pay-chip"><b>${match}</b> hit = <b>${mult}</b></span>
+          `).join('')}
+        </div>`;
+    }
+
+    $('kclear').onclick = () => {
+      if (busy) return;
+      picks.clear();
+      board.querySelectorAll('.keno-num').forEach((b) => b.classList.remove('selected', 'drawn', 'hit'));
+      $('kpick-info').textContent = `${esc(t('keno_picked'))}: 0/10`;
+      $('kdraw').disabled = true;
+      $('kpay').innerHTML = '';
+      $('kdrawn').innerHTML = '';
+      say($('kmsg'), '');
+    };
+
+    $('kdraw').onclick = async () => {
+      if (busy || picks.size === 0) return;
+      busy = true;
+      $('kdraw').disabled = true;
+      bet.lock(true);
+      board.querySelectorAll('.keno-num').forEach((b) => b.classList.remove('drawn', 'hit'));
+      $('kdrawn').innerHTML = '';
+      say($('kmsg'), '');
+
+      try {
+        const r = await C.api('/games/keno', { bet: bet.get(), picks: [...picks] });
+        C.setBalance(r.balance);
+
+        // Animate drawing numbers one by one
+        const drawn = [...r.drawn].sort((a, b) => a - b);
+        const drawnRow = $('kdrawn');
+        drawnRow.innerHTML = `<span class="keno-drawn-label">${esc(t('keno_drawn'))}:</span>`;
+
+        for (let i = 0; i < r.drawn.length; i++) {
+          await sleep(60);
+          const n = r.drawn[i];
+          const pill = document.createElement('span');
+          const isHit = picks.has(n);
+          pill.className = 'keno-ball' + (isHit ? ' hit' : '');
+          pill.textContent = n;
+          drawnRow.appendChild(pill);
+          sfx.plink();
+
+          const btn = board.querySelector(`[data-n="${n}"]`);
+          if (btn) {
+            btn.classList.add('drawn');
+            if (isHit) { btn.classList.add('hit'); }
+          }
+        }
+
+        await sleep(300);
+        if (r.payout > 0) {
+          say($('kmsg'),
+            `🎉 ${esc(t('keno_matched'))} ${r.matched} ${esc(t('keno_of'))} ${picks.size}! +${C.fmt(r.payout)} (×${r.mult})`,
+            'win');
+          sfx.win();
+          if (r.matched >= 4) coinRain(stage);
+        } else {
+          say($('kmsg'),
+            `${esc(t('keno_matched'))} ${r.matched} ${esc(t('keno_of'))} ${picks.size}. ${esc(t('lose'))}`,
+            'lose');
+          sfx.lose();
+        }
+      } catch (e) { C.fail(e); }
+
+      busy = false;
+      $('kdraw').disabled = picks.size === 0;
+      bet.lock(false);
+    };
+  }
+
+  // =========================================================
+  // ETHIOPIAN BINGO (ቢንጎ ሜዳ — Traditional Ethiopian Style)
+  // =========================================================
+  // Columns labelled: ቢ / ን / ጎ / ሜ / ዳ  (Ethiopian B-I-N-G-O variant)
+  const BINGO_COLS = ['ቢ', 'ን', 'ጎ', 'ሜ', 'ዳ'];
+  // Ethiopian number words for 1-15 style display
+  const ETH_NUMS = ['', 'አንድ','ሁለት','ሶስት','አራት','አምስት','ስድስት','ሰባት','ስምንት','ዘጠኝ','አስር',
+    '11','12','13','14','አስራ አምስት','16','17','18','19','ሃያ',
+    '21','22','23','24','25','26','27','28','29','ሰላሳ',
+    '31','32','33','34','35','36','37','38','39','አርባ',
+    '41','42','43','44','45','46','47','48','49','ሃምሳ',
+    '51','52','53','54','55','56','57','58','59','ስድሳ',
+    '61','62','63','64','65','66','67','68','69','ሰባ',
+    '71','72','73','74','75'];
+
+  function bingo(body, stage) {
+    const { t, esc } = C;
+    let card = null;        // card[col][row]
+    let drawn = [];
+    let marked = new Array(25).fill(false); // marked[row*5+col]
+    let gameActive = false;
+    let busy = false;
+    let currentBet = 1000;
+    let autoCallInterval = null;
+
+    body.innerHTML = `
+      <div id="bbet"></div>
+      <div class="bingo-layout">
+        <div class="bingo-left">
+          <div class="bingo-card-wrap">
+            <div class="bingo-card" id="bcard">
+              <div class="bingo-header">
+                ${BINGO_COLS.map((c) => `<div class="bingo-col-head">${c}</div>`).join('')}
+              </div>
+              <div class="bingo-grid" id="bgrid"></div>
+            </div>
+          </div>
+          <div class="bingo-called-bar" id="bcalled-bar">
+            <div class="bingo-called-label">${esc(t('bingo_called'))}:</div>
+            <div class="bingo-balls" id="bballs"></div>
+          </div>
+        </div>
+        <div class="bingo-right">
+          <div class="bingo-multiplier-table">
+            <div class="bingo-pay-title">🏆 Payout Guide</div>
+            <div class="bingo-pay-row"><span>≤20 draws</span><span class="bingo-pay-mult">×15</span></div>
+            <div class="bingo-pay-row"><span>≤30 draws</span><span class="bingo-pay-mult">×8</span></div>
+            <div class="bingo-pay-row"><span>≤40 draws</span><span class="bingo-pay-mult">×4</span></div>
+            <div class="bingo-pay-row"><span>≤50 draws</span><span class="bingo-pay-mult">×2.5</span></div>
+            <div class="bingo-pay-row"><span>51+ draws</span><span class="bingo-pay-mult">×1.5</span></div>
+          </div>
+          <div class="bingo-draw-count" id="bdrawcount">Draws: 0</div>
+          <div class="bingo-last-ball" id="blastball">—</div>
+        </div>
+      </div>
+      <div class="bingo-controls">
+        <button class="bigbtn green" id="bnew">${esc(t('bingo_new_card'))}</button>
+        <button class="bigbtn" id="bcall" disabled>📢 ${esc(t('bingo_call'))}</button>
+        <button class="chip" id="bauto" style="margin-left:8px">⏩ Auto</button>
+      </div>
+      <div class="msg" id="bmsg"></div>`;
+
+    const bet = betBar($('bbet'));
+
+    function buildGrid() {
+      const grid = $('bgrid');
+      grid.innerHTML = '';
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 5; col++) {
+          const cell = document.createElement('div');
+          const isFree = row === 2 && col === 2;
+          const num = isFree ? 0 : card[col][row];
+          cell.className = 'bingo-cell' + (isFree ? ' free' : '');
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+
+          if (isFree) {
+            cell.innerHTML = '<span class="bingo-free">ፍጣን</span>';
+            cell.classList.add('marked');
+          } else {
+            // Display: Ethiopic column letter + number
+            cell.innerHTML = `<span class="bingo-col-tag">${BINGO_COLS[col]}</span><span class="bingo-num-big">${num}</span>`;
+            if (marked[row * 5 + col]) cell.classList.add('marked');
+          }
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function addBall(n, isNew = false) {
+      const el = $('bballs');
+      const b = document.createElement('span');
+      b.className = 'bingo-ball-called' + (isNew ? ' new-ball' : '');
+      b.textContent = n;
+      // Color by column
+      const col = n <= 15 ? 0 : n <= 30 ? 1 : n <= 45 ? 2 : n <= 60 ? 3 : 4;
+      b.style.background = ['#c1121f','#1e40af','#047857','#92400e','#6b21a8'][col];
+      el.appendChild(b);
+      el.scrollLeft = el.scrollWidth;
+
+      // Update last ball display
+      const lastBall = $('blastball');
+      if (lastBall) {
+        lastBall.textContent = `${BINGO_COLS[col]}-${n}`;
+        lastBall.style.background = ['#c1121f','#1e40af','#047857','#92400e','#6b21a8'][col];
+        if (isNew) {
+          lastBall.classList.remove('ball-pop');
+          void lastBall.offsetWidth;
+          lastBall.classList.add('ball-pop');
+        }
+      }
+    }
+
+    function markCell(row, col) {
+      const cell = $('bgrid').querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      if (cell) {
+        cell.classList.add('marked', 'just-marked');
+        setTimeout(() => cell.classList.remove('just-marked'), 600);
+      }
+    }
+
+    async function initBingoState() {
+      try {
+        const st = await C.api('/games/bingo');
+        if (st && st.active) {
+          card = st.card;
+          drawn = st.drawn || [];
+          marked = st.marked || new Array(25).fill(false);
+          gameActive = true;
+          buildGrid();
+          drawn.forEach((n) => addBall(n));
+          $('bcall').disabled = false;
+          $('bnew').textContent = 'Abandon & New';
+          $('bdrawcount').textContent = `Draws: ${drawn.length}`;
+          say($('bmsg'), esc(t('bingo_waiting')), '');
+          bet.lock(true);
+        }
+      } catch (e) { /* no active game */ }
+    }
+
+    $('bnew').onclick = async () => {
+      if (busy) return; busy = true;
+      stopAutoCall();
+      try {
+        if (gameActive) {
+          await C.api('/games/bingo/abandon', {});
+          gameActive = false;
+        }
+        const r = await C.api('/games/bingo/start', { bet: bet.get() });
+        C.setBalance(r.balance);
+        card = r.card;
+        drawn = [];
+        marked = new Array(25).fill(false);
+        gameActive = true;
+        $('bballs').innerHTML = '';
+        $('blastball').textContent = '—';
+        $('blastball').style.background = '';
+        $('bdrawcount').textContent = 'Draws: 0';
+        buildGrid();
+        $('bcall').disabled = false;
+        $('bnew').textContent = 'Abandon & New';
+        bet.lock(true);
+        say($('bmsg'), esc(t('bingo_waiting')), '');
+        sfx.tick();
+      } catch (e) { C.fail(e); }
+      busy = false;
+    };
+
+    async function callOne() {
+      if (!gameActive || busy) return;
+      busy = true;
+      try {
+        const r = await C.api('/games/bingo/call', {});
+        C.setBalance(r.balance);
+        drawn = r.drawn;
+        marked = r.marked;
+
+        addBall(r.called, true);
+        sfx.plink();
+
+        // Mark matching cells
+        for (let col = 0; col < 5; col++) {
+          for (let row = 0; row < 5; row++) {
+            if (card[col][row] === r.called) markCell(row, col);
+          }
+        }
+
+        $('bdrawcount').textContent = `Draws: ${drawn.length}`;
+
+        if (r.won) {
+          stopAutoCall();
+          say($('bmsg'), `${esc(t('bingo_win'))} +${C.fmt(r.payout)} (×${r.mult}) 🎊`, 'win');
+          sfx.win(); coinRain(stage);
+          gameActive = false;
+          $('bcall').disabled = true;
+          $('bnew').textContent = esc(t('bingo_new_card'));
+          bet.lock(false);
+          $('bdrawcount').textContent = `✅ Bingo in ${drawn.length} draws!`;
+        }
+      } catch (e) { C.fail(e); stopAutoCall(); }
+      busy = false;
+    }
+
+    $('bcall').onclick = callOne;
+
+    let autoOn = false;
+    function stopAutoCall() {
+      if (autoCallInterval) { clearInterval(autoCallInterval); autoCallInterval = null; }
+      autoOn = false;
+      const ab = $('bauto');
+      if (ab) { ab.textContent = '⏩ Auto'; ab.classList.remove('on'); }
+    }
+
+    $('bauto').onclick = () => {
+      if (!gameActive) return;
+      autoOn = !autoOn;
+      const ab = $('bauto');
+      if (autoOn) {
+        ab.textContent = '⏸ Pause'; ab.classList.add('on');
+        autoCallInterval = setInterval(async () => {
+          if (!gameActive || busy) return;
+          await callOne();
+          if (!gameActive) stopAutoCall();
+        }, 1400);
+      } else {
+        stopAutoCall();
+      }
+    };
+
+    stopFns.push(() => stopAutoCall());
+    initBingoState();
   }
 
   return { mount };

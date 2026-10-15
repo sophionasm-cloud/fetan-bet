@@ -328,6 +328,184 @@ function plinko(userId, bet, rows = 10, risk = 'medium') {
   })();
 }
 
+
+// ---------- Keno (1-80, pick 1-10 spots, draw 20) ----------
+// Payout table: [spots_picked][spots_matched] = multiplier
+const KENO_PAY = {
+  1:  { 1: 3.8 },
+  2:  { 2: 12 },
+  3:  { 2: 2, 3: 40 },
+  4:  { 2: 1.5, 3: 5, 4: 100 },
+  5:  { 3: 3, 4: 20, 5: 420 },
+  6:  { 3: 2, 4: 8, 5: 80, 6: 1600 },
+  7:  { 3: 1.5, 4: 5, 5: 25, 6: 320, 7: 7000 },
+  8:  { 4: 3.5, 5: 12, 6: 100, 7: 1700, 8: 10000 },
+  9:  { 4: 2.5, 5: 7, 6: 50, 7: 500, 8: 4000, 9: 30000 },
+  10: { 5: 5, 6: 25, 7: 250, 8: 2000, 9: 10000, 10: 100000 },
+};
+
+function keno(userId, bet, picks) {
+  checkBet(bet);
+  const picksArr = (Array.isArray(picks) ? picks : []).map(Number);
+  if (picksArr.length < 1 || picksArr.length > 10) throw new Error('INVALID');
+  if (picksArr.some((n) => !Number.isInteger(n) || n < 1 || n > 80)) throw new Error('INVALID');
+  if (new Set(picksArr).size !== picksArr.length) throw new Error('INVALID');
+
+  return db.transaction(() => {
+    const roundId = saveRound(userId, 'keno', bet, 0, {});
+    postLedger({ userId, delta: -bet, type: 'bet', refType: 'round', refId: roundId });
+
+    // Shuffle numbers 1-80, take first 20 drawn
+    const pool = Array.from({ length: 80 }, (_, i) => i + 1);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = rnd(i + 1);
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const drawn = pool.slice(0, 20);
+
+    const matched = picksArr.filter((p) => drawn.includes(p)).length;
+    const payRow = KENO_PAY[picksArr.length] || {};
+    const mult = payRow[matched] || 0;
+    const payout = Math.floor(bet * mult);
+
+    if (payout > 0) postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: roundId });
+    db.prepare('UPDATE game_rounds SET payout=?, detail=? WHERE id=?')
+      .run(payout, JSON.stringify({ picks: picksArr, drawn, matched, mult }), roundId);
+    const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+    return { drawn, matched, mult, payout, balance };
+  })();
+}
+
+// ---------- Ethiopian Bingo (ቢንጎ ሜዳ) ----------
+// 5×5 card, numbers 1-75, FREE center, draw up to 75 numbers
+// Columns: B(1-15), I(16-30), N(31-45), G(46-60), O(61-75)
+// Win conditions: row, column, diagonal, full card
+
+function generateBingoCard() {
+  const cols = [
+    { start: 1,  end: 15 },   // B
+    { start: 16, end: 30 },   // I
+    { start: 31, end: 45 },   // N
+    { start: 46, end: 60 },   // G
+    { start: 61, end: 75 },   // O (ቢ-ን-ጎ)
+  ];
+  const card = [];
+  for (let col = 0; col < 5; col++) {
+    const { start, end } = cols[col];
+    const pool = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = rnd(i + 1);
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    card.push(pool.slice(0, 5));
+  }
+  // Card is [col][row], center is col 2, row 2 = FREE
+  card[2][2] = 0; // FREE
+  return card; // card[col][row]
+}
+
+function checkBingoWin(marked, card) {
+  // marked is flat 25-element bool array: row-major (i = col*5+row doesn't apply — use row*5+col)
+  // We store marked[row][col] as flat marked[row*5+col]
+  const m = (row, col) => row === 2 && col === 2 ? true : marked[row * 5 + col];
+
+  // Rows
+  for (let row = 0; row < 5; row++) {
+    if ([0,1,2,3,4].every((col) => m(row, col))) return true;
+  }
+  // Columns
+  for (let col = 0; col < 5; col++) {
+    if ([0,1,2,3,4].every((row) => m(row, col))) return true;
+  }
+  // Diagonals
+  if ([0,1,2,3,4].every((i) => m(i, i))) return true;
+  if ([0,1,2,3,4].every((i) => m(i, 4 - i))) return true;
+  return false;
+}
+
+function bingoStart(userId, bet) {
+  checkBet(bet);
+  return db.transaction(() => {
+    // Cancel any existing active bingo round
+    const existing = db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='bingo' AND status='active'").get(userId);
+    if (existing) {
+      db.prepare("UPDATE game_rounds SET status='done' WHERE id=?").run(existing.id);
+    }
+    const card = generateBingoCard();
+    const detail = { card, drawn: [], marked: new Array(25).fill(false) };
+    const id = saveRound(userId, 'bingo', bet, 0, detail, 'active', 0);
+    postLedger({ userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
+    const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+    return { id, card, drawn: [], balance };
+  })();
+}
+
+function bingoState(userId) {
+  const r = db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='bingo' AND status='active'").get(userId);
+  const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+  if (!r) return { active: false, balance };
+  const detail = JSON.parse(r.detail);
+  return { active: true, id: r.id, card: detail.card, drawn: detail.drawn, marked: detail.marked, bet: r.bet, balance };
+}
+
+function bingoCall(userId) {
+  return db.transaction(() => {
+    const r = db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='bingo' AND status='active'").get(userId);
+    if (!r) throw new Error('NOT_FOUND');
+    const detail = JSON.parse(r.detail);
+
+    // Draw a number not yet drawn
+    const remaining = [];
+    for (let n = 1; n <= 75; n++) {
+      if (!detail.drawn.includes(n)) remaining.push(n);
+    }
+    if (remaining.length === 0) throw new Error('INVALID'); // all drawn
+
+    const idx = rnd(remaining.length);
+    const called = remaining[idx];
+    detail.drawn.push(called);
+
+    // Auto-mark on card: card[col][row], marked[row*5+col]
+    for (let col = 0; col < 5; col++) {
+      for (let row = 0; row < 5; row++) {
+        if (detail.card[col][row] === called) {
+          detail.marked[row * 5 + col] = true;
+        }
+      }
+    }
+
+    // Check win
+    const won = checkBingoWin(detail.marked, detail.card);
+    const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+
+    if (won) {
+      // Payout scales with draws: fewer draws = higher multiplier
+      const drawCount = detail.drawn.length;
+      const mult = drawCount <= 20 ? 15 : drawCount <= 30 ? 8 : drawCount <= 40 ? 4 : drawCount <= 50 ? 2.5 : 1.5;
+      const payout = Math.floor(r.bet * mult);
+      postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: r.id });
+      db.prepare("UPDATE game_rounds SET status='done', payout=?, detail=? WHERE id=?")
+        .run(payout, JSON.stringify(detail), r.id);
+      const newBal = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+      return { called, drawn: detail.drawn, marked: detail.marked, won: true, payout, mult, balance: newBal };
+    }
+
+    db.prepare("UPDATE game_rounds SET step=step+1, detail=? WHERE id=?")
+      .run(JSON.stringify(detail), r.id);
+    return { called, drawn: detail.drawn, marked: detail.marked, won: false, balance };
+  })();
+}
+
+function bingoAbandon(userId) {
+  return db.transaction(() => {
+    const r = db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='bingo' AND status='active'").get(userId);
+    if (!r) return {};
+    db.prepare("UPDATE game_rounds SET status='done' WHERE id=?").run(r.id);
+    const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+    return { balance };
+  })();
+}
+
 module.exports = {
   roulette,
   starSpin,
@@ -340,6 +518,12 @@ module.exports = {
   minesStep,
   minesCashout,
   plinko,
+  keno,
+  bingoStart,
+  bingoState,
+  bingoCall,
+  bingoAbandon,
   MIN_BET,
-  MAX_BET
+  MAX_BET,
+  KENO_PAY,
 };
