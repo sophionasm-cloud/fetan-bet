@@ -76,6 +76,19 @@ const server = app.listen(0, async () => {
     ok('agent cannot approve own deposit', (await agent(`/agent/deposits/${adep.data.id}/decide`, { action: 'approve' })).data.error === 'SELF');
     ok('admin can reject with reason', (await admin(`/agent/deposits/${adep.data.id}/decide`, { action: 'reject', reason: 'No payment found' })).status === 200);
 
+    // Agent Funding Flow (Agent requests from Admin, Admin decides)
+    ok('user cannot request agent funding', (await user('/agent/funding', { amount: 500 })).status === 403);
+    const fReq = await agent('/agent/funding', { amount: 500, note: 'Need float for weekend' });
+    ok('agent funding request created', fReq.status === 200 && fReq.data.id > 0);
+    const afList = await admin('/admin/agent-funding?status=pending');
+    ok('admin views pending agent funding', afList.data.requests.some((r) => r.id === fReq.data.id));
+    const afBefore = (await agent('/me')).data.balance;
+    const afDec = await admin(`/admin/agent-funding/${fReq.data.id}/decide`, { action: 'approve', note: 'Approved float' });
+    ok('admin approves agent funding', afDec.status === 200);
+    ok('agent balance credited with funding', (await agent('/me')).data.balance === afBefore + 50000);
+    const adminTx = await admin('/admin/transactions');
+    ok('admin views transactions list', adminTx.status === 200 && adminTx.data.transactions.length > 0);
+
     // Games
     ok('bet below minimum rejected', (await user('/games/roulette', { bet: 1, kind: 'color', value: 'red' })).data.error === 'INVALID');
     const before = (await user('/me')).data.balance;

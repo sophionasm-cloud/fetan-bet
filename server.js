@@ -198,6 +198,22 @@ app.post('/api/agent/withdrawals/:id/decide', auth, need('agent', 'admin'), wrap
   })();
 }));
 
+app.post('/api/agent/funding', auth, need('agent', 'admin'), wrap((req) => {
+  const amount = money(req.body.amount);
+  const note = String(req.body.note || '').trim().slice(0, 200);
+  const r = db.prepare('INSERT INTO agent_funding_requests (agent_id, amount, note) VALUES (?,?,?)')
+    .run(req.user.id, amount, note || null);
+  const id = Number(r.lastInsertRowid);
+  audit(req.user.id, 'agent.funding_request', { id, amount });
+  return { id };
+}));
+
+app.get('/api/agent/funding', auth, need('agent', 'admin'), wrap((req) => ({
+  requests: db.prepare(`SELECT f.*, u.name admin_name FROM agent_funding_requests f
+    LEFT JOIN users u ON u.id = f.admin_id
+    WHERE f.agent_id = ? ORDER BY f.id DESC LIMIT 50`).all(req.user.id)
+})));
+
 // ---------- support ----------
 app.post('/api/support', auth, wrap((req) => {
   const message = String(req.body.message || '').trim().slice(0, 500);
@@ -229,11 +245,57 @@ app.post('/api/games/bingo/abandon', ...g((req) => games.bingoAbandon(req.user.i
 const admin = [auth, need('admin')];
 app.get('/api/admin/stats', ...admin, wrap(() => ({
   users: db.prepare("SELECT COUNT(*) c FROM users WHERE role='user'").get().c,
+  agents: db.prepare("SELECT COUNT(*) c FROM users WHERE role='agent'").get().c,
   pending: db.prepare("SELECT COUNT(*) c FROM deposits WHERE status='pending'").get().c,
+  pending_funding: db.prepare("SELECT COUNT(*) c FROM agent_funding_requests WHERE status='pending'").get().c,
   credited: db.prepare("SELECT COALESCE(SUM(amount),0) s FROM ledger WHERE type='deposit'").get().s,
   rounds: db.prepare('SELECT COUNT(*) c FROM game_rounds').get().c,
   tickets: db.prepare('SELECT COUNT(*) c FROM support_tickets').get().c,
 })));
+app.get('/api/admin/agent-funding', ...admin, wrap((req) => {
+  const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : null;
+  const sql = status
+    ? `SELECT f.*, a.name agent_name, a.phone agent_phone, u.name admin_name
+       FROM agent_funding_requests f
+       JOIN users a ON a.id = f.agent_id
+       LEFT JOIN users u ON u.id = f.admin_id
+       WHERE f.status = ? ORDER BY f.id DESC LIMIT 100`
+    : `SELECT f.*, a.name agent_name, a.phone agent_phone, u.name admin_name
+       FROM agent_funding_requests f
+       JOIN users a ON a.id = f.agent_id
+       LEFT JOIN users u ON u.id = f.admin_id
+       ORDER BY f.id DESC LIMIT 100`;
+  return { requests: db.prepare(sql).all(...(status ? [status] : [])) };
+}));
+app.post('/api/admin/agent-funding/:id/decide', ...admin, wrap((req) => {
+  const id = Number(req.params.id);
+  const approve = req.body.action === 'approve';
+  if (!approve && req.body.action !== 'reject') throw new Error('INVALID');
+  const note = String(req.body.note || '').trim().slice(0, 200);
+  db.transaction(() => {
+    const f = db.prepare('SELECT * FROM agent_funding_requests WHERE id = ?').get(id);
+    if (!f || f.status !== 'pending') throw new Error('NOT_FOUND');
+    const next = approve ? 'approved' : 'rejected';
+    db.prepare('UPDATE agent_funding_requests SET status=?, admin_id=?, admin_note=?, decided_at=datetime(\'now\') WHERE id=?')
+      .run(next, req.user.id, note || null, id);
+    if (approve) {
+      postLedger({ userId: f.agent_id, delta: f.amount, type: 'agent_funding', refType: 'agent_funding', refId: id, by: req.user.id });
+    }
+    audit(req.user.id, 'agent_funding.' + next, { id, amount: f.amount, note });
+  })();
+}));
+app.get('/api/admin/transactions', ...admin, wrap((req) => {
+  const type = req.query.type ? String(req.query.type) : null;
+  let sql = `SELECT l.id, l.type, l.amount, l.balance_after, l.created_at, l.ref_type, l.ref_id, u.name user_name, u.phone
+             FROM ledger l JOIN users u ON u.id = l.user_id`;
+  const params = [];
+  if (type && type !== 'all') {
+    sql += ` WHERE l.type = ?`;
+    params.push(type);
+  }
+  sql += ` ORDER BY l.id DESC LIMIT 150`;
+  return { transactions: db.prepare(sql).all(...params) };
+}));
 app.get('/api/admin/users', ...admin, wrap(() => ({
   users: db.prepare(`SELECT u.id, u.name, u.phone, u.role, u.status, u.created_at, w.balance
     FROM users u JOIN wallets w ON w.user_id=u.id ORDER BY u.id DESC LIMIT 200`).all(),

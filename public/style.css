@@ -1118,3 +1118,256 @@ tr:hover td {
   .top-right { gap: 6px; }
   .balance { font-size: 12px; padding: 4px 10px; }
 }
+
+/* ============================================================
+   PREMIUM PAYMENT, AGENT & ADMIN DASHBOARD ENHANCEMENTS
+   ============================================================ */
+
+/* Step wizard & step headers */
+.payment-step-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 12px;
+}
+.payment-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F2D98B, #D6BD72);
+  color: #0B0E0D;
+  font-weight: 800;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.payment-step-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  letter-spacing: 0.3px;
+}
+
+/* Provider selector cards */
+.provider-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.provider-card-item {
+  background: var(--surface-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.provider-card-item:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-subtle);
+  transform: translateY(-2px);
+}
+.provider-card-item.selected {
+  background: var(--surface-hover);
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 14px rgba(214, 189, 114, 0.25);
+}
+.provider-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface-panel);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  border: 1px solid var(--border);
+}
+.provider-card-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+.provider-card-badge {
+  font-size: 10px;
+  color: var(--gold);
+  background: rgba(214, 189, 114, 0.12);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Quick amount selection chips */
+.quick-amounts-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 14px;
+}
+.quick-amt-chip {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.quick-amt-chip:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--border-subtle);
+}
+.quick-amt-chip.active {
+  background: var(--gold);
+  color: #0B0E0D;
+  border-color: var(--gold-bright);
+  box-shadow: 0 2px 8px rgba(214, 189, 114, 0.35);
+}
+
+/* Instruction box with copy button */
+.provider-detail-box {
+  background: rgba(21, 27, 23, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin: 14px 0 18px;
+}
+.provider-detail-box .p-title {
+  font-weight: 800;
+  color: var(--gold-bright);
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.provider-detail-box .p-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Filter pills (All, Deposits, Withdrawals, etc.) */
+.filter-pills-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.filter-pill {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.filter-pill:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.filter-pill.active {
+  background: var(--surface-hover);
+  border-color: var(--gold);
+  color: var(--gold-bright);
+}
+
+/* Mobile Transaction Cards */
+.tx-cards-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tx-card-box {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.15s ease;
+}
+.tx-card-box:hover {
+  border-color: var(--border-subtle);
+}
+.tx-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tx-card-type {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+.tx-card-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.tx-card-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+.tx-card-amt {
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  letter-spacing: 0.5px;
+}
+.tx-card-bal {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Agent Float Banner */
+.agent-float-card {
+  background: linear-gradient(135deg, rgba(21, 27, 23, 0.95), rgba(27, 34, 29, 0.95));
+  border: 1.5px solid rgba(214, 189, 114, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.agent-float-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.agent-float-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.agent-float-num {
+  font-size: 32px;
+  font-weight: 900;
+  font-family: var(--font-heading);
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
