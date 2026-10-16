@@ -101,58 +101,125 @@ window.Games = (function () {
     C = ctx;
     const { t, esc } = C;
     app.innerHTML = `
-      <div class="stage-head" style="margin-bottom:12px">
-        <h2 style="color:#111;margin:0;font-size:22px;display:flex;align-items:center;gap:8px">
-          🎰 ${esc(t('lobby_title'))}
-        </h2>
-        <span id="sbtn"></span>
+      <!-- FETAN BET HERO BANNER -->
+      <div class="lobby-hero">
+        <div class="lobby-hero-content">
+          <div class="lobby-hero-badge">⚡ FETAN BET CASINO ARENA</div>
+          <h1 class="lobby-hero-title">${esc(t('hero_headline'))}</h1>
+          <p class="lobby-hero-sub">${esc(t('hero_sub'))}</p>
+          <div class="lobby-hero-pills">
+            <span class="hero-pill">🛡️ ${lang === 'am' ? 'ፍትሃዊ የጨዋታ ውጤቶች' : 'Provably Fair RNG'}</span>
+            <span class="hero-pill">⚡ ${lang === 'am' ? 'ፈጣን የክሬዲት ዝውውር' : 'Instant Agent Cash'}</span>
+            <span class="hero-pill">🪙 ${lang === 'am' ? '1,000 ነፃ የሙከራ ክሬዲት' : '1,000 Free Credits'}</span>
+          </div>
+        </div>
       </div>
-      <div class="lobby">
-        <div class="gcard g1" data-g="road">
-          <span class="big">🐔</span>
+
+      <!-- GAME DISCOVERY & CATEGORY TABS -->
+      <div class="lobby-nav-bar">
+        <div class="lobby-filter-pills" id="gfilters">
+          <button type="button" class="gfilter on" data-cat="all">${esc(t('cat_all'))} <span class="gcount">7</span></button>
+          <button type="button" class="gfilter" data-cat="originals">${esc(t('cat_originals'))} <span class="gcount">3</span></button>
+          <button type="button" class="gfilter" data-cat="table">${esc(t('cat_classic'))} <span class="gcount">2</span></button>
+          <button type="button" class="gfilter" data-cat="lottery">🎱 ${lang === 'am' ? 'ኬኖ እና ቢንጎ' : 'Keno & Bingo'} <span class="gcount">2</span></button>
+        </div>
+        <div class="lobby-sound-slot" id="sbtn"></div>
+      </div>
+
+      <!-- GAMES GRID -->
+      <div class="lobby" id="ggrid">
+        <!-- 1. Road Dash -->
+        <div class="gcard g1" data-g="road" data-cat="originals">
+          <span class="gcard-badge hot">HOT</span>
+          <div class="gcard-icon-wrap"><span class="big">🐔</span></div>
           <h3>${esc(t('road_title'))}</h3>
           <p>${esc(t('road_desc'))}</p>
-          <button class="btn">${esc(t('play_now'))}</button>
+          <div class="gcard-meta"><span>Up to ×1000</span></div>
+          <button class="btn btn-gold">${esc(t('play_now'))}</button>
         </div>
-        <div class="gcard g4" data-g="mines">
-          <span class="big">💎</span>
+
+        <!-- 2. Mines -->
+        <div class="gcard g4" data-g="mines" data-cat="originals">
+          <span class="gcard-badge original">ORIGINAL</span>
+          <div class="gcard-icon-wrap"><span class="big">💎</span></div>
           <h3>${esc(t('mines_title'))}</h3>
           <p>${esc(t('mines_desc'))}</p>
-          <button class="btn">${esc(t('play_now'))}</button>
+          <div class="gcard-meta"><span>1–24 Mines · Pick & Win</span></div>
+          <button class="btn btn-gold">${esc(t('play_now'))}</button>
         </div>
-        <div class="gcard g5" data-g="plinko">
-          <span class="big">⚡</span>
+
+        <!-- 3. Plinko -->
+        <div class="gcard g5" data-g="plinko" data-cat="originals">
+          <span class="gcard-badge original">ORIGINAL</span>
+          <div class="gcard-icon-wrap"><span class="big">⚡</span></div>
           <h3>${esc(t('plinko_title'))}</h3>
           <p>${esc(t('plinko_desc'))}</p>
-          <button class="btn">${esc(t('play_now'))}</button>
+          <div class="gcard-meta"><span>8–16 Rows · 3 Risk Levels</span></div>
+          <button class="btn btn-gold">${esc(t('play_now'))}</button>
         </div>
-        <div class="gcard g-keno" data-g="keno">
-          <span class="big">🎱</span>
+
+        <!-- 4. Keno -->
+        <div class="gcard g-keno" data-g="keno" data-cat="lottery">
+          <span class="gcard-badge popular">POPULAR</span>
+          <div class="gcard-icon-wrap"><span class="big">🎱</span></div>
           <h3>${esc(t('keno_title'))}</h3>
           <p>${esc(t('keno_desc'))}</p>
-          <button class="btn">${esc(t('play_now'))}</button>
+          <div class="gcard-meta"><span>Pick 1–10 of 80 · 20 Drawn</span></div>
+          <button class="btn btn-gold">${esc(t('play_now'))}</button>
         </div>
-        <div class="gcard g-bingo" data-g="bingo">
-          <span class="big">🇪🇹</span>
+
+        <!-- 5. Ethiopian Bingo -->
+        <div class="gcard g-bingo" data-g="bingo" data-cat="lottery">
+          <span class="gcard-badge ethiopia">🇪🇹 ቢንጎ</span>
+          <div class="gcard-icon-wrap"><span class="big">🇪🇹</span></div>
           <h3>${esc(t('bingo_title'))}</h3>
           <p>${esc(t('bingo_desc'))}</p>
-          <button class="btn">${esc(t('play_now'))}</button>
+          <div class="gcard-meta"><span>Traditional 5×5 · Auto Call</span></div>
+          <button class="btn btn-gold">${esc(t('play_now'))}</button>
         </div>
-        <div class="gcard g2" data-g="roulette">
-          <span class="big">🎡</span>
+
+        <!-- 6. Roulette -->
+        <div class="gcard g2" data-g="roulette" data-cat="table">
+          <span class="gcard-badge classic">CLASSIC</span>
+          <div class="gcard-icon-wrap"><span class="big">🎡</span></div>
           <h3>${esc(t('roulette_title'))}</h3>
           <p>${esc(t('roulette_desc'))}</p>
-          <button class="btn">${esc(t('play_now'))}</button>
+          <div class="gcard-meta"><span>European 37-Pocket Wheel</span></div>
+          <button class="btn btn-gold">${esc(t('play_now'))}</button>
         </div>
-        <div class="gcard g3" data-g="star">
-          <span class="big">🎰</span>
+
+        <!-- 7. Star Spin -->
+        <div class="gcard g3" data-g="star" data-cat="table">
+          <span class="gcard-badge classic">SLOT</span>
+          <div class="gcard-icon-wrap"><span class="big">🎰</span></div>
           <h3>${esc(t('star_title'))}</h3>
           <p>${esc(t('star_desc'))}</p>
-          <button class="btn">${esc(t('play_now'))}</button>
+          <div class="gcard-meta"><span>3-Reel Slots · Wild Star</span></div>
+          <button class="btn btn-gold">${esc(t('play_now'))}</button>
         </div>
       </div>`;
+
     soundBtn($('sbtn'));
-    app.querySelectorAll('.gcard').forEach((c) => (c.onclick = () => open(app, c.dataset.g)));
+    
+    // Category filter logic
+    const filterBtns = app.querySelectorAll('.gfilter');
+    const cards = app.querySelectorAll('.gcard');
+    filterBtns.forEach((b) => {
+      b.onclick = () => {
+        filterBtns.forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        const cat = b.dataset.cat;
+        cards.forEach((c) => {
+          if (cat === 'all' || c.dataset.cat === cat) {
+            c.style.display = '';
+          } else {
+            c.style.display = 'none';
+          }
+        });
+      };
+    });
+
+    cards.forEach((c) => (c.onclick = () => open(app, c.dataset.g)));
   }
 
   let stopFns = [];

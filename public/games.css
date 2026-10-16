@@ -1,161 +1,448 @@
-/* =============================================
-   ፍጣን ቤት — Games CSS
-   Professional black/white/gold theme
-   ============================================= */
+/* ============================================================
+   FETAN BET — GAMES & LOBBY SYSTEM
+   Stake-Level Polish + Black-and-Gold Brand Identity
+   ============================================================ */
 
-/* ---- GAME LOBBY ---- */
+/* ---- HERO SECTION (HOMEPAGE & LOBBY) ---- */
+.lobby-hero {
+  position: relative;
+  background-color: #0B0E0D;
+  background-image: 
+    radial-gradient(ellipse at 85% 30%, rgba(26, 44, 34, 0.75) 0%, rgba(16, 22, 18, 0.95) 70%, #0B0E0D 100%),
+    url('casino-pattern.svg');
+  background-repeat: repeat;
+  background-size: 320px 320px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 34px 30px;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 1px 1px var(--border);
+  overflow: hidden;
+}
+
+.lobby-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(214, 189, 114, 0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.lobby-hero-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold-bright);
+  background: rgba(214, 189, 114, 0.12);
+  border: 1px solid rgba(214, 189, 114, 0.28);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.lobby-hero-title {
+  font-family: var(--font-heading);
+  font-size: 40px;
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1.05;
+  letter-spacing: 0.8px;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8);
+}
+
+.lobby-hero-sub {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 560px;
+  margin-bottom: 18px;
+}
+
+.lobby-hero-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hero-pill {
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- GAME DISCOVERY & CATEGORY FILTER BAR ---- */
+.lobby-nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lobby-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gfilter {
+  background: var(--surface-panel);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gfilter:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--border-subtle);
+}
+
+.gfilter.on {
+  background: var(--surface-active);
+  color: var(--gold-bright);
+  border-color: var(--border-gold);
+  box-shadow: 0 0 12px rgba(214, 189, 114, 0.15);
+}
+
+.gcount {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 7px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.gfilter.on .gcount {
+  background: rgba(214, 189, 114, 0.25);
+  color: #FFFFFF;
+}
+
+/* ---- GAME LOBBY GRID ---- */
 .lobby {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
 }
+
 .gcard {
-  border-radius: 18px;
-  padding: 22px 18px;
+  background: linear-gradient(165deg, #1B241E 0%, #121915 60%, #0D1310 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px 20px;
   cursor: pointer;
   text-align: center;
   color: #fff;
   position: relative;
   overflow: hidden;
-  transition: transform 0.18s, box-shadow 0.18s;
-  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.gcard:hover { transform: translateY(-5px); box-shadow: 0 12px 32px rgba(0,0,0,0.25); }
+
+.gcard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 24px rgba(214, 189, 114, 0.16);
+  border-color: var(--border-gold);
+}
+
 .gcard::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom right, rgba(255,255,255,0.06), transparent);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
   pointer-events: none;
 }
-.gcard .big {
-  font-size: 62px;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-  margin-bottom: 8px;
-  display: block;
-  line-height: 1.1;
+
+/* Game Card Badges */
+.gcard-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  z-index: 2;
 }
-.gcard h3 { margin: 0 0 6px; font-size: 18px; font-weight: 800; }
-.gcard p { margin: 0 0 14px; font-size: 13px; opacity: 0.85; line-height: 1.4; }
-.gcard .btn { margin: 0; }
 
-/* Road Dash — deep green asphalt */
-.gcard.g1 { background: linear-gradient(145deg, #1a3a0a 0%, #0d2208 60%, #04140a 100%); border-color: #2d5018; }
-.gcard.g1 .btn { background: #4ade80; color: #052; }
+.gcard-badge.hot {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
 
-/* Roulette — deep red velvet */
-.gcard.g2 { background: linear-gradient(145deg, #5c0a14 0%, #2a0408 60%, #1a0208 100%); border-color: #8a1020; }
-.gcard.g2 .btn { background: #f87171; color: #3a0000; }
+.gcard-badge.original {
+  background: rgba(214, 189, 114, 0.2);
+  color: #F2D98B;
+  border: 1px solid rgba(214, 189, 114, 0.4);
+}
 
-/* Star Spin — deep purple */
-.gcard.g3 { background: linear-gradient(145deg, #3a0d5e 0%, #18062a 60%, #0a0118 100%); border-color: #6b21a8; }
-.gcard.g3 .btn { background: #c084fc; color: #1a0040; }
+.gcard-badge.popular {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
 
-/* NEW GAME CARDS — Mines & Plinko */
-.gcard.g4 { background: linear-gradient(145deg, #1a2a4a 0%, #080e1e 60%, #020510 100%); border-color: #1e3a6e; }
-.gcard.g4 .btn { background: #60a5fa; color: #00143a; }
-.gcard.g5 { background: linear-gradient(145deg, #4a2a00 0%, #1e0e00 60%, #100500 100%); border-color: #7a4a00; }
-.gcard.g5 .btn { background: #fbbf24; color: #3a1a00; }
+.gcard-badge.ethiopia {
+  background: rgba(124, 58, 237, 0.22);
+  color: #c084fc;
+  border: 1px solid rgba(124, 58, 237, 0.45);
+}
+
+.gcard-badge.classic {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+/* Card Icons */
+.gcard-icon-wrap {
+  width: 76px;
+  height: 76px;
+  margin: 6px auto 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  transition: transform 0.2s ease;
+}
+
+.gcard:hover .gcard-icon-wrap {
+  transform: scale(1.1);
+}
+
+.gcard .big {
+  font-size: 44px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+  line-height: 1;
+}
+
+.gcard h3 {
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0 0 6px;
+  letter-spacing: 0.5px;
+}
+
+.gcard p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.gcard-meta {
+  margin-bottom: 16px;
+}
+
+.gcard-meta span {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold-bright);
+  background: rgba(214, 189, 114, 0.08);
+  border: 1px solid rgba(214, 189, 114, 0.22);
+  border-radius: 6px;
+  padding: 3px 10px;
+}
+
+.gcard .btn {
+  margin: 0;
+  padding: 11px;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+/* Distinct Card Accent Borders */
+.gcard.g1 { border-bottom: 2px solid #22c55e; }
+.gcard.g4 { border-bottom: 2px solid #38bdf8; }
+.gcard.g5 { border-bottom: 2px solid #f59e0b; }
+.gcard.g-keno { border-bottom: 2px solid #10b981; }
+.gcard.g-bingo { border-bottom: 2px solid #a855f7; }
+.gcard.g2 { border-bottom: 2px solid #f43f5e; }
+.gcard.g3 { border-bottom: 2px solid #eab308; }
 
 /* ---- GAME STAGE ---- */
 .stage {
-  background: #0a0f0d;
-  border: 1px solid #222;
-  border-radius: 18px;
-  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
+
 .stage::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; height: 200px;
-  background: radial-gradient(ellipse at 50% -50%, rgba(201,162,39,0.06), transparent 70%);
+  top: 0; left: 0; right: 0; height: 240px;
+  background: radial-gradient(ellipse at 50% -30%, rgba(214, 189, 114, 0.08), transparent 70%);
   pointer-events: none;
 }
+
 .stage-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
-.stage-head h2 { margin: 0; color: #fff; }
+
+.stage-head h2 {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  margin: 0;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
 
 /* ---- BET BAR ---- */
-.betbar { margin-top: 14px; }
+.betbar {
+  margin-top: 18px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
 .chips {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
 }
+
 .chipb {
-  width: 52px; height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  border: 3px dashed rgba(255,255,255,0.5);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   font-weight: 800;
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
-  font-size: 15px;
-  transition: transform 0.1s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+  transition: transform 0.12s ease, outline 0.12s ease;
 }
-.chipb:hover { transform: scale(1.08); }
+
+.chipb:hover {
+  transform: scale(1.08);
+}
+
 .chipb.on {
-  outline: 3px solid #c9a227;
+  outline: 3px solid var(--gold);
   outline-offset: 2px;
   transform: translateY(-4px);
-  box-shadow: 0 6px 0 rgba(0,0,0,0.3);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
 }
-.c1 { background: radial-gradient(circle at 30% 30%, #5f9be8, #1a4ea8); }
-.c5 { background: radial-gradient(circle at 30% 30%, #e85f5f, #a81a1a); }
-.c10 { background: radial-gradient(circle at 30% 30%, #5fe89a, #1a7a47); }
-.c50 { background: radial-gradient(circle at 30% 30%, #c07fe8, #6b1aa8); }
-.c100 { background: radial-gradient(circle at 30% 30%, #888, #222); }
+
+.c1 { background: radial-gradient(circle at 35% 35%, #3b82f6, #1d4ed8); }
+.c5 { background: radial-gradient(circle at 35% 35%, #ef4444, #b91c1c); }
+.c10 { background: radial-gradient(circle at 35% 35%, #10b981, #047857); }
+.c50 { background: radial-gradient(circle at 35% 35%, #a855f7, #7e22ce); }
+.c100 { background: radial-gradient(circle at 35% 35%, #f59e0b, #b45309); }
 
 .betrow {
   display: flex;
   gap: 10px;
   align-items: center;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 14px;
 }
+
 .betrow input {
   width: 110px;
   text-align: center;
   font-weight: 800;
-  background: #111;
-  border-color: #333;
+  background: var(--bg);
+  border-color: var(--border);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
-.betrow .muted { color: #888; font-size: 13px; }
 
-/* ---- BIG BUTTON ---- */
+.betrow .muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---- BIG ACTION BUTTON ---- */
 .bigbtn {
   display: block;
-  margin: 14px auto 0;
-  background: linear-gradient(180deg, #e8c040 0%, #c9a227 50%, #a88010 100%);
-  color: #1a1000;
+  margin: 16px auto 0;
+  background: linear-gradient(135deg, #F2D98B 0%, #D6BD72 65%, #A9965F 100%);
+  color: #0B0E0D;
   border: 0;
   border-radius: 40px;
-  padding: 14px 48px;
-  font-size: 18px;
+  padding: 14px 44px;
+  font-size: 17px;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 5px 0 #6b5000, 0 8px 20px rgba(201,162,39,0.3);
+  box-shadow: 0 4px 16px rgba(214, 189, 114, 0.28);
   letter-spacing: 0.5px;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition: all 0.15s ease;
   text-transform: uppercase;
 }
-.bigbtn:hover { filter: brightness(1.07); }
-.bigbtn:active { transform: translateY(3px); box-shadow: 0 2px 0 #6b5000; }
-.bigbtn:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+.bigbtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(214, 189, 114, 0.4);
+}
+
+.bigbtn:active {
+  transform: translateY(1px);
+}
+
+.bigbtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .bigbtn.green {
-  background: linear-gradient(180deg, #68e08a 0%, #38b85a 50%, #1a8a3a 100%);
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 60%, #15803d 100%);
   color: #03200c;
-  box-shadow: 0 5px 0 #0a5020, 0 8px 20px rgba(56,184,90,0.3);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+}
+
+.bigbtn.green:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.45);
 }
 
 /* ---- MESSAGE ---- */
@@ -855,12 +1142,6 @@
 /* ============================================================
    KENO
    ============================================================ */
-.gcard.g-keno {
-  background: linear-gradient(145deg, #003d30 0%, #001714 60%, #000d09 100%);
-  border-color: #00c896;
-}
-.gcard.g-keno .btn { background: #10b981; color: #003322; }
-
 .keno-meta {
   display: flex;
   align-items: center;
@@ -988,12 +1269,6 @@
 /* ============================================================
    ETHIOPIAN BINGO (ቢንጎ ሜዳ)
    ============================================================ */
-.gcard.g-bingo {
-  background: linear-gradient(145deg, #1a0a3e 0%, #08021a 60%, #040010 100%);
-  border-color: #7c3aed;
-}
-.gcard.g-bingo .btn { background: #7c3aed; color: #fff; }
-
 .bingo-layout {
   display: flex;
   gap: 18px;
@@ -1216,11 +1491,26 @@
 }
 
 /* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .lobby-hero { padding: 26px 20px; }
+  .lobby-hero-title { font-size: 32px; }
+  .lobby { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+
 @media (max-width: 600px) {
+  .lobby-hero { padding: 20px 16px; }
+  .lobby-hero-title { font-size: 26px; }
+  .lobby-hero-sub { font-size: 13px; }
+  .hero-pill { font-size: 11px; padding: 4px 10px; }
+  .gfilter { padding: 6px 12px; font-size: 12px; }
   .lobby { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .gcard { padding: 14px 10px; }
-  .gcard .big { font-size: 44px; }
-  .gcard h3 { font-size: 15px; }
+  .gcard { padding: 16px 12px 14px; border-radius: 14px; }
+  .gcard-icon-wrap { width: 52px; height: 52px; border-radius: 14px; margin: 2px auto 8px; }
+  .gcard .big { font-size: 32px; }
+  .gcard h3 { font-size: 16px; }
+  .gcard p { font-size: 11.5px; margin-bottom: 8px; }
+  .gcard-meta span { font-size: 10px; padding: 2px 6px; }
+  .gcard .btn { padding: 8px; font-size: 12px; }
   .bigbtn { padding: 12px 30px; font-size: 16px; }
   .chipb { width: 44px; height: 44px; font-size: 13px; }
   .reelwin { width: 80px; height: 210px; }
@@ -1231,10 +1521,11 @@
   .mines-grid { gap: 6px; max-width: 320px; }
   .mine-cell { font-size: 24px; border-bottom-width: 4px; }
 }
+
 @media (max-width: 400px) {
   .lobby { grid-template-columns: 1fr; }
-  .gcard { padding: 18px; }
-  .gcard .big { font-size: 52px; }
+  .gcard { padding: 18px 14px; }
+  .gcard .big { font-size: 44px; }
   .reelwin { width: 72px; height: 195px; }
   .sym { height: 65px; font-size: 38px; line-height: 65px; }
   .mines-grid { gap: 4px; max-width: 290px; }

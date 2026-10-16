@@ -145,6 +145,7 @@ async function render(subMode = '') {
 
 // =====================================================
 // AUTH VIEW — Stake-style Login & Registration
+// Reference: Dark green-black & antique-gold split card
 // =====================================================
 function authView(app, initialMode = 'login') {
   app.innerHTML = `
@@ -153,18 +154,24 @@ function authView(app, initialMode = 'login') {
         <!-- Left Brand Showcase Side -->
         <div class="auth-showcase">
           <div>
-            <div class="auth-brand-head">
-              <div class="auth-brand-logo">ፍ</div>
-              <div>
-                <div class="auth-brand-title">${esc(t('brand'))}</div>
-                <span class="auth-brand-sub">Fetan Bet · Casino</span>
-              </div>
+            <div class="auth-brand-head" style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <div class="logo">ፍ</div>
+              <span class="brand-sub" style="font-size:12px;letter-spacing:1px;color:var(--gold-bright)">FETAN BET CASINO</span>
             </div>
-            <div class="auth-brand-tagline">${esc(t('tagline'))}</div>
+
+            <div class="auth-hero-title-group">
+              <div class="auth-welcome-sub">Welcome to</div>
+              <div class="auth-brand-giant">FETAN BET</div>
+            </div>
+
+            <div class="auth-brand-tagline">
+              ${lang === 'am' ? 'በፍጣን ቤት በሚወዷቸው የካሲኖ እና የስፖርት ጨዋታዎች ይደሰቱ' : 'Bet on your favorite sports and casino games with FETAN BET'}
+            </div>
+
             <ul class="auth-features">
               <li class="auth-feat-item">
                 <span class="auth-feat-icon">🎰</span>
-                <span>${lang === 'am' ? '5 የካሲኖ ጨዋታዎች (ሮድ ዳሽ፣ ማይንስ፣ ፕሊንኮ፣ ሩሌት፣ ስፒን)' : '5 Casino Games (Road Dash, Mines, Plinko, Roulette, Slots)'}</span>
+                <span>${lang === 'am' ? '7 ዋና የካሲኖ ጨዋታዎች (ሮድ፣ ማይንስ፣ ፕሊንኮ፣ ኬኖ፣ ቢንጎ...)' : '7 Premium Casino Games (Road, Mines, Plinko, Keno, Bingo...)'}</span>
               </li>
               <li class="auth-feat-item">
                 <span class="auth-feat-icon">🪙</span>
@@ -172,14 +179,11 @@ function authView(app, initialMode = 'login') {
               </li>
               <li class="auth-feat-item">
                 <span class="auth-feat-icon">⚡</span>
-                <span>${lang === 'am' ? 'ፈጣን የወኪል ገንዘብ ማስገቢያ እና ማውጫ' : 'Fast Agent Deposits & Withdrawals'}</span>
-              </li>
-              <li class="auth-feat-item">
-                <span class="auth-feat-icon">🇪🇹</span>
-                <span>${lang === 'am' ? 'በአማርኛ እና በእንግሊዝኛ ሙሉ ድጋፍ' : 'Amharic & English Multilingual Support'}</span>
+                <span>${lang === 'am' ? 'ፈጣን የወኪል ገንዘብ ማስገቢያ እና ማውጫ' : 'Instant Agent Deposits & Withdrawals'}</span>
               </li>
             </ul>
           </div>
+
           <div class="auth-showcase-notice">
             <span>⚠</span>
             <span>${esc(t('demo_notice'))}</span>
@@ -207,12 +211,25 @@ function authView(app, initialMode = 'login') {
             <form id="lf" autocomplete="on">
               <label for="l-phone">${esc(t('phone'))}</label>
               <input id="l-phone" name="phone" placeholder="${esc(t('phone_hint'))}" autocomplete="username" required>
-              <label for="l-pass" style="margin-top:10px">${esc(t('password'))}</label>
-              <input id="l-pass" name="password" type="password" autocomplete="current-password" required>
-              <button type="submit" class="btn btn-gold" style="margin-top:20px">${esc(t('login'))}</button>
+              
+              <label for="l-pass" style="margin-top:12px">${esc(t('password'))}</label>
+              <div class="input-wrap-pass">
+                <input id="l-pass" name="password" type="password" autocomplete="current-password" required>
+                <button type="button" class="pass-toggle-btn" id="l-pass-toggle" title="Show/Hide Password">👁</button>
+              </div>
+
+              <div class="auth-helper-row">
+                <label class="auth-checkbox-label">
+                  <input type="checkbox" id="remember-me" checked>
+                  <span>Remember me</span>
+                </label>
+                <a href="#" class="auth-forgot-link" id="forgot-pass-link">Forgot Password?</a>
+              </div>
+
+              <button type="submit" class="btn btn-gold" style="margin-top:16px">${esc(t('login'))}</button>
             </form>
-            <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-muted)">
-              ${esc(t('no_account'))} <a href="#" id="switch-to-reg" style="color:var(--gold-dark);font-weight:700">${esc(t('register'))}</a>
+            <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-muted)">
+              ${esc(t('no_account'))} <a href="#" id="switch-to-reg" style="color:var(--gold-bright);font-weight:700">${esc(t('register'))}</a>
             </p>
           </div>
 
@@ -221,14 +238,20 @@ function authView(app, initialMode = 'login') {
             <form id="rf" autocomplete="on">
               <label for="r-name">${esc(t('name'))}</label>
               <input id="r-name" name="name" autocomplete="name" minlength="2" maxlength="60" required>
+              
               <label for="r-phone" style="margin-top:10px">${esc(t('phone'))}</label>
               <input id="r-phone" name="phone" inputmode="tel" placeholder="${esc(t('phone_hint'))}" autocomplete="tel" required>
+              
               <label for="r-pass" style="margin-top:10px">${esc(t('password'))}</label>
-              <input id="r-pass" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="${esc(t('pass_hint'))}" required>
+              <div class="input-wrap-pass">
+                <input id="r-pass" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="${esc(t('pass_hint'))}" required>
+                <button type="button" class="pass-toggle-btn" id="r-pass-toggle" title="Show/Hide Password">👁</button>
+              </div>
+
               <button type="submit" class="btn btn-gold" style="margin-top:20px">${esc(t('register'))}</button>
             </form>
-            <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-muted)">
-              ${esc(t('have_account'))} <a href="#" id="switch-to-login" style="color:var(--gold-dark);font-weight:700">${esc(t('login'))}</a>
+            <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-muted)">
+              ${esc(t('have_account'))} <a href="#" id="switch-to-login" style="color:var(--gold-bright);font-weight:700">${esc(t('login'))}</a>
             </p>
           </div>
         </div>
@@ -245,6 +268,20 @@ function authView(app, initialMode = 'login') {
     $('l-phone').value = '0911111111';
     $('l-pass').value = 'agent123';
     showLogin();
+  };
+
+  // Password visibility toggles
+  $('l-pass-toggle').onclick = () => {
+    const inp = $('l-pass');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  };
+  $('r-pass-toggle').onclick = () => {
+    const inp = $('r-pass');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  };
+  $('forgot-pass-link').onclick = (e) => {
+    e.preventDefault();
+    toast('Demo account: use 0900000000 / admin123 or your registered phone number.', 'ok');
   };
 
   // Tab switching

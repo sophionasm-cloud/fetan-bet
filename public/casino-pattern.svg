@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360" fill="none">
+  <defs>
+    <style>
+      .pat { fill: #A9965F; fill-opacity: 0.13; }
+      .stroke-pat { stroke: #A9965F; stroke-opacity: 0.13; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .glow-pat { fill: #D6BD72; fill-opacity: 0.18; }
+    </style>
+  </defs>
+
+  <!-- Top-Left: Concentric Circles / Roulette Motif -->
+  <g transform="translate(45, 45)">
+    <circle cx="0" cy="0" r="32" class="stroke-pat" stroke-width="2"/>
+    <circle cx="0" cy="0" r="22" class="stroke-pat" stroke-width="4"/>
+    <circle cx="0" cy="0" r="10" class="pat"/>
+  </g>
+
+  <!-- 4-Point Concave Diamond Star -->
+  <g transform="translate(130, 45)">
+    <path d="M 0 -28 Q 0 0 28 0 Q 0 0 0 28 Q 0 0 -28 0 Q 0 0 0 -28 Z" class="pat"/>
+  </g>
+
+  <!-- Geometric Quarter Circle / Fan -->
+  <g transform="translate(200, 20)">
+    <path d="M 0 0 L 36 0 A 36 36 0 0 1 0 36 Z" class="pat"/>
+  </g>
+
+  <!-- Casino Chips Stack -->
+  <g transform="translate(295, 45)">
+    <ellipse cx="0" cy="-18" rx="22" ry="7" class="stroke-pat" stroke-width="2"/>
+    <path d="M -22 -18 L -22 18 A 22 7 0 0 0 22 18 L 22 -18" class="stroke-pat" stroke-width="2"/>
+    <ellipse cx="0" cy="-6" rx="22" ry="7" class="stroke-pat" stroke-width="1.5"/>
+    <ellipse cx="0" cy="6" rx="22" ry="7" class="stroke-pat" stroke-width="1.5"/>
+    <ellipse cx="0" cy="18" rx="22" ry="7" class="pat"/>
+  </g>
+
+  <!-- Half-Moon / Pill Shapes -->
+  <g transform="translate(40, 130)">
+    <path d="M -16 -24 A 16 24 0 0 1 -16 24 Z" class="pat"/>
+    <path d="M 12 -24 A 12 24 0 0 1 12 24 Z" class="stroke-pat" stroke-width="4"/>
+  </g>
+
+  <!-- 3x3 Dot Grid -->
+  <g transform="translate(115, 120)">
+    <circle cx="-16" cy="-14" r="3.5" class="pat"/>
+    <circle cx="0" cy="-14" r="3.5" class="pat"/>
+    <circle cx="16" cy="-14" r="3.5" class="pat"/>
+    <circle cx="-16" cy="0" r="3.5" class="pat"/>
+    <circle cx="0" cy="0" r="4.5" class="glow-pat"/>
+    <circle cx="16" cy="0" r="3.5" class="pat"/>
+    <circle cx="-16" cy="14" r="3.5" class="pat"/>
+    <circle cx="0" cy="14" r="3.5" class="pat"/>
+    <circle cx="16" cy="14" r="3.5" class="pat"/>
+  </g>
+
+  <!-- Pool Ball Pyramid / Dots with numbers -->
+  <g transform="translate(195, 120)">
+    <circle cx="0" cy="-18" r="4.5" class="stroke-pat"/>
+    <circle cx="-8" cy="-6" r="4.5" class="stroke-pat"/>
+    <circle cx="8" cy="-6" r="4.5" class="stroke-pat"/>
+    <circle cx="-16" cy="6" r="4.5" class="stroke-pat"/>
+    <circle cx="0" cy="6" r="4.5" class="pat"/>
+    <circle cx="16" cy="6" r="4.5" class="stroke-pat"/>
+    <circle cx="-8" cy="18" r="4.5" class="stroke-pat"/>
+    <circle cx="8" cy="18" r="4.5" class="stroke-pat"/>
+  </g>
+
+  <!-- Four-Leaf Petal / Geometric Clover -->
+  <g transform="translate(280, 130)">
+    <path d="M 0 0 C 14 -18 24 -18 24 0 C 24 18 14 18 0 0 Z" class="pat"/>
+    <path d="M 0 0 C -14 -18 -24 -18 -24 0 C -24 18 -14 18 0 0 Z" class="pat"/>
+    <path d="M 0 0 C -18 14 -18 24 0 24 C 18 24 18 14 0 0 Z" class="pat"/>
+    <path d="M 0 0 C -18 -14 -18 -24 0 -24 C 18 -24 18 -14 0 0 Z" class="pat"/>
+  </g>
+
+  <!-- Triangle with Dots (Plinko / Rack) -->
+  <g transform="translate(95, 230)">
+    <polygon points="0,-26 24,20 -24,20" class="stroke-pat" stroke-width="2.5"/>
+    <circle cx="0" cy="-10" r="2.5" class="glow-pat"/>
+    <circle cx="-6" cy="0" r="2.5" class="glow-pat"/>
+    <circle cx="6" cy="0" r="2.5" class="glow-pat"/>
+    <circle cx="-12" cy="10" r="2.5" class="glow-pat"/>
+    <circle cx="0" cy="10" r="2.5" class="glow-pat"/>
+    <circle cx="12" cy="10" r="2.5" class="glow-pat"/>
+  </g>
+
+  <!-- Slot Machine 777 Silhouette -->
+  <g transform="translate(180, 230)">
+    <rect x="-24" y="-28" width="48" height="52" rx="8" class="stroke-pat" stroke-width="2.5"/>
+    <!-- Top arch -->
+    <path d="M -16 -28 Q 0 -36 16 -28" class="stroke-pat" stroke-width="2"/>
+    <!-- Reel window -->
+    <rect x="-18" y="-12" width="36" height="18" rx="3" class="stroke-pat" stroke-width="1.5"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Barlow Condensed', sans-serif" font-size="13" font-weight="900" fill="#A9965F" fill-opacity="0.2">777</text>
+    <!-- Lever -->
+    <path d="M 24 -4 L 32 -10 L 32 -18" class="stroke-pat" stroke-width="2.5"/>
+    <circle cx="32" cy="-21" r="4.5" class="pat"/>
+  </g>
+
+  <!-- Dice Pair -->
+  <g transform="translate(265, 225)">
+    <!-- Die 1 -->
+    <rect x="-24" y="-22" width="26" height="26" rx="5" class="stroke-pat" stroke-width="2"/>
+    <circle cx="-18" cy="-16" r="2.2" class="pat"/>
+    <circle cx="-6" cy="-16" r="2.2" class="pat"/>
+    <circle cx="-18" cy="-4" r="2.2" class="pat"/>
+    <circle cx="-6" cy="-4" r="2.2" class="pat"/>
+    <circle cx="-12" cy="-10" r="2.2" class="pat"/>
+    <!-- Die 2 (Rotated) -->
+    <g transform="translate(12, 10) rotate(15)">
+      <rect x="-14" y="-14" width="26" height="26" rx="5" class="stroke-pat" stroke-width="2"/>
+      <circle cx="-7" cy="-7" r="2.2" class="pat"/>
+      <circle cx="7" cy="7" r="2.2" class="pat"/>
+      <circle cx="0" cy="0" r="2.2" class="pat"/>
+    </g>
+  </g>
+
+  <!-- Playing Cards: Ace of Spades & Diamonds -->
+  <g transform="translate(325, 235)">
+    <!-- Back card -->
+    <rect x="-20" y="-24" width="24" height="34" rx="4" class="stroke-pat" stroke-width="1.8" transform="rotate(-12)"/>
+    <!-- Front card -->
+    <g transform="rotate(8)">
+      <rect x="-14" y="-22" width="24" height="34" rx="4" class="stroke-pat" stroke-width="2"/>
+      <!-- Spade icon -->
+      <path d="M -2 -8 C -6 -13 -10 -8 -10 -4 C -10 0 -3 4 -2 7 L -2 9 L -4 10 L 0 10 L -2 9 L -2 7 C -1 4 6 0 6 -4 C 6 -8 2 -13 -2 -8 Z" class="pat" transform="scale(0.8) translate(0, -6)"/>
+    </g>
+  </g>
+
+  <!-- Bottom Cross / Diamond Flourish -->
+  <g transform="translate(45, 315)">
+    <path d="M 0 -22 Q 0 0 22 0 Q 0 0 0 22 Q 0 0 -22 0 Q 0 0 0 -22 Z" class="pat"/>
+  </g>
+
+  <!-- Concentric Oval Ring -->
+  <g transform="translate(135, 320)">
+    <ellipse cx="0" cy="0" rx="18" ry="26" class="stroke-pat" stroke-width="5"/>
+    <ellipse cx="0" cy="0" rx="9" ry="16" class="stroke-pat" stroke-width="1.5"/>
+  </g>
+
+  <!-- 4-Petal Motif 2 -->
+  <g transform="translate(225, 320)">
+    <circle cx="-14" cy="0" r="8" class="pat"/>
+    <circle cx="14" cy="0" r="8" class="pat"/>
+    <circle cx="0" cy="-14" r="8" class="pat"/>
+    <circle cx="0" cy="14" r="8" class="pat"/>
+  </g>
+
+  <!-- Cross Star -->
+  <g transform="translate(315, 315)">
+    <path d="M 0 -26 Q 0 0 26 0 Q 0 0 0 26 Q 0 0 -26 0 Q 0 0 0 -26 Z" class="glow-pat"/>
+  </g>
+</svg>
