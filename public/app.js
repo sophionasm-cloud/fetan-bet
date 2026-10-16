@@ -738,6 +738,8 @@ async function historyView(app) {
   });
 
   renderHistoryContent('all');
+}
+
 // =====================================================
 // SUPPORT VIEW — Interactive AI Assistant & Customer Chat
 // =====================================================
