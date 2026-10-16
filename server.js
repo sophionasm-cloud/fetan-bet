@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { db, audit, postLedger, createUser, seed } = require('./db');
 const games = require('./games');
+const { getAiResponse } = require('./ai-support');
 
 const SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const app = express();
@@ -214,15 +215,189 @@ app.get('/api/agent/funding', auth, need('agent', 'admin'), wrap((req) => ({
     WHERE f.agent_id = ? ORDER BY f.id DESC LIMIT 50`).all(req.user.id)
 })));
 
-// ---------- support ----------
-app.post('/api/support', auth, wrap((req) => {
-  const message = String(req.body.message || '').trim().slice(0, 500);
-  if (message.length < 3) throw new Error('INVALID');
-  db.prepare('INSERT INTO support_tickets (user_id, message) VALUES (?,?)').run(req.user.id, message);
+// ---------- unified support, AI assistant & communication ----------
+app.get('/api/support', auth, wrap((req) => {
+  const activeTicket = db.prepare(`SELECT * FROM support_tickets WHERE user_id = ? ORDER BY id DESC LIMIT 1`).get(req.user.id);
+  const messages = activeTicket
+    ? db.prepare(`SELECT * FROM support_messages WHERE ticket_id = ? AND is_internal = 0 ORDER BY id ASC`).all(activeTicket.id)
+    : [];
+  const aiSetting = db.prepare("SELECT value FROM system_settings WHERE key='ai_support_enabled'").get();
+  return {
+    ticket: activeTicket || null,
+    messages,
+    ai_enabled: !aiSetting || aiSetting.value === '1'
+  };
 }));
 
-// ---------- games ----------
-const g = (fn) => [auth, wrap((req) => fn(req))];
+app.post('/api/support', auth, wrap((req) => {
+  const message = String(req.body.message || '').trim().slice(0, 1000);
+  if (message.length < 2) throw new Error('INVALID');
+
+  let ticket = db.prepare("SELECT * FROM support_tickets WHERE user_id = ? AND status != 'resolved' ORDER BY id DESC LIMIT 1").get(req.user.id);
+  if (!ticket) {
+    const r = db.prepare("INSERT INTO support_tickets (user_id, message, status) VALUES (?,?, 'open')")
+      .run(req.user.id, message);
+    ticket = { id: Number(r.lastInsertRowid), user_id: req.user.id, status: 'open' };
+  }
+
+  // Insert user's message
+  db.prepare("INSERT INTO support_messages (ticket_id, sender_id, sender_role, sender_name, message, is_internal) VALUES (?, ?, 'user', ?, ?, 0)")
+    .run(ticket.id, req.user.id, req.user.name, message);
+
+  // Check if AI Support is enabled
+  const aiSetting = db.prepare("SELECT value FROM system_settings WHERE key='ai_support_enabled'").get();
+  const aiEnabled = !aiSetting || aiSetting.value === '1';
+
+  if (aiEnabled) {
+    const pendingDeps = db.prepare("SELECT d.*, p.name provider FROM deposits d JOIN providers p ON p.id=d.provider_id WHERE d.user_id=? AND d.status='pending'").all(req.user.id);
+    const pendingWiths = db.prepare("SELECT w.*, p.name provider FROM withdrawals w JOIN providers p ON p.id=w.provider_id WHERE w.user_id=? AND w.status='pending'").all(req.user.id);
+    const bal = balanceOf(req.user.id);
+
+    const aiRes = getAiResponse(message, {
+      user: req.user,
+      pendingDeposits: pendingDeps,
+      pendingWithdrawals: pendingWiths,
+      balance: bal
+    });
+
+    db.prepare("INSERT INTO support_messages (ticket_id, sender_id, sender_role, sender_name, message, is_internal) VALUES (?, NULL, 'ai', 'Fetan AI', ?, 0)")
+      .run(ticket.id, aiRes.reply);
+
+    if (aiRes.shouldEscalate) {
+      db.prepare("UPDATE support_tickets SET status='escalated', escalated_reason=?, updated_at=datetime('now') WHERE id=?")
+        .run(aiRes.reason, ticket.id);
+      audit(req.user.id, 'support.escalate', { ticketId: ticket.id, reason: aiRes.reason });
+      ticket.status = 'escalated';
+    }
+  }
+
+  const messages = db.prepare("SELECT * FROM support_messages WHERE ticket_id = ? AND is_internal = 0 ORDER BY id ASC").all(ticket.id);
+  return { ticketId: ticket.id, status: ticket.status, messages };
+}));
+
+app.get('/api/support/ticket/:id', auth, wrap((req) => {
+  const ticketId = Number(req.params.id);
+  const ticket = db.prepare(`SELECT t.*, u.name user_name, u.phone user_phone, a.name agent_name
+    FROM support_tickets t
+    JOIN users u ON u.id = t.user_id
+    LEFT JOIN users a ON a.id = t.assigned_agent_id
+    WHERE t.id = ?`).get(ticketId);
+  if (!ticket) throw new Error('NOT_FOUND');
+  if (req.user.role === 'user' && ticket.user_id !== req.user.id) throw new Error('FORBIDDEN');
+
+  const filterInternal = req.user.role === 'user' ? 'AND is_internal = 0' : '';
+  const messages = db.prepare(`SELECT * FROM support_messages WHERE ticket_id = ? ${filterInternal} ORDER BY id ASC`).all(ticketId);
+  return { ticket, messages };
+}));
+
+app.post('/api/support/ticket/:id/reply', auth, wrap((req) => {
+  const ticketId = Number(req.params.id);
+  const message = String(req.body.message || '').trim().slice(0, 1000);
+  if (message.length < 1) throw new Error('INVALID');
+
+  const ticket = db.prepare("SELECT * FROM support_tickets WHERE id = ?").get(ticketId);
+  if (!ticket) throw new Error('NOT_FOUND');
+  if (req.user.role === 'user' && ticket.user_id !== req.user.id) throw new Error('FORBIDDEN');
+
+  const isInternal = (req.user.role === 'agent' || req.user.role === 'admin') && Boolean(req.body.is_internal);
+
+  db.prepare("INSERT INTO support_messages (ticket_id, sender_id, sender_role, sender_name, message, is_internal) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(ticketId, req.user.id, req.user.role, req.user.name, message, isInternal ? 1 : 0);
+
+  if (!isInternal && (req.user.role === 'agent' || req.user.role === 'admin')) {
+    db.prepare("UPDATE support_tickets SET status='in_progress', assigned_agent_id=COALESCE(assigned_agent_id, ?), updated_at=datetime('now') WHERE id=?")
+      .run(req.user.id, ticketId);
+  }
+
+  const filterInternal = req.user.role === 'user' ? 'AND is_internal = 0' : '';
+  const messages = db.prepare(`SELECT * FROM support_messages WHERE ticket_id = ? ${filterInternal} ORDER BY id ASC`).all(ticketId);
+  return { ok: true, messages };
+}));
+
+app.post('/api/support/ticket/:id/status', auth, need('agent', 'admin'), wrap((req) => {
+  const ticketId = Number(req.params.id);
+  const status = req.body.status;
+  if (!['open', 'in_progress', 'escalated', 'resolved'].includes(status)) throw new Error('INVALID');
+
+  const assigned = req.body.assigned_agent_id ? Number(req.body.assigned_agent_id) : req.user.id;
+  db.prepare("UPDATE support_tickets SET status=?, assigned_agent_id=?, updated_at=datetime('now') WHERE id=?")
+    .run(status, assigned, ticketId);
+
+  if (req.body.note) {
+    db.prepare("INSERT INTO support_messages (ticket_id, sender_id, sender_role, sender_name, message, is_internal) VALUES (?, ?, ?, ?, ?, 1)")
+      .run(ticketId, req.user.id, req.user.role, req.user.name, String(req.body.note).trim().slice(0, 500));
+  }
+
+  audit(req.user.id, 'support.status', { ticketId, status, assigned });
+  return { ok: true, status };
+}));
+
+app.get('/api/agent/tickets', auth, need('agent', 'admin'), wrap((req) => {
+  const status = req.query.status;
+  const where = status && status !== 'all' ? 'WHERE t.status = ?' : '';
+  const params = status && status !== 'all' ? [status] : [];
+  const tickets = db.prepare(`SELECT t.*, u.name user_name, u.phone user_phone, a.name agent_name,
+    (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id = t.id) message_count
+    FROM support_tickets t
+    JOIN users u ON u.id = t.user_id
+    LEFT JOIN users a ON a.id = t.assigned_agent_id
+    ${where} ORDER BY t.id DESC LIMIT 100`).all(...params);
+  return { tickets };
+}));
+
+app.get('/api/admin/tickets', auth, need('admin'), wrap((req) => {
+  const tickets = db.prepare(`SELECT t.*, u.name user_name, u.phone user_phone, a.name agent_name,
+    (SELECT COUNT(*) FROM support_messages m WHERE m.ticket_id = t.id) message_count
+    FROM support_tickets t
+    JOIN users u ON u.id = t.user_id
+    LEFT JOIN users a ON a.id = t.assigned_agent_id
+    ORDER BY t.id DESC LIMIT 100`).all();
+  return { tickets };
+}));
+
+// ---------- announcements ----------
+app.get('/api/announcements', auth, wrap((req) => {
+  const role = req.user.role;
+  return {
+    announcements: db.prepare(`SELECT a.*, u.name author_name FROM announcements a
+      JOIN users u ON u.id = a.author_id
+      WHERE a.target_role IN ('all', ?) ORDER BY a.id DESC LIMIT 20`).all(role)
+  };
+}));
+
+app.post('/api/admin/announcements', auth, need('admin'), wrap((req) => {
+  const title = String(req.body.title || '').trim().slice(0, 150);
+  const content = String(req.body.content || '').trim().slice(0, 1000);
+  const target = ['agent', 'user', 'all'].includes(req.body.target_role) ? req.body.target_role : 'agent';
+  if (title.length < 2 || content.length < 2) throw new Error('INVALID');
+
+  const r = db.prepare("INSERT INTO announcements (author_id, target_role, title, content) VALUES (?,?,?,?)")
+    .run(req.user.id, target, title, content);
+  audit(req.user.id, 'announcement.create', { id: Number(r.lastInsertRowid), title, target });
+  return { id: Number(r.lastInsertRowid) };
+}));
+
+app.get('/api/admin/ai-settings', auth, need('admin'), wrap(() => {
+  const aiSetting = db.prepare("SELECT value FROM system_settings WHERE key='ai_support_enabled'").get();
+  const totalHandled = db.prepare("SELECT COUNT(*) c FROM support_messages WHERE sender_role='ai'").get().c;
+  const escalatedCount = db.prepare("SELECT COUNT(*) c FROM support_tickets WHERE status='escalated'").get().c;
+  return {
+    enabled: !aiSetting || aiSetting.value === '1',
+    total_ai_messages: totalHandled,
+    escalated_tickets: escalatedCount
+  };
+}));
+
+app.post('/api/admin/ai-settings', auth, need('admin'), wrap((req) => {
+  const val = req.body.enabled ? '1' : '0';
+  db.prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('ai_support_enabled', ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=datetime('now')")
+    .run(val);
+  audit(req.user.id, 'ai_settings.update', { enabled: val === '1' });
+  return { enabled: val === '1' };
+}));
+
+// ---------- games (STRICTLY RESTRICTED TO USERS ONLY — NO AGENTS OR ADMINS!) ----------
+const g = (fn) => [auth, need('user'), wrap((req) => fn(req))];
 app.post('/api/games/roulette', ...g((req) => games.roulette(req.user.id, Number(req.body.bet), req.body.kind,
   req.body.kind === 'number' ? Number(req.body.value) : req.body.value)));
 app.post('/api/games/star', ...g((req) => games.starSpin(req.user.id, Number(req.body.bet))));
@@ -241,6 +416,28 @@ app.post('/api/games/bingo/start', ...g((req) => games.bingoStart(req.user.id, N
 app.post('/api/games/bingo/call', ...g((req) => games.bingoCall(req.user.id)));
 app.post('/api/games/bingo/abandon', ...g((req) => games.bingoAbandon(req.user.id)));
 
+// ---------- agent performance ----------
+app.get('/api/agent/performance', auth, need('agent', 'admin'), wrap((req) => {
+  const agentId = req.user.id;
+  const depAll = db.prepare("SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM deposits WHERE reviewed_by=? AND status='approved'").get(agentId);
+  const withAll = db.prepare("SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM withdrawals WHERE reviewed_by=? AND status='approved'").get(agentId);
+  const depToday = db.prepare("SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM deposits WHERE reviewed_by=? AND status='approved' AND date(reviewed_at)=date('now')").get(agentId);
+  const withToday = db.prepare("SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM withdrawals WHERE reviewed_by=? AND status='approved' AND date(reviewed_at)=date('now')").get(agentId);
+  const ticketsResolved = db.prepare("SELECT COUNT(*) c FROM support_tickets WHERE assigned_agent_id=? AND status='resolved'").get(agentId).c;
+  return {
+    balance: balanceOf(agentId),
+    approved_deposits_count: depAll.c,
+    approved_deposits_volume: depAll.s,
+    approved_withdrawals_count: withAll.c,
+    approved_withdrawals_volume: withAll.s,
+    today_deposits_count: depToday.c,
+    today_deposits_volume: depToday.s,
+    today_withdrawals_count: withToday.c,
+    today_withdrawals_volume: withToday.s,
+    tickets_resolved: ticketsResolved
+  };
+}));
+
 // ---------- admin ----------
 const admin = [auth, need('admin')];
 app.get('/api/admin/stats', ...admin, wrap(() => ({
@@ -250,8 +447,72 @@ app.get('/api/admin/stats', ...admin, wrap(() => ({
   pending_funding: db.prepare("SELECT COUNT(*) c FROM agent_funding_requests WHERE status='pending'").get().c,
   credited: db.prepare("SELECT COALESCE(SUM(amount),0) s FROM ledger WHERE type='deposit'").get().s,
   rounds: db.prepare('SELECT COUNT(*) c FROM game_rounds').get().c,
-  tickets: db.prepare('SELECT COUNT(*) c FROM support_tickets').get().c,
+  tickets: db.prepare("SELECT COUNT(*) c FROM support_tickets WHERE status != 'resolved'").get().c,
 })));
+
+app.get('/api/admin/financial-analytics', ...admin, wrap((req) => {
+  const range = req.query.range || '7d';
+  let dateFilter = '';
+  if (range === 'today') dateFilter = "AND created_at >= datetime('now', 'start of day')";
+  else if (range === '7d') dateFilter = "AND created_at >= datetime('now', '-7 days')";
+  else if (range === '30d') dateFilter = "AND created_at >= datetime('now', '-30 days')";
+  else if (range === 'month') dateFilter = "AND created_at >= datetime('now', 'start of month')";
+
+  // 1. Deposits & Withdrawals
+  const depApproved = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM ledger WHERE type='deposit' ${dateFilter}`).get();
+  const withApproved = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(-amount),0) s FROM ledger WHERE type='withdraw_hold' ${dateFilter}`).get();
+  const depPending = db.prepare("SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM deposits WHERE status='pending'").get();
+  const withPending = db.prepare("SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM withdrawals WHERE status='pending'").get();
+
+  // 2. Betting Activity (Stakes & Payouts)
+  const bets = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(-amount),0) s FROM ledger WHERE type='bet' ${dateFilter}`).get();
+  const wins = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(amount),0) s FROM ledger WHERE type='win' ${dateFilter}`).get();
+  const ggr = bets.s - wins.s;
+  const marginPct = bets.s > 0 ? ((ggr / bets.s) * 100).toFixed(1) : '0.0';
+
+  // 3. Game Distribution
+  const gameDist = db.prepare(`SELECT game, COUNT(*) rounds, COALESCE(SUM(bet),0) stakes, COALESCE(SUM(payout),0) payouts,
+    COALESCE(SUM(bet - payout),0) ggr FROM game_rounds WHERE 1=1 ${dateFilter} GROUP BY game ORDER BY stakes DESC`).all();
+
+  // 4. Daily Trend
+  const dailyTrends = db.prepare(`SELECT strftime('%Y-%m-%d', created_at) date,
+    COALESCE(SUM(CASE WHEN type='deposit' THEN amount ELSE 0 END), 0) deposits,
+    COALESCE(SUM(CASE WHEN type='withdraw_hold' THEN -amount ELSE 0 END), 0) withdrawals,
+    COALESCE(SUM(CASE WHEN type='bet' THEN -amount ELSE 0 END), 0) bets,
+    COALESCE(SUM(CASE WHEN type='win' THEN amount ELSE 0 END), 0) wins
+    FROM ledger WHERE created_at >= datetime('now', '-14 days')
+    GROUP BY date ORDER BY date ASC`).all();
+
+  // 5. Agent Comparison
+  const agentSummary = db.prepare(`SELECT u.id, u.name, u.phone, u.status, w.balance,
+    (SELECT COUNT(*) FROM deposits d WHERE d.reviewed_by = u.id AND d.status='approved') deposits_verified,
+    (SELECT COALESCE(SUM(amount),0) FROM deposits d WHERE d.reviewed_by = u.id AND d.status='approved') deposits_volume,
+    (SELECT COUNT(*) FROM withdrawals w WHERE w.reviewed_by = u.id AND w.status='approved') withdrawals_verified,
+    (SELECT COUNT(*) FROM support_tickets t WHERE t.assigned_agent_id = u.id AND t.status='resolved') tickets_resolved
+    FROM users u JOIN wallets w ON w.user_id = u.id WHERE u.role='agent'`).all();
+
+  return {
+    range,
+    total_deposits_count: depApproved.c,
+    total_deposits_amount: depApproved.s,
+    total_withdrawals_count: withApproved.c,
+    total_withdrawals_amount: withApproved.s,
+    pending_deposits_count: depPending.c,
+    pending_deposits_amount: depPending.s,
+    pending_withdrawals_count: withPending.c,
+    pending_withdrawals_amount: withPending.s,
+    total_bets_count: bets.c,
+    total_bets_amount: bets.s,
+    total_wins_count: wins.c,
+    total_wins_amount: wins.s,
+    gross_gaming_revenue: ggr,
+    margin_percent: marginPct,
+    game_distribution: gameDist,
+    daily_trends: dailyTrends,
+    agents: agentSummary
+  };
+}));
+
 app.get('/api/admin/agent-funding', ...admin, wrap((req) => {
   const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : null;
   const sql = status
@@ -267,6 +528,7 @@ app.get('/api/admin/agent-funding', ...admin, wrap((req) => {
        ORDER BY f.id DESC LIMIT 100`;
   return { requests: db.prepare(sql).all(...(status ? [status] : [])) };
 }));
+
 app.post('/api/admin/agent-funding/:id/decide', ...admin, wrap((req) => {
   const id = Number(req.params.id);
   const approve = req.body.action === 'approve';
@@ -284,22 +546,30 @@ app.post('/api/admin/agent-funding/:id/decide', ...admin, wrap((req) => {
     audit(req.user.id, 'agent_funding.' + next, { id, amount: f.amount, note });
   })();
 }));
+
 app.get('/api/admin/transactions', ...admin, wrap((req) => {
   const type = req.query.type ? String(req.query.type) : null;
+  const search = req.query.search ? String(req.query.search).trim() : null;
   let sql = `SELECT l.id, l.type, l.amount, l.balance_after, l.created_at, l.ref_type, l.ref_id, u.name user_name, u.phone
-             FROM ledger l JOIN users u ON u.id = l.user_id`;
+             FROM ledger l JOIN users u ON u.id = l.user_id WHERE 1=1`;
   const params = [];
   if (type && type !== 'all') {
-    sql += ` WHERE l.type = ?`;
+    sql += ` AND l.type = ?`;
     params.push(type);
   }
-  sql += ` ORDER BY l.id DESC LIMIT 150`;
+  if (search) {
+    sql += ` AND (u.phone LIKE ? OR u.name LIKE ?)`;
+    params.push(`%${search}%`, `%${search}%`);
+  }
+  sql += ` ORDER BY l.id DESC LIMIT 200`;
   return { transactions: db.prepare(sql).all(...params) };
 }));
+
 app.get('/api/admin/users', ...admin, wrap(() => ({
   users: db.prepare(`SELECT u.id, u.name, u.phone, u.role, u.status, u.created_at, w.balance
     FROM users u JOIN wallets w ON w.user_id=u.id ORDER BY u.id DESC LIMIT 200`).all(),
 })));
+
 app.post('/api/admin/users/:id', ...admin, wrap((req) => {
   const id = Number(req.params.id);
   if (id === req.user.id) throw new Error('SELF');
@@ -311,15 +581,28 @@ app.post('/api/admin/users/:id', ...admin, wrap((req) => {
   if (status) db.prepare('UPDATE users SET status=? WHERE id=?').run(status, id);
   audit(req.user.id, 'user.update', { id, role, status });
 }));
-app.get('/api/admin/audit', ...admin, wrap(() => ({
-  logs: db.prepare('SELECT a.id, a.action, a.detail, a.created_at, u.name actor FROM audit_logs a LEFT JOIN users u ON u.id=a.actor_id ORDER BY a.id DESC LIMIT 100').all(),
-})));
-app.get('/api/admin/support', ...admin, wrap(() => ({
-  tickets: db.prepare('SELECT s.id, s.message, s.created_at, u.name, u.phone FROM support_tickets s JOIN users u ON u.id=s.user_id ORDER BY s.id DESC LIMIT 100').all(),
-})));
+
+app.get('/api/admin/audit', ...admin, wrap((req) => {
+  const search = req.query.search ? String(req.query.search).trim() : null;
+  let sql = `SELECT a.id, a.action, a.detail, a.created_at, u.name actor FROM audit_logs a LEFT JOIN users u ON u.id=a.actor_id`;
+  const params = [];
+  if (search) {
+    sql += ` WHERE a.action LIKE ? OR u.name LIKE ?`;
+    params.push(`%${search}%`, `%${search}%`);
+  }
+  sql += ` ORDER BY a.id DESC LIMIT 100`;
+  return { logs: db.prepare(sql).all(...params) };
+}));
+
+app.get('/api/admin/support', ...admin, wrap((req) => {
+  const tickets = db.prepare(`SELECT t.id, t.message, t.status, t.escalated_reason, t.created_at, u.name, u.phone
+    FROM support_tickets t JOIN users u ON u.id=t.user_id ORDER BY t.id DESC LIMIT 100`).all();
+  return { tickets };
+}));
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
   app.listen(PORT, () => console.log(`ፍጣን ቤት / Fetan Bet running at http://localhost:${PORT}`));
 }
 module.exports = app;
+

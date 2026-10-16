@@ -78,6 +78,9 @@ async function refreshMe() {
 
   if (isLogged) {
     $('balanceBox').innerHTML = `🪙 ${fmt(balance)} <small style="color:var(--text-muted);font-weight:400">${t('credits')}</small>`;
+    if (me.role !== 'user') {
+      $('quickDepositBtn').hidden = true;
+    }
   }
 }
 
@@ -95,22 +98,29 @@ $('langBtn').onclick = async () => {
 };
 $('logoutBtn').onclick = async () => { await api('/logout', {}); me = null; tab = 'games'; render(); };
 $('quickDepositBtn').onclick = () => { tab = 'deposit'; render(); };
-$('brandBtn').onclick = () => { tab = 'games'; render(); };
+$('brandBtn').onclick = () => { tab = (me && me.role !== 'user') ? me.role : 'games'; render(); };
 $('headerLoginBtn').onclick = () => { tab = 'auth'; render('login'); };
 $('headerRegBtn').onclick = () => { tab = 'auth'; render('register'); };
 
 // ---------- NAV ----------
 function nav() {
-  const tabs = [
-    ['games', '🎰', 'games'],
-    ['wallet', '💳', 'wallet'],
-    ['deposit', '⬇', 'deposit'],
-    ['withdraw', '⬆', 'withdraw'],
-    ['history', '📋', 'history'],
-    ['support', '💬', 'support'],
-  ];
-  if (me.role === 'agent' || me.role === 'admin') tabs.push(['agent', '🔑', 'agent']);
-  if (me.role === 'admin') tabs.push(['admin', '⚙', 'admin']);
+  const tabs = [];
+  if (me.role === 'admin') {
+    tabs.push(['admin', '⚙', 'admin']);
+    tabs.push(['agent', '🔑', 'agent']);
+    tabs.push(['history', '📋', 'history']);
+  } else if (me.role === 'agent') {
+    tabs.push(['agent', '🔑', 'agent']);
+    tabs.push(['history', '📋', 'history']);
+  } else {
+    tabs.push(['games', '🎰', 'games']);
+    tabs.push(['wallet', '💳', 'wallet']);
+    tabs.push(['deposit', '⬇', 'deposit']);
+    tabs.push(['withdraw', '⬆', 'withdraw']);
+    tabs.push(['history', '📋', 'history']);
+    tabs.push(['support', '💬', 'support']);
+  }
+
   const n = $('nav');
   n.hidden = false;
   n.innerHTML = tabs.map(([k, icon, label]) =>
@@ -126,6 +136,15 @@ async function render(subMode = '') {
     $('nav').hidden = true;
     return authView(app, subMode || 'login');
   }
+
+  // Enforce administrative role restriction (Requirement 6)
+  if (me.role === 'admin' || me.role === 'agent') {
+    if (tab === 'games' || tab === 'deposit' || tab === 'withdraw') {
+      tab = me.role === 'admin' ? 'admin' : 'agent';
+      toast(t('admin_game_blocked'), 'err');
+    }
+  }
+
   nav();
   const views = {
     games: gamesView,
@@ -138,7 +157,7 @@ async function render(subMode = '') {
     admin: adminView,
   };
   try {
-    const fn = views[tab] || gamesView;
+    const fn = views[tab] || (me.role === 'admin' ? adminView : me.role === 'agent' ? agentView : gamesView);
     await fn(app);
   } catch (e) { fail(e); }
 }
@@ -305,7 +324,8 @@ function authView(app, initialMode = 'login') {
     btn.disabled = true; btn.textContent = '...';
     try {
       await api('/login', Object.fromEntries(new FormData(ev.target)));
-      tab = 'games'; // Customer sees games immediately upon login!
+      await refreshMe();
+      tab = (me && me.role !== 'user') ? me.role : 'games';
       render();
     } catch (e) { fail(e); btn.disabled = false; btn.textContent = t('login'); }
   };
@@ -718,38 +738,118 @@ async function historyView(app) {
   });
 
   renderHistoryContent('all');
-}
-
 // =====================================================
-// SUPPORT VIEW
+// SUPPORT VIEW — Interactive AI Assistant & Customer Chat
 // =====================================================
 async function supportView(app) {
+  const { ticket, messages, ai_enabled } = await api('/support');
+
+  const defaultGreeting = lang === 'am'
+    ? `ሰላም ${esc(me.name)}! ወደ ፍጣን ቤት የደንበኞች ድጋፍ ማዕከል እንኳን በደህና መጡ። እኔ የፍጣን ቤት AI ረዳት ነኝ። ዛሬ እንዴት ልረዳዎ እችላለሁ? ስለ ገንዘብ ማስገባት፣ ማውጣት፣ ወይም ስለ ጨዋታዎቻችን መጠየቅ ይችላሉ።`
+    : `Hi ${esc(me.name)}! Welcome to Fetan Bet Support. I am your AI Support Assistant. How can I assist you today? Feel free to ask about deposits, withdrawals, or game rules.`;
+
+  const allMessages = messages && messages.length ? messages : [
+    { sender_role: 'ai', sender_name: 'Fetan AI', message: defaultGreeting, created_at: 'Just now' }
+  ];
+
   app.innerHTML = `
-    <div class="card" style="max-width:480px;margin:0 auto">
-      <h2>${esc(t('support'))}</h2>
-      <p class="secondary" style="margin-bottom:14px">${esc(t('support_desc'))}</p>
-      <form id="sf">
-        <textarea name="message" rows="5" maxlength="500" placeholder="${esc(t('ticket_ph'))}" required></textarea>
-        <button class="btn btn-gold">${esc(t('send'))}</button>
+    <div class="support-chat-card">
+      <div class="support-chat-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="logo" style="width:34px;height:34px;font-size:16px">🤖</div>
+          <div>
+            <div style="font-weight:800;font-size:15px;color:var(--text)">${esc(t('ai_assistant'))}</div>
+            <div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px">
+              <span style="font-size:8px">●</span> ${esc(t('ai_status_active'))}
+            </div>
+          </div>
+        </div>
+        <div>
+          ${ticket ? statusTag(ticket.status) : `<span class="tag open">${esc(t('status_open'))}</span>`}
+        </div>
+      </div>
+
+      <!-- Quick prompts bar -->
+      <div class="chat-prompts-bar">
+        <button type="button" class="prompt-chip" data-q="How do I deposit with Telebirr or CBE?">💳 ${lang === 'am' ? 'ገንዘብ ማስገባት' : 'Deposit Instructions'}</button>
+        <button type="button" class="prompt-chip" data-q="Where is my deposit status?">🪙 ${lang === 'am' ? 'የማስገቢያዬ ሁኔታ' : 'Deposit Status'}</button>
+        <button type="button" class="prompt-chip" data-q="How do I request a withdrawal?">⬆ ${lang === 'am' ? 'ገንዘብ ማውጣት' : 'Withdrawal Process'}</button>
+        <button type="button" class="prompt-chip" data-q="How do I play Road Dash and Mines?">🎰 ${lang === 'am' ? 'የጨዋታዎች ህግ' : 'Game Rules'}</button>
+        <button type="button" class="prompt-chip" data-q="I want to talk to a human agent">👤 ${lang === 'am' ? 'ከሰው ወኪል ጋር አገናኘኝ' : 'Talk to Human Agent'}</button>
+      </div>
+
+      <!-- Chat message stream -->
+      <div class="support-chat-stream" id="chat-stream">
+        ${allMessages.map((m) => `
+          <div class="chat-msg ${m.sender_role}">
+            <div class="chat-msg-sender">
+              <span>${m.sender_role === 'ai' ? '🤖 Fetan AI' : m.sender_role === 'user' ? '🪙 You' : '👤 ' + esc(m.sender_name)}</span>
+              <span class="muted" style="font-size:10px">${esc(m.created_at)}</span>
+            </div>
+            <div class="chat-bubble">${esc(m.message)}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      ${ticket && ticket.status === 'escalated' ? `
+        <div style="padding:10px 18px;background:rgba(239,68,68,0.1);border-top:1px solid rgba(239,68,68,0.3);font-size:12px;color:#FCA5A5">
+          ℹ ${lang === 'am' ? 'ጥያቄዎ ወደ ሰው ድጋፍ ሰጪ ወኪሎቻችን ተላልፏል። አንድ ወኪል በቅርቡ እዚህ መልስ ይሰጥዎታል።' : 'Your request has been escalated to our human support team. An agent will reply to you directly here.'}
+        </div>
+      ` : ''}
+
+      <!-- Message input -->
+      <form id="chat-form" class="chat-input-row">
+        <input id="chat-input" placeholder="${esc(t('ticket_ph'))}" autocomplete="off" required>
+        <button type="submit" class="chat-send-btn" id="chat-send-btn">
+          <span>${esc(t('send'))}</span> ➤
+        </button>
       </form>
     </div>`;
-  $('sf').onsubmit = async (ev) => {
+
+  const stream = $('chat-stream');
+  if (stream) stream.scrollTop = stream.scrollHeight;
+
+  document.querySelectorAll('.prompt-chip').forEach((chip) => {
+    chip.onclick = () => {
+      $('chat-input').value = chip.dataset.q;
+      $('chat-form').dispatchEvent(new Event('submit'));
+    };
+  });
+
+  $('chat-form').onsubmit = async (ev) => {
     ev.preventDefault();
-    const btn = ev.target.querySelector('button[type=submit]');
-    btn.disabled = true; btn.textContent = '...';
+    const inp = $('chat-input');
+    const msg = inp.value.trim();
+    if (!msg) return;
+    const btn = $('chat-send-btn');
+    btn.disabled = true;
+
+    // Immediately display user bubble in UI
+    const userDiv = document.createElement('div');
+    userDiv.className = 'chat-msg user';
+    userDiv.innerHTML = `
+      <div class="chat-msg-sender"><span>🪙 You</span><span class="muted" style="font-size:10px">Just now</span></div>
+      <div class="chat-bubble">${esc(msg)}</div>
+    `;
+    stream.appendChild(userDiv);
+    stream.scrollTop = stream.scrollHeight;
+    inp.value = '';
+
     try {
-      await api('/support', { message: ev.target.message.value });
-      ev.target.reset(); success(t('ticket_sent'));
-      btn.disabled = false; btn.textContent = t('send');
-    } catch (e) { fail(e); btn.disabled = false; btn.textContent = t('send'); }
+      await api('/support', { message: msg });
+      supportView(app);
+    } catch (e) {
+      fail(e);
+      btn.disabled = false;
+    }
   };
 }
 
 // =====================================================
-// AGENT VIEW — Float Funding & Customer Verification
+// AGENT VIEW — Float Funding, Verification & Support Queue
 // =====================================================
 async function agentView(app) {
-  const [dp, da, dr, wp, wa, wr, fund] = await Promise.all([
+  const [dp, da, dr, wp, wa, wr, fund, ticketsRes, perf, annRes] = await Promise.all([
     api('/agent/deposits?status=pending'),
     api('/agent/deposits?status=approved'),
     api('/agent/deposits?status=rejected'),
@@ -757,11 +857,18 @@ async function agentView(app) {
     api('/agent/withdrawals?status=approved'),
     api('/agent/withdrawals?status=rejected'),
     api('/agent/funding').catch(() => ({ requests: [] })),
+    api('/agent/tickets').catch(() => ({ tickets: [] })),
+    api('/agent/performance').catch(() => ({})),
+    api('/announcements').catch(() => ({ announcements: [] })),
   ]);
 
   const isDep = agentSubtab === 'deposits';
   const isWith = agentSubtab === 'withdrawals';
+  const isTickets = agentSubtab === 'tickets';
   const isFund = agentSubtab === 'funding';
+  const isAnn = agentSubtab === 'announcements';
+
+  const pendingTickets = ticketsRes.tickets.filter((t) => t.status === 'open' || t.status === 'escalated');
 
   app.innerHTML = `
     <!-- Agent Float Balance Banner -->
@@ -771,14 +878,18 @@ async function agentView(app) {
         <div class="agent-float-num">🪙 ${fmt(balance)} <small style="font-size:16px;color:var(--gold-bright);font-weight:700">${esc(t('currency_etb'))}</small></div>
         <div style="font-size:12px;color:var(--text-muted)">${esc(me.name)} (${esc(me.phone)})</div>
       </div>
-      <div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div class="stat" style="padding:8px 14px;background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
+          <div class="stat-label">Today's Verified</div>
+          <b>${perf.today_deposits_count ?? 0} in · ${perf.today_withdrawals_count ?? 0} out</b>
+        </div>
         <button id="toggle-funding-btn" class="btn btn-gold" style="width:auto;padding:10px 18px;font-size:13px">
           ⚡ ${esc(t('request_funding'))}
         </button>
       </div>
     </div>
 
-    <!-- Agent Funding Request Drawer / Box (Hidden by default, toggleable) -->
+    <!-- Agent Funding Request Drawer / Box -->
     <div id="funding-request-box" class="card" style="display:none;border-color:var(--gold-muted);margin-bottom:20px">
       <div class="section-head">
         <h3>⚡ ${esc(t('request_funding'))}</h3>
@@ -818,9 +929,15 @@ async function agentView(app) {
           ⬆ ${esc(t('customer_withdrawals'))}
           <span class="tag ${wp.withdrawals.length ? 'pending' : 'approved'}">${wp.withdrawals.length}</span>
         </button>
+        <button class="subtab ${isTickets ? 'on' : ''}" id="as-tickets">
+          💬 ${esc(t('tickets'))}
+          <span class="tag ${pendingTickets.length ? 'pending' : 'approved'}">${pendingTickets.length}</span>
+        </button>
         <button class="subtab ${isFund ? 'on' : ''}" id="as-fund">
           ⚡ ${esc(t('funding_history'))}
-          <span class="tag ${fund.requests.filter(r => r.status === 'pending').length ? 'pending' : 'approved'}">${fund.requests.length}</span>
+        </button>
+        <button class="subtab ${isAnn ? 'on' : ''}" id="as-ann">
+          📢 ${esc(t('announcements'))} (${annRes.announcements.length})
         </button>
       </div>
 
@@ -892,8 +1009,71 @@ async function agentView(app) {
         }
       ` : ''}
 
-      <!-- TAB 3: AGENT FUNDING REQUESTS -->
+      <!-- TAB 3: CUSTOMER SUPPORT TICKETS QUEUE -->
+      ${isTickets ? `
+        <div class="section-head">
+          <h3>💬 Customer Support & Escalated Requests</h3>
+        </div>
+        ${!ticketsRes.tickets.length ? emptyState('💬', t('no_data')) : `
+          <div class="scroll"><table>
+            <tr><th>Ticket ID</th><th>${esc(t('name'))}</th><th>Status</th><th>Escalation Reason</th><th>Date</th><th>Action</th></tr>
+            ${ticketsRes.tickets.map((tk) => `<tr>
+              <td>#${tk.id}</td>
+              <td><div style="font-weight:700">${esc(tk.user_name)}</div><div class="muted">${esc(tk.user_phone)}</div></td>
+              <td>${statusTag(tk.status)}</td>
+              <td><span style="font-size:12px;color:var(--gold-bright)">${esc(tk.escalated_reason || 'General inquiry')}</span></td>
+              <td class="muted" style="white-space:nowrap">${esc(tk.created_at)}</td>
+              <td>
+                <button class="btn sm btn-gold" data-open-ticket="${tk.id}">💬 Reply / Manage</button>
+              </td>
+            </tr>`).join('')}
+          </table></div>`
+        }
+
+        <!-- Inline Ticket Thread Modal / Container -->
+        <div id="agent-ticket-modal" style="display:none;margin-top:20px;background:var(--surface-card);border:1.5px solid var(--border-subtle);border-radius:var(--radius-lg);padding:18px">
+          <div class="section-head">
+            <h4 id="atm-title" style="margin:0"></h4>
+            <button type="button" id="atm-close" class="btn sm btn-outline">✕ Close</button>
+          </div>
+          <div id="atm-stream" class="support-chat-stream" style="max-height:300px;margin-bottom:14px;border-radius:8px"></div>
+          
+          <form id="atm-reply-form">
+            <textarea id="atm-reply-msg" rows="3" placeholder="Type reply to customer, or internal staff note..." required style="margin-bottom:10px"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+              <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" id="atm-internal">
+                <span>🔒 ${esc(t('internal_note'))}</span>
+              </label>
+              <div style="display:flex;gap:8px">
+                <button type="button" id="atm-resolve-btn" class="btn sm alt">✓ Mark Resolved</button>
+                <button type="submit" class="btn sm btn-gold">Send Reply</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      ` : ''}
+
+      <!-- TAB 4: AGENT FLOAT & PERFORMANCE -->
       ${isFund ? `
+        <div class="grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:14px;margin-bottom:20px">
+          <div class="stat">
+            <div class="stat-label">Total Deposits Approved</div>
+            <b style="color:var(--gold-bright)">${perf.approved_deposits_count ?? 0}</b>
+            <div class="muted">${fmt(perf.approved_deposits_volume ?? 0)} ${esc(t('currency_etb'))}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Total Withdrawals Handled</div>
+            <b>${perf.approved_withdrawals_count ?? 0}</b>
+            <div class="muted">${fmt(perf.approved_withdrawals_volume ?? 0)} ${esc(t('currency_etb'))}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Tickets Resolved</div>
+            <b style="color:var(--green)">${perf.tickets_resolved ?? 0}</b>
+            <div class="muted">Customer issues closed</div>
+          </div>
+        </div>
+
         <h3>${esc(t('funding_history'))}</h3>
         ${!fund.requests.length ? emptyState('⚡', t('no_data')) : `
           <div class="scroll"><table>
@@ -907,6 +1087,22 @@ async function agentView(app) {
             </tr>`).join('')}
           </table></div>`
         }
+      ` : ''}
+
+      <!-- TAB 5: SUPER ADMIN ANNOUNCEMENTS -->
+      ${isAnn ? `
+        <div class="section-head">
+          <h3>📢 Super Admin Instructions & Announcements</h3>
+        </div>
+        ${!annRes.announcements.length ? emptyState('📢', 'No announcements posted yet.') : `
+          ${annRes.announcements.map((a) => `
+            <div class="announcement-box">
+              <div class="announcement-box-title">📢 ${esc(a.title)}</div>
+              <div class="announcement-box-content">${esc(a.content)}</div>
+              <div class="muted" style="font-size:11px;margin-top:6px">Posted by Super Admin · ${esc(a.created_at)}</div>
+            </div>
+          `).join('')}
+        `}
       ` : ''}
     </div>`;
 
@@ -943,8 +1139,11 @@ async function agentView(app) {
 
   $('as-dep').onclick = () => { agentSubtab = 'deposits'; render(); };
   $('as-with').onclick = () => { agentSubtab = 'withdrawals'; render(); };
+  $('as-tickets').onclick = () => { agentSubtab = 'tickets'; render(); };
   $('as-fund').onclick = () => { agentSubtab = 'funding'; render(); };
+  $('as-ann').onclick = () => { agentSubtab = 'announcements'; render(); };
 
+  // Agent approvals
   app.querySelectorAll('button[data-a]').forEach((b) => (b.onclick = async () => {
     let reason = '';
     if (b.dataset.a === 'reject') {
@@ -960,86 +1159,252 @@ async function agentView(app) {
       render();
     } catch (e) { fail(e); }
   }));
+
+  // Agent ticket reply & management
+  let activeAgentTicketId = null;
+  app.querySelectorAll('button[data-open-ticket]').forEach((b) => (b.onclick = async () => {
+    activeAgentTicketId = Number(b.dataset.openTicket);
+    try {
+      const res = await api(`/support/ticket/${activeAgentTicketId}`);
+      $('atm-title').textContent = `Ticket #${res.ticket.id} — ${res.ticket.user_name} (${res.ticket.user_phone})`;
+      const stream = $('atm-stream');
+      stream.innerHTML = res.messages.map((m) => `
+        <div class="chat-msg ${m.is_internal ? 'internal' : m.sender_role}">
+          <div class="chat-msg-sender">
+            <span>${m.is_internal ? '🔒 Internal Note' : m.sender_role === 'ai' ? '🤖 Fetan AI' : m.sender_role === 'user' ? '🪙 Customer' : '👤 ' + esc(m.sender_name)}</span>
+            <span class="muted" style="font-size:10px">${esc(m.created_at)}</span>
+          </div>
+          <div class="chat-bubble">${esc(m.message)}</div>
+        </div>
+      `).join('');
+      $('agent-ticket-modal').style.display = 'block';
+      $('agent-ticket-modal').scrollIntoView({ behavior: 'smooth' });
+    } catch (e) { fail(e); }
+  }));
+
+  const closeAtm = $('atm-close');
+  if (closeAtm) closeAtm.onclick = () => { $('agent-ticket-modal').style.display = 'none'; };
+
+  const atmForm = $('atm-reply-form');
+  if (atmForm) {
+    atmForm.onsubmit = async (ev) => {
+      ev.preventDefault();
+      if (!activeAgentTicketId) return;
+      const msg = $('atm-reply-msg').value.trim();
+      const isInternal = $('atm-internal').checked;
+      try {
+        await api(`/support/ticket/${activeAgentTicketId}/reply`, { message: msg, is_internal: isInternal });
+        success('Reply recorded');
+        $('atm-reply-msg').value = '';
+        agentView(app);
+      } catch (e) { fail(e); }
+    };
+  }
+
+  const resolveBtn = $('atm-resolve-btn');
+  if (resolveBtn) {
+    resolveBtn.onclick = async () => {
+      if (!activeAgentTicketId) return;
+      try {
+        await api(`/support/ticket/${activeAgentTicketId}/status`, { status: 'resolved' });
+        success('Ticket marked as resolved');
+        agentView(app);
+      } catch (e) { fail(e); }
+    };
+  }
 }
 
 // =====================================================
-// ADMIN VIEW — 3 Structured Sections: Deposits, Agent Funding, Transactions
+// ADMIN VIEW — Complete Financial Analytics, Central Ledger & Management
 // =====================================================
-let adminSection = 'deposits';
+let adminSection = 'analytics';
+let adminAnalyticsRange = '7d';
 
 async function adminView(app) {
-  const [s, u, tks, aud, fundReqs, depPending, txs] = await Promise.all([
+  const [s, u, aud, fundReqs, depPending, withPending, analytics, txs, ticketsRes, aiConfig, annRes] = await Promise.all([
     api('/admin/stats'),
     api('/admin/users'),
-    api('/admin/tickets'),
     api('/admin/audit'),
     api('/admin/agent-funding').catch(() => ({ requests: [] })),
     api('/agent/deposits?status=pending').catch(() => ({ deposits: [] })),
+    api('/agent/withdrawals?status=pending').catch(() => ({ withdrawals: [] })),
+    api(`/admin/financial-analytics?range=${adminAnalyticsRange}`).catch(() => ({})),
     api('/admin/transactions').catch(() => ({ transactions: [] })),
+    api('/admin/tickets').catch(() => ({ tickets: [] })),
+    api('/admin/ai-settings').catch(() => ({ enabled: true })),
+    api('/announcements').catch(() => ({ announcements: [] })),
   ]);
+
+  const pendingFundingCount = fundReqs.requests.filter((r) => r.status === 'pending').length;
 
   app.innerHTML = `
     <div class="section-head">
-      <h2>⚙ ${esc(t('admin'))}</h2>
-      <span class="tag rejected" style="font-size:12px;letter-spacing:1px">SUPER ADMIN</span>
+      <div>
+        <h2>⚙ ${esc(t('admin'))}</h2>
+        <span class="brand-sub" style="color:var(--gold-bright)">SUPER ADMIN EXECUTIVE DESK</span>
+      </div>
+      <span class="tag rejected" style="font-size:12px;letter-spacing:1px;font-weight:800">SUPER ADMIN</span>
     </div>
 
-    <!-- Admin KPI Stats Grid -->
+    <!-- Executive KPI Grid -->
     <div class="admin-stats">
       <div class="admin-stat">
-        <div class="value">${s.users}</div>
-        <div class="label">${esc(t('stat_users'))}</div>
+        <div class="value accent">${fmt(analytics.gross_gaming_revenue ?? 0)} <small style="font-size:14px;color:var(--text-muted)">ETB</small></div>
+        <div class="label">${esc(t('ggr'))}</div>
+        <div style="font-size:11px;color:var(--gold-bright);margin-top:2px">Margin: ${analytics.margin_percent ?? '0.0'}%</div>
       </div>
       <div class="admin-stat">
-        <div class="value">${s.agents ?? 1}</div>
-        <div class="label">${esc(t('stat_agents'))}</div>
+        <div class="value">${fmt(analytics.total_bets_amount ?? 0)} <small style="font-size:14px;color:var(--text-muted)">ETB</small></div>
+        <div class="label">${esc(t('total_stakes'))} (${analytics.total_bets_count ?? 0})</div>
       </div>
       <div class="admin-stat">
-        <div class="value ${depPending.deposits.length ? 'accent' : ''}">${depPending.deposits.length}</div>
-        <div class="label">${esc(t('stat_pending'))}</div>
+        <div class="value">${fmt(analytics.total_wins_amount ?? 0)} <small style="font-size:14px;color:var(--text-muted)">ETB</small></div>
+        <div class="label">${esc(t('total_payouts'))} (${analytics.total_wins_count ?? 0})</div>
       </div>
       <div class="admin-stat">
-        <div class="value ${fundReqs.requests.filter(r => r.status === 'pending').length ? 'accent' : ''}">
-          ${fundReqs.requests.filter(r => r.status === 'pending').length}
-        </div>
+        <div class="value ${depPending.deposits.length ? 'accent' : ''}">${depPending.deposits.length} in · ${withPending.withdrawals.length} out</div>
+        <div class="label">Pending Transfers</div>
+      </div>
+      <div class="admin-stat">
+        <div class="value ${pendingFundingCount ? 'accent' : ''}">${pendingFundingCount}</div>
         <div class="label">${esc(t('stat_funding_pending'))}</div>
       </div>
       <div class="admin-stat">
-        <div class="value accent">${fmt(s.credited)}</div>
-        <div class="label">${esc(t('stat_credited'))}</div>
-      </div>
-      <div class="admin-stat">
-        <div class="value">${s.rounds}</div>
-        <div class="label">${esc(t('stat_rounds'))}</div>
+        <div class="value">${s.users} users · ${s.agents} agents</div>
+        <div class="label">Platform Accounts</div>
       </div>
     </div>
 
-    <!-- Admin Navigation Tabs -->
-    <div class="card" style="padding:16px 20px 8px">
-      <div class="subtabs" style="margin-bottom:0;border-bottom:none">
+    <!-- Admin Subtabs Navigation -->
+    <div class="card" style="padding:14px 20px 6px">
+      <div class="subtabs" style="margin-bottom:0;border-bottom:none;overflow-x:auto">
+        <button class="subtab ${adminSection === 'analytics' ? 'on' : ''}" id="adm-tab-analytics">
+          📊 ${esc(t('financial_analytics'))}
+        </button>
         <button class="subtab ${adminSection === 'deposits' ? 'on' : ''}" id="adm-tab-dep">
           ⬇ ${esc(t('sec_customer_deposits'))}
           <span class="tag ${depPending.deposits.length ? 'pending' : 'approved'}">${depPending.deposits.length}</span>
         </button>
         <button class="subtab ${adminSection === 'funding' ? 'on' : ''}" id="adm-tab-fund">
           ⚡ ${esc(t('sec_agent_funding'))}
-          <span class="tag ${fundReqs.requests.filter(r => r.status === 'pending').length ? 'pending' : 'approved'}">
-            ${fundReqs.requests.filter(r => r.status === 'pending').length}
-          </span>
+          <span class="tag ${pendingFundingCount ? 'pending' : 'approved'}">${pendingFundingCount}</span>
         </button>
         <button class="subtab ${adminSection === 'transactions' ? 'on' : ''}" id="adm-tab-tx">
           📋 ${esc(t('sec_system_tx'))}
         </button>
-        <button class="subtab ${adminSection === 'users' ? 'on' : ''}" id="adm-tab-users">
-          👥 ${esc(t('users'))}
-        </button>
         <button class="subtab ${adminSection === 'support' ? 'on' : ''}" id="adm-tab-supp">
-          💬 ${esc(t('tickets'))} (${tks.tickets.length})
+          💬 ${esc(t('tickets'))} &amp; AI (${ticketsRes.tickets.length})
+        </button>
+        <button class="subtab ${adminSection === 'users' ? 'on' : ''}" id="adm-tab-users">
+          👥 ${esc(t('users'))} &amp; Audit
         </button>
       </div>
     </div>
 
-    <!-- SECTION 1: CUSTOMER DEPOSITS APPROVAL -->
+    <!-- SECTION 1: FINANCIAL ANALYTICS & INTERACTIVE REPORTS -->
+    ${adminSection === 'analytics' ? `
+      <div class="card">
+        <div class="section-head">
+          <h3>📊 Platform Financial Analytics</h3>
+          <div class="filter-pills-bar" style="margin-bottom:0">
+            <button class="filter-pill ${adminAnalyticsRange === 'today' ? 'active' : ''}" data-range="today">Today</button>
+            <button class="filter-pill ${adminAnalyticsRange === '7d' ? 'active' : ''}" data-range="7d">Last 7 Days</button>
+            <button class="filter-pill ${adminAnalyticsRange === '30d' ? 'active' : ''}" data-range="30d">Last 30 Days</button>
+            <button class="filter-pill ${adminAnalyticsRange === 'month' ? 'active' : ''}" data-range="month">This Month</button>
+            <button class="filter-pill ${adminAnalyticsRange === 'all' ? 'active' : ''}" data-range="all">All Time</button>
+          </div>
+        </div>
+
+        <div class="analytics-kpi-grid">
+          <div class="analytics-kpi-item">
+            <div class="analytics-kpi-val" style="color:var(--gold-bright)">${fmt(analytics.gross_gaming_revenue ?? 0)} ETB</div>
+            <div class="analytics-kpi-lbl">${esc(t('ggr'))}</div>
+            <div class="analytics-kpi-formula">Formula: Total Stakes - Total Winning Payouts</div>
+          </div>
+          <div class="analytics-kpi-item">
+            <div class="analytics-kpi-val" style="color:#A3E635">${fmt(analytics.total_deposits_amount ?? 0)} ETB</div>
+            <div class="analytics-kpi-lbl">Approved Customer Deposits</div>
+            <div class="analytics-kpi-formula">${analytics.total_deposits_count ?? 0} settled deposits</div>
+          </div>
+          <div class="analytics-kpi-item">
+            <div class="analytics-kpi-val" style="color:#F87171">${fmt(analytics.total_withdrawals_amount ?? 0)} ETB</div>
+            <div class="analytics-kpi-lbl">Approved Customer Withdrawals</div>
+            <div class="analytics-kpi-formula">${analytics.total_withdrawals_count ?? 0} settled payouts</div>
+          </div>
+          <div class="analytics-kpi-item">
+            <div class="analytics-kpi-val">${analytics.margin_percent ?? '0.0'}%</div>
+            <div class="analytics-kpi-lbl">${esc(t('house_margin'))}</div>
+            <div class="analytics-kpi-formula">GGR / Total Stakes</div>
+          </div>
+        </div>
+
+        <!-- SVG Daily Trend Visual -->
+        <div class="chart-box">
+          <div class="chart-box-head">
+            <h4 style="margin:0">📈 Daily Financial Activity Trend</h4>
+            <div class="muted" style="font-size:12px">Stakes vs Winning Payouts</div>
+          </div>
+          <div style="overflow-x:auto">
+            ${(analytics.daily_trends && analytics.daily_trends.length) ? `
+              <div style="display:flex;align-items:flex-end;gap:12px;height:180px;padding:10px 0;border-bottom:1px solid var(--border)">
+                ${analytics.daily_trends.map((d) => {
+                  const maxH = Math.max(...analytics.daily_trends.map(x => Math.max(x.bets, x.wins)), 100);
+                  const hBet = Math.max(10, Math.round((d.bets / maxH) * 150));
+                  const hWin = Math.max(10, Math.round((d.wins / maxH) * 150));
+                  return `
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:44px">
+                      <div style="display:flex;gap:4px;align-items:flex-end;height:150px">
+                        <div style="width:14px;height:${hBet}px;background:var(--gold);border-radius:3px" title="Stakes: ${fmt(d.bets)}"></div>
+                        <div style="width:14px;height:${hWin}px;background:#10B981;border-radius:3px" title="Payouts: ${fmt(d.wins)}"></div>
+                      </div>
+                      <span class="muted" style="font-size:10px;white-space:nowrap">${d.date.slice(5)}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <div style="display:flex;gap:16px;margin-top:10px;font-size:12px">
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:var(--gold);border-radius:2px"></span> Stakes</span>
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#10B981;border-radius:2px"></span> Winning Payouts</span>
+              </div>
+            ` : emptyState('📈', 'Trend data will appear as games and transactions take place')}
+          </div>
+        </div>
+
+        <!-- Game Breakdown Table -->
+        <h4 style="margin:20px 0 10px">🎰 Game-by-Game Revenue Breakdown</h4>
+        ${(analytics.game_distribution && analytics.game_distribution.length) ? `
+          <div class="scroll"><table>
+            <tr><th>Game</th><th>Rounds Played</th><th>Total Stakes</th><th>Payouts</th><th>GGR</th></tr>
+            ${analytics.game_distribution.map((g) => `<tr>
+              <td><b>${esc(g.game.toUpperCase())}</b></td>
+              <td>${g.rounds}</td>
+              <td style="font-weight:700">${fmt(g.stakes)} ETB</td>
+              <td style="color:#A3E635">${fmt(g.payouts)} ETB</td>
+              <td style="font-weight:800;color:var(--gold-bright)">${fmt(g.ggr)} ETB</td>
+            </tr>`).join('')}
+          </table></div>` : emptyState('🎰', 'No game round data recorded for this date range')
+        }
+
+        <!-- Agent Performance Comparison Table -->
+        <h4 style="margin:24px 0 10px">👤 Agent Operations & Performance Comparison</h4>
+        ${(analytics.agents && analytics.agents.length) ? `
+          <div class="scroll"><table>
+            <tr><th>Agent Name</th><th>Phone</th><th>Status</th><th>Float Balance</th><th>Deposits Verified</th><th>Withdrawals Verified</th><th>Resolved Tickets</th></tr>
+            ${analytics.agents.map((ag) => `<tr>
+              <td><b>${esc(ag.name)}</b></td>
+              <td>${esc(ag.phone)}</td>
+              <td>${statusTag(ag.status)}</td>
+              <td style="font-weight:800;color:var(--gold-bright)">🪙 ${fmt(ag.balance)}</td>
+              <td><b>${ag.deposits_verified}</b> (${fmt(ag.deposits_volume)} ETB)</td>
+              <td><b>${ag.withdrawals_verified}</b></td>
+              <td><span style="color:var(--green);font-weight:700">${ag.tickets_resolved}</span></td>
+            </tr>`).join('')}
+          </table></div>` : emptyState('👤', 'No registered agents')
+        }
+      </div>
+    ` : ''}
+
+    <!-- SECTION 2: CUSTOMER DEPOSITS APPROVAL -->
     ${adminSection === 'deposits' ? `
       <div class="card">
         <h3>${esc(t('sec_customer_deposits'))}</h3>
@@ -1060,7 +1425,7 @@ async function adminView(app) {
       </div>
     ` : ''}
 
-    <!-- SECTION 2: AGENT FUNDING REQUESTS -->
+    <!-- SECTION 3: AGENT FUNDING REQUESTS -->
     ${adminSection === 'funding' ? `
       <div class="card">
         <h3>${esc(t('sec_agent_funding'))}</h3>
@@ -1087,12 +1452,18 @@ async function adminView(app) {
       </div>
     ` : ''}
 
-    <!-- SECTION 3: SYSTEM TRANSACTIONS / LEDGER -->
+    <!-- SECTION 4: SYSTEM TRANSACTIONS / CENTRAL LEDGER -->
     ${adminSection === 'transactions' ? `
       <div class="card">
-        <div class="section-head">
-          <h3>${esc(t('sec_system_tx'))}</h3>
-          <span class="muted" style="font-size:12px">${txs.transactions.length} records</span>
+        <div class="section-head" style="flex-wrap:wrap;gap:12px">
+          <div>
+            <h3>${esc(t('sec_system_tx'))}</h3>
+            <span class="muted" style="font-size:12px">${txs.transactions.length} records retrieved</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input id="tx-search-input" placeholder="Search customer or phone..." style="padding:6px 14px;font-size:13px;width:220px">
+            <button id="download-csv-btn" class="btn sm btn-outline">📥 ${esc(t('export_csv'))}</button>
+          </div>
         </div>
         ${!txs.transactions.length ? emptyState('📋', t('no_data')) : `
         <div class="scroll"><table>
@@ -1108,7 +1479,57 @@ async function adminView(app) {
       </div>
     ` : ''}
 
-    <!-- SECTION 4: USER MANAGEMENT -->
+    <!-- SECTION 5: SUPPORT, AI SETTINGS & ANNOUNCEMENTS -->
+    ${adminSection === 'support' ? `
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <h3>🤖 AI Customer Support Configuration</h3>
+            <p class="secondary" style="margin:0;font-size:13px">Enable or disable automated AI responses for customer queries</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label style="display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer">
+              <input type="checkbox" id="ai-toggle-chk" ${aiConfig.enabled ? 'checked' : ''}>
+              <span>${aiConfig.enabled ? 'AI Support Active' : 'AI Support Disabled'}</span>
+            </label>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:10px;font-size:13px">
+          <div>Messages Handled by AI: <b>${aiConfig.total_ai_messages ?? 0}</b></div>
+          <div>Escalated to Human Agents: <b>${aiConfig.escalated_tickets ?? 0}</b></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h3>📢 Broadcast Announcement to Agents</h3>
+        </div>
+        <form id="ann-form">
+          <label for="ann-title">Announcement Title</label>
+          <input id="ann-title" name="title" placeholder="e.g. Weekend Cash Handling Guidelines" required>
+          <label for="ann-content" style="margin-top:10px">Message Content</label>
+          <textarea id="ann-content" name="content" rows="3" placeholder="Write message to agents..." required></textarea>
+          <button type="submit" class="btn btn-gold" style="margin-top:12px;width:auto">📢 Broadcast to Agents</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>💬 Customer Support Tickets Desk</h3>
+        ${!ticketsRes.tickets.length ? emptyState('💬', t('no_data')) : `
+        <div class="scroll"><table>
+          <tr><th>Ticket ID</th><th>${esc(t('name'))}</th><th>Status</th><th>Escalated Reason</th><th>${esc(t('date'))}</th></tr>
+          ${ticketsRes.tickets.map((x) => `<tr>
+            <td>#${x.id}</td>
+            <td><div style="font-weight:600">${esc(x.user_name || x.name)}</div><div class="muted">${esc(x.user_phone || x.phone)}</div></td>
+            <td>${statusTag(x.status)}</td>
+            <td><span style="font-size:12px;color:var(--gold-bright)">${esc(x.escalated_reason || 'Direct question')}</span></td>
+            <td class="muted" style="white-space:nowrap">${esc(x.created_at)}</td>
+          </tr>`).join('')}
+        </table></div>`}
+      </div>
+    ` : ''}
+
+    <!-- SECTION 6: USER MANAGEMENT & AUDIT LOGS -->
     ${adminSection === 'users' ? `
       <div class="card">
         <h3>${esc(t('users'))}</h3>
@@ -1134,28 +1555,15 @@ async function adminView(app) {
           </tr>`).join('')}
         </table></div>
       </div>
-    ` : ''}
-
-    <!-- SECTION 5: SUPPORT TICKETS & AUDIT -->
-    ${adminSection === 'support' ? `
-      <div class="card">
-        <h3>${esc(t('tickets'))}</h3>
-        ${!tks.tickets.length ? emptyState('💬', t('no_data')) : `
-        <div class="scroll"><table>
-          <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('message'))}</th></tr>
-          ${tks.tickets.map((x) => `<tr>
-            <td class="muted" style="white-space:nowrap">${esc(x.created_at)}</td>
-            <td><div style="font-weight:600">${esc(x.user_name)}</div><div class="muted">${esc(x.phone)}</div></td>
-            <td>${esc(x.message)}</td>
-          </tr>`).join('')}
-        </table></div>`}
-      </div>
 
       <div class="card">
-        <h3>${esc(t('audit'))}</h3>
+        <div class="section-head">
+          <h3>${esc(t('audit'))}</h3>
+          <input id="audit-search" placeholder="Search audit logs..." style="padding:6px 14px;font-size:12px;width:180px">
+        </div>
         <div class="scroll"><table>
           <tr><th>${esc(t('date'))}</th><th>${esc(t('actor'))}</th><th>${esc(t('action'))}</th></tr>
-          ${aud.logs.slice(0, 30).map((x) => `<tr>
+          ${aud.logs.slice(0, 40).map((x) => `<tr>
             <td class="muted" style="white-space:nowrap">${esc(x.created_at)}</td>
             <td>${esc(x.actor_name || 'System')}</td>
             <td><span style="font-family:monospace;font-size:12px">${esc(x.action)}</span></td>
@@ -1166,11 +1574,81 @@ async function adminView(app) {
   `;
 
   // Subtab switching
+  $('adm-tab-analytics').onclick = () => { adminSection = 'analytics'; render(); };
   $('adm-tab-dep').onclick = () => { adminSection = 'deposits'; render(); };
   $('adm-tab-fund').onclick = () => { adminSection = 'funding'; render(); };
   $('adm-tab-tx').onclick = () => { adminSection = 'transactions'; render(); };
-  $('adm-tab-users').onclick = () => { adminSection = 'users'; render(); };
   $('adm-tab-supp').onclick = () => { adminSection = 'support'; render(); };
+  $('adm-tab-users').onclick = () => { adminSection = 'users'; render(); };
+
+  // Date range filter
+  document.querySelectorAll('.filter-pill[data-range]').forEach((pill) => {
+    pill.onclick = () => {
+      adminAnalyticsRange = pill.dataset.range;
+      adminView(app);
+    };
+  });
+
+  // AI Toggle listener
+  const aiChk = $('ai-toggle-chk');
+  if (aiChk) {
+    aiChk.onchange = async () => {
+      try {
+        await api('/admin/ai-settings', { enabled: aiChk.checked });
+        success('AI Support ' + (aiChk.checked ? 'enabled' : 'disabled'));
+        adminView(app);
+      } catch (e) { fail(e); }
+    };
+  }
+
+  // Announcement form
+  const annForm = $('ann-form');
+  if (annForm) {
+    annForm.onsubmit = async (ev) => {
+      ev.preventDefault();
+      try {
+        await api('/admin/announcements', {
+          title: $('ann-title').value,
+          content: $('ann-content').value,
+          target_role: 'agent'
+        });
+        success('Announcement broadcasted to agents');
+        $('ann-form').reset();
+        adminView(app);
+      } catch (e) { fail(e); }
+    };
+  }
+
+  // Transaction search & CSV download
+  const txSearch = $('tx-search-input');
+  if (txSearch) {
+    txSearch.onkeyup = (e) => {
+      if (e.key === 'Enter') {
+        api(`/admin/transactions?search=${encodeURIComponent(txSearch.value)}`).then((res) => {
+          txs.transactions = res.transactions;
+          adminView(app);
+        });
+      }
+    };
+  }
+
+  const csvBtn = $('download-csv-btn');
+  if (csvBtn) {
+    csvBtn.onclick = () => {
+      const rows = [
+        ['ID', 'Date', 'User', 'Phone', 'Type', 'Amount', 'Balance After'],
+        ...txs.transactions.map((t) => [t.id, t.created_at, `"${t.user_name}"`, t.phone, t.type, t.amount / 100, t.balance_after / 100])
+      ];
+      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'fetan_bet_transactions.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+  }
 
   // Admin customer deposit approvals
   app.querySelectorAll('button[data-adm-dep]').forEach((b) => (b.onclick = async () => {

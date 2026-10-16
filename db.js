@@ -106,8 +106,37 @@ CREATE TABLE IF NOT EXISTS game_rounds (
 CREATE TABLE IF NOT EXISTS support_tickets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id),
+  subject TEXT DEFAULT 'Support Request',
   message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','escalated','resolved')),
+  assigned_agent_id INTEGER REFERENCES users(id),
+  escalated_reason TEXT,
+  ai_handled INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS support_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticket_id INTEGER NOT NULL REFERENCES support_tickets(id),
+  sender_id INTEGER REFERENCES users(id),
+  sender_role TEXT NOT NULL CHECK (sender_role IN ('user','agent','admin','ai')),
+  sender_name TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_internal INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS announcements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  author_id INTEGER NOT NULL REFERENCES users(id),
+  target_role TEXT NOT NULL DEFAULT 'agent' CHECK (target_role IN ('agent','user','all')),
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS system_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS audit_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -128,6 +157,14 @@ CREATE TABLE IF NOT EXISTS agent_funding_requests (
   decided_at TEXT
 );
 `);
+
+// Safe migrations for existing databases
+try { raw.exec('ALTER TABLE support_tickets ADD COLUMN subject TEXT DEFAULT "Support Request";'); } catch {}
+try { raw.exec('ALTER TABLE support_tickets ADD COLUMN status TEXT NOT NULL DEFAULT "open";'); } catch {}
+try { raw.exec('ALTER TABLE support_tickets ADD COLUMN assigned_agent_id INTEGER REFERENCES users(id);'); } catch {}
+try { raw.exec('ALTER TABLE support_tickets ADD COLUMN escalated_reason TEXT;'); } catch {}
+try { raw.exec('ALTER TABLE support_tickets ADD COLUMN ai_handled INTEGER NOT NULL DEFAULT 0;'); } catch {}
+try { raw.exec('ALTER TABLE support_tickets ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime("now"));'); } catch {}
 
 function audit(actorId, action, detail) {
   db.prepare('INSERT INTO audit_logs (actor_id, action, detail) VALUES (?,?,?)')
@@ -180,6 +217,19 @@ function seed() {
       if (w && w.balance === 0) {
         postLedger({ userId: admin.id, delta: 100000, type: 'demo_bonus', refType: 'admin_topup', refId: admin.id });
       }
+    }
+  }
+  // Initialize default system settings
+  if (db.prepare("SELECT COUNT(*) c FROM system_settings WHERE key='ai_support_enabled'").get().c === 0) {
+    db.prepare("INSERT INTO system_settings (key, value) VALUES ('ai_support_enabled', '1')").run();
+  }
+  // Initialize default announcement for agents
+  if (db.prepare('SELECT COUNT(*) c FROM announcements').get().c === 0) {
+    const adminUser = db.prepare("SELECT id FROM users WHERE role='admin' LIMIT 1").get();
+    if (adminUser) {
+      db.prepare(`INSERT INTO announcements (author_id, target_role, title, content)
+        VALUES (?, 'agent', 'Welcome to Fetan Bet Operations', 'Welcome to the Agent Portal. Please verify all customer deposits promptly and check transaction references carefully.')`)
+        .run(adminUser.id);
     }
   }
 }

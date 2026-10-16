@@ -140,6 +140,34 @@ const server = app.listen(0, async () => {
     const bgAbandon = await user('/games/bingo/abandon', {});
     ok('bingo abandon cleans up active round', bgAbandon.status === 200 && (await user('/games/bingo')).data.active === false);
 
+    // Role restriction: Agents and Admins CANNOT play games!
+    ok('agent cannot play roulette', (await agent('/games/roulette', { bet: 1000, kind: 'color', value: 'red' })).status === 403);
+    ok('admin cannot play road dash', (await admin('/games/road/start', { bet: 1000 })).status === 403);
+    ok('agent cannot play mines', (await agent('/games/mines/start', { bet: 1000, mines: 5 })).status === 403);
+
+    // AI Support & Customer Communication
+    const supRes1 = await user('/support', { message: 'Hello, how can I deposit?' });
+    ok('customer receives AI response', supRes1.status === 200 && supRes1.data.messages.some((m) => m.sender_role === 'ai'));
+
+    // AI Escalation to Human Agent
+    const supRes2 = await user('/support', { message: 'I need to speak with a human agent' });
+    ok('customer ticket escalates to agent', supRes2.status === 200 && supRes2.data.status === 'escalated');
+
+    // Agent viewing tickets and replying
+    const agTickets = await agent('/agent/tickets');
+    ok('agent can view tickets', agTickets.status === 200 && agTickets.data.tickets.length > 0);
+    const tId = agTickets.data.tickets[0].id;
+    const agReply = await agent(`/support/ticket/${tId}/reply`, { message: 'Hello, I am taking over your ticket' });
+    ok('agent replies to ticket', agReply.status === 200);
+
+    // Admin financial analytics & reports
+    const finAnalytics = await admin('/admin/financial-analytics?range=all');
+    ok('admin retrieves financial analytics', finAnalytics.status === 200 && typeof finAnalytics.data.gross_gaming_revenue === 'number');
+
+    // Admin AI Support settings toggle
+    const aiToggle = await admin('/admin/ai-settings', { enabled: true });
+    ok('admin can configure AI settings', aiToggle.status === 200 && aiToggle.data.enabled === true);
+
     // Ledger balance equals wallet balance for every user
     const bad = db.prepare(`SELECT w.user_id FROM wallets w
       WHERE w.balance != COALESCE((SELECT SUM(amount) FROM ledger l WHERE l.user_id = w.user_id), 0)`).all();
