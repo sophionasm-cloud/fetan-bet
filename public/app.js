@@ -216,22 +216,13 @@ function authView(app, initialMode = 'login') {
             <button class="auth-tab-btn ${initialMode === 'register' ? 'active' : ''}" id="atb-register">${esc(t('register'))}</button>
           </div>
 
-          <!-- Quick 1-Click Demo Testing Bar -->
-          <div class="auth-demo-banner">
-            <div class="auth-demo-banner-head">⚡ ${esc(t('admin_demo_hint'))}</div>
-            <div class="auth-demo-buttons">
-              <button type="button" id="fill-admin" class="auth-demo-btn">🔑 Super Admin</button>
-              <button type="button" id="fill-agent" class="auth-demo-btn">👤 Demo Agent</button>
-            </div>
-          </div>
-
           <!-- LOGIN FORM -->
           <div id="auth-login" ${initialMode === 'login' ? '' : 'hidden'}>
             <form id="lf" autocomplete="on">
               <label for="l-phone">${esc(t('phone'))}</label>
-              <input id="l-phone" name="phone" placeholder="${esc(t('phone_hint'))}" autocomplete="username" required>
+              <input id="l-phone" name="phone" type="tel" inputmode="numeric" placeholder="${esc(t('phone_hint'))}" autocomplete="tel" required>
               
-              <label for="l-pass" style="margin-top:12px">${esc(t('password'))}</label>
+              <label for="l-pass" style="margin-top:14px">${esc(t('password'))}</label>
               <div class="input-wrap-pass">
                 <input id="l-pass" name="password" type="password" autocomplete="current-password" required>
                 <button type="button" class="pass-toggle-btn" id="l-pass-toggle" title="Show/Hide Password">👁</button>
@@ -277,18 +268,6 @@ function authView(app, initialMode = 'login') {
       </div>
     </div>`;
 
-  // Quick fill listeners
-  $('fill-admin').onclick = () => {
-    $('l-phone').value = '0900000000';
-    $('l-pass').value = 'admin123';
-    showLogin();
-  };
-  $('fill-agent').onclick = () => {
-    $('l-phone').value = '0911111111';
-    $('l-pass').value = 'agent123';
-    showLogin();
-  };
-
   // Password visibility toggles
   $('l-pass-toggle').onclick = () => {
     const inp = $('l-pass');
@@ -300,7 +279,7 @@ function authView(app, initialMode = 'login') {
   };
   $('forgot-pass-link').onclick = (e) => {
     e.preventDefault();
-    toast('Demo account: use 0900000000 / admin123 or your registered phone number.', 'ok');
+    toast(t('forgot_password_info'), 'ok');
   };
 
   // Tab switching
