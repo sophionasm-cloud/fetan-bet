@@ -29,6 +29,8 @@ window.Games = (function () {
     reveal: () => { beep(659, 0.08, 'triangle', 0.06); beep(987, 0.12, 'sine', 0.08, 0.06); },
     boom:   () => { beep(80, 0.4, 'sawtooth', 0.12); beep(45, 0.5, 'square', 0.1, 0.1); },
     plink:  () => beep(750 + Math.random() * 500, 0.06, 'triangle', 0.04),
+    coin:   () => { beep(987, 0.08, 'sine', 0.08); beep(1318, 0.15, 'sine', 0.08, 0.07); },
+    horn:   () => { beep(350, 0.18, 'sawtooth', 0.06); beep(350, 0.22, 'sawtooth', 0.06, 0.1); },
   };
 
   function soundBtn(host) {
@@ -772,177 +774,710 @@ window.Games = (function () {
   }
 
   // =========================================================
-  // ROAD DASH (Original Chicken Road crossing)
+  // ROAD DASH (Chicken Crossing — Chicken Road 3G Style)
   // =========================================================
-  const LANE_W = 74, CURB_W = 80;
+  const LANE_W = 96, CURB_W = 90;
   const heroLeft = (step) =>
-    step === 0 ? CURB_W / 2 - 21 : CURB_W + (step - 1) * LANE_W + LANE_W / 2 - 21;
+    step === 0 ? CURB_W / 2 - 29 : CURB_W + (step - 1) * LANE_W + LANE_W / 2 - 29;
 
   const CARS_DN = [
     { e: '🚗', cls: 'md' }, { e: '🚕', cls: 'md' }, { e: '🚙', cls: 'md' },
-    { e: '🚌', cls: 'lg' }, { e: '🚓', cls: 'md' }, { e: '🏎', cls: 'sm' },
+    { e: '🚌', cls: 'lg' }, { e: '🚓', cls: 'md' }, { e: '🏎️', cls: 'sm' },
   ];
   const CARS_UP = [
     { e: '🚐', cls: 'md' }, { e: '🚑', cls: 'md' }, { e: '🚒', cls: 'lg' },
-    { e: '🛻', cls: 'md' }, { e: '🚛', cls: 'lg' }, { e: '🏍', cls: 'sm' },
+    { e: '🛻', cls: 'md' }, { e: '🚛', cls: 'lg' }, { e: '🏍️', cls: 'sm' },
   ];
 
   function road(body, stage) {
     const { t, esc } = C;
-    let st = C.roadState, busy = false;
+    let st = C.roadState || { active: false, balance: 100000, difficulty: 'easy', ladder: [], maxSteps: 24, next: 1.01, next_crash_chance: 1.8 };
+    let curDiff = st.difficulty || 'easy';
+    let busy = false;
+    let currentBetCents = 1000; // 10 credits default
+    let activeSubTab = 'bets';
+    let roundHistory = [];
+    let customClientSeed = 'fetan_' + Math.random().toString(36).slice(2, 10);
 
     body.innerHTML = `
-      <div id="rscene"></div>
-      <div class="road-info" id="rinfo"></div>
-      <div id="rctl"></div>
-      <div class="msg" id="rmsg"></div>`;
+      <div class="road-container">
+        <!-- Top bar -->
+        <div class="road-topbar">
+          <div class="road-brand-pill">
+            <span class="road-brand-badge">ፈ</span>
+            <span>${esc(t('road_title'))}</span>
+          </div>
+          <div class="road-topbar-actions">
+            <button class="road-btn-icon" id="road-how-btn">
+              <span>❓</span> ${esc(t('how_to_play'))}
+            </button>
+            <div class="road-balance-pill" id="road-bal-pill">
+              <span>🪙</span> <span id="road-bal-val">${C.fmt(st.balance || 0)}</span>
+            </div>
+            <button class="road-btn-icon" id="road-sound-btn">
+              <span id="road-sound-icon">${muted ? '🔇' : '🔊'}</span>
+            </button>
+            <button class="road-btn-icon" id="road-fs-btn" title="${esc(t('fullscreen'))}">
+              <span>⛶</span>
+            </button>
+          </div>
+        </div>
 
-    let bet = null;
-
-    function buildScene() {
-      let lanes = '';
-      for (let i = 1; i <= st.maxSteps; i++) {
-        const dir = i % 2 ? 'dn' : 'up';
-        const carCount = 1 + (i % 3 === 0 ? 2 : i % 2);
-        let cs = '';
-        const pool = dir === 'dn' ? CARS_DN : CARS_UP;
-        for (let k = 0; k < carCount; k++) {
-          const car = pool[(i * 3 + k) % pool.length];
-          const dur = (2.2 + ((i * 7 + k * 4) % 7) * 0.4).toFixed(2);
-          const delay = (-((i * 11 + k * 19) % 10) * 0.35).toFixed(2);
-          cs += `<span class="car ${car.cls} ${dir}" style="animation-duration:${dur}s;animation-delay:${delay}s">${car.e}</span>`;
-        }
-        lanes += `<div class="lane" id="ln${i}">
-          <span class="badge">×${st.ladder[i - 1]}</span>${cs}
-        </div>`;
-      }
-      $('rscene').innerHTML = `
-        <div class="road-scene-wrap">
-          <div class="road-sky"></div>
+        <!-- Road scene with horizontal camera tracking -->
+        <div class="road-viewport" id="rviewport">
           <div class="road-scroll" id="rsc">
-            <div class="road-track">
-              <div class="curb">🏠</div>
-              ${lanes}
-              <div class="road-end">🏁</div>
-              <span class="hero" id="hero">🐔</span>
+            <div class="road-track" id="rtrack"></div>
+          </div>
+        </div>
+
+        <!-- Bottom control panel -->
+        <div class="road-panel">
+          <!-- Stepper and chips -->
+          <div class="road-stepper-row">
+            <div class="road-input-box">
+              <button class="road-step-btn" id="bet-min" type="button">MIN</button>
+              <button class="road-step-btn" id="bet-minus" type="button">−</button>
+              <input class="road-bet-input" id="rbet-val" type="text" value="10" />
+              <button class="road-step-btn" id="bet-plus" type="button">+</button>
+              <button class="road-step-btn" id="bet-max" type="button">MAX</button>
+            </div>
+            <div class="road-chips-group">
+              <button class="road-chip-btn" id="chip-1" type="button">+1</button>
+              <button class="road-chip-btn" id="chip-5" type="button">+5</button>
+              <button class="road-chip-btn" id="chip-10" type="button">+10</button>
+              <button class="road-chip-btn" id="chip-50" type="button">+50</button>
+              <button class="road-chip-btn" id="chip-half" type="button">½</button>
+              <button class="road-chip-btn" id="chip-double" type="button">2×</button>
+            </div>
+          </div>
+
+          <!-- Difficulty segmented selector & Shot down indicator -->
+          <div class="road-diff-row">
+            <div class="road-segmented" id="rdiff-segment">
+              <button class="road-seg-btn ${curDiff === 'easy' ? 'active' : ''}" data-diff="easy" type="button">${esc(t('diff_easy'))}</button>
+              <button class="road-seg-btn ${curDiff === 'medium' ? 'active' : ''}" data-diff="medium" type="button">${esc(t('diff_medium'))}</button>
+              <button class="road-seg-btn ${curDiff === 'hard' ? 'active' : ''}" data-diff="hard" type="button">${esc(t('diff_hard'))}</button>
+              <button class="road-seg-btn ${curDiff === 'hardcore' ? 'active' : ''}" data-diff="hardcore" type="button">${esc(t('diff_hardcore'))}</button>
+            </div>
+            <div class="road-shot-down">
+              <span>⚠️ ${esc(t('chance_shot_down'))}:</span>
+              <span class="road-shot-down-val" id="rshot-val">—</span>
+            </div>
+          </div>
+
+          <!-- Action buttons (GO & CASH OUT) -->
+          <div class="road-actions-row">
+            <button class="btn-road-cashout" id="rcashout-btn" disabled type="button">
+              <span>💰</span>
+              <span id="rcashout-label">${esc(t('cashout'))}</span>
+            </button>
+            <button class="btn-road-go" id="rgo-btn" type="button">
+              <span id="rgo-icon">🐔</span>
+              <span id="rgo-label">${esc(t('go'))}</span>
+            </button>
+          </div>
+
+          <div class="msg" id="rmsg" style="text-align:center;margin-top:4px"></div>
+        </div>
+
+        <!-- Sub-tabs: My bets & Provably Fair -->
+        <div class="road-subtabs">
+          <div class="road-tabs-nav">
+            <button class="road-tab-btn ${activeSubTab === 'bets' ? 'active' : ''}" id="tab-bets-btn" type="button">
+              <span>📊</span> ${esc(t('my_bets'))}
+            </button>
+            <button class="road-tab-btn ${activeSubTab === 'fairness' ? 'active' : ''}" id="tab-fair-btn" type="button">
+              <span>🛡️</span> ${esc(t('provably_fair'))}
+            </button>
+          </div>
+          <div class="road-tab-body" id="road-tab-pane"></div>
+        </div>
+      </div>
+
+      <!-- Rules modal container -->
+      <div id="road-modal-slot"></div>
+    `;
+
+    // Hook sound toggle
+    $('road-sound-btn').onclick = () => {
+      muted = !muted;
+      localStorage.setItem('mute', muted ? '1' : '0');
+      $('road-sound-icon').textContent = muted ? '🔇' : '🔊';
+    };
+
+    // Fullscreen toggle
+    $('road-fs-btn').onclick = () => {
+      if (!document.fullscreenElement) {
+        if (stage.requestFullscreen) stage.requestFullscreen();
+        else if (stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    };
+
+    // Rules modal
+    $('road-how-btn').onclick = () => showRulesModal();
+    function showRulesModal() {
+      const slot = $('road-modal-slot');
+      if (!slot) return;
+      slot.innerHTML = `
+        <div class="road-modal-overlay" id="road-rules-overlay">
+          <div class="road-modal-box">
+            <h3 class="road-modal-title"><span>🐔</span> ${esc(t('rules_title'))}</h3>
+            <p class="road-modal-body">${esc(t('rules_content'))}</p>
+            <div style="text-align:right">
+              <button class="btn btn-gold" id="road-rules-close" style="padding:8px 24px">${esc(t('close') || 'OK')}</button>
             </div>
           </div>
         </div>`;
-      placeHero(st.active ? st.step : 0, false);
-      updateLaneStates();
+      $('road-rules-close').onclick = () => { slot.innerHTML = ''; };
+      $('road-rules-overlay').onclick = (e) => { if (e.target.id === 'road-rules-overlay') slot.innerHTML = ''; };
     }
 
-    function placeHero(step, hop = true) {
-      const h = $('hero');
-      if (!h) return;
-      const lx = heroLeft(step);
-      h.style.setProperty('--tx', `translateX(${lx}px)`);
-      h.style.transform = `translateX(${lx}px)`;
-      if (hop) {
-        h.classList.remove('hop', 'run');
-        void h.offsetWidth;
-        h.classList.add('hop');
-        sfx.hop();
-        setTimeout(() => { if (h) { h.classList.remove('hop'); h.classList.add('run'); } }, 420);
-        setTimeout(() => { if (h) h.classList.remove('run'); }, 800);
-      }
-      const sc = $('rsc');
-      if (sc) sc.scrollLeft = Math.max(0, lx - 120);
+    // Stepper & Chip inputs
+    const betInput = $('rbet-val');
+    function getBetCents() {
+      const v = parseFloat(betInput.value) || 1;
+      return Math.round(Math.max(1, Math.min(1000, v)) * 100);
+    }
+    function setBetDisplay(credits) {
+      betInput.value = (Math.max(1, Math.min(1000, credits))).toFixed(0);
+      currentBetCents = getBetCents();
+    }
+    betInput.onchange = () => setBetDisplay(parseFloat(betInput.value) || 1);
+    $('bet-min').onclick = () => setBetDisplay(1);
+    $('bet-max').onclick = () => setBetDisplay(1000);
+    $('bet-minus').onclick = () => setBetDisplay(Math.max(1, parseFloat(betInput.value) - 1));
+    $('bet-plus').onclick = () => setBetDisplay(Math.min(1000, parseFloat(betInput.value) + 1));
+    $('chip-1').onclick = () => setBetDisplay(parseFloat(betInput.value) + 1);
+    $('chip-5').onclick = () => setBetDisplay(parseFloat(betInput.value) + 5);
+    $('chip-10').onclick = () => setBetDisplay(parseFloat(betInput.value) + 10);
+    $('chip-50').onclick = () => setBetDisplay(parseFloat(betInput.value) + 50);
+    $('chip-half').onclick = () => setBetDisplay(Math.max(1, Math.floor(parseFloat(betInput.value) / 2)));
+    $('chip-double').onclick = () => setBetDisplay(Math.min(1000, parseFloat(betInput.value) * 2));
+
+    // Difficulty Segmented Control
+    const segBtns = body.querySelectorAll('.road-seg-btn');
+    segBtns.forEach((b) => {
+      b.onclick = async () => {
+        if (st.active || busy) return;
+        curDiff = b.dataset.diff;
+        segBtns.forEach((x) => x.classList.remove('active'));
+        b.classList.add('active');
+        sfx.tick();
+        try {
+          st = await C.api(`/games/road?difficulty=${curDiff}`);
+          renderScene();
+          updateControls();
+        } catch (e) { /* ignore */ }
+      };
+    });
+
+    // Sub-tabs handling
+    $('tab-bets-btn').onclick = () => {
+      activeSubTab = 'bets';
+      $('tab-bets-btn').classList.add('active');
+      $('tab-fair-btn').classList.remove('active');
+      renderSubTab();
+    };
+    $('tab-fair-btn').onclick = () => {
+      activeSubTab = 'fairness';
+      $('tab-fair-btn').classList.add('active');
+      $('tab-bets-btn').classList.remove('active');
+      renderSubTab();
+    };
+
+    async function loadHistory() {
+      try {
+        const r = await C.api('/games/road/history');
+        roundHistory = r.rounds || r.history || [];
+        if (activeSubTab === 'bets') renderSubTab();
+      } catch (e) { /* ignore */ }
     }
 
-    function updateLaneStates() {
-      for (let i = 1; i <= st.maxSteps; i++) {
-        const el = $('ln' + i); if (!el) continue;
-        el.classList.toggle('done', st.active && i <= st.step);
-        el.classList.toggle('cur',  st.active && i === st.step + 1);
-      }
-    }
+    function renderSubTab() {
+      const pane = $('road-tab-pane');
+      if (!pane) return;
+      if (activeSubTab === 'bets') {
+        if (roundHistory.length === 0) {
+          pane.innerHTML = `<div style="text-align:center;color:#8c9b91;padding:16px">${esc(t('no_data'))}</div>`;
+          return;
+        }
+        pane.innerHTML = `
+          <div style="overflow-x:auto">
+            <table class="road-history-table">
+              <thead>
+                <tr>
+                  <th>${esc(t('date'))}</th>
+                  <th>${esc(t('difficulty') || 'Difficulty')}</th>
+                  <th>${esc(t('bet'))}</th>
+                  <th>${esc(t('lane'))}</th>
+                  <th>${esc(t('multiplier') || 'Multiplier')}</th>
+                  <th>${esc(t('payout') || 'Payout')}</th>
+                  <th>${esc(t('status'))}</th>
+                  <th>${esc(t('verify_btn'))}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${roundHistory.map((row) => `
+                  <tr>
+                    <td>${esc(row.created_at ? row.created_at.slice(11, 19) : '—')}</td>
+                    <td style="text-transform:capitalize">${esc(row.difficulty)}</td>
+                    <td>${C.fmt(row.bet)}</td>
+                    <td>${row.step}</td>
+                    <td style="font-weight:800;color:#F2D98B">×${Number(row.multiplier || 1).toFixed(2)}</td>
+                    <td class="${row.payout > 0 ? 'tag-win' : 'tag-lose'}">${row.payout > 0 ? '+' + C.fmt(row.payout) : '0'}</td>
+                    <td><span class="${row.result === 'win' ? 'tag-win' : 'tag-lose'}">${row.result === 'win' ? 'WIN' : 'CRASH'}</span></td>
+                    <td>
+                      ${row.server_seed ? `
+                        <button class="chip" style="font-size:11px;padding:3px 8px" onclick="window.verifyRoadRound('${esc(row.server_seed)}', '${esc(row.client_seed || '')}', ${row.step}, '${esc(row.difficulty)}')">
+                          ${esc(t('verify_btn'))}
+                        </button>
+                      ` : '<span style="color:#666">—</span>'}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      } else {
+        // Provably Fair tab
+        pane.innerHTML = `
+          <div class="fairness-grid">
+            <div class="fairness-field">
+              <label class="fairness-label">${esc(t('server_seed_hash'))}</label>
+              <input class="fairness-input" id="pf-server-hash" type="text" readonly value="${esc(st.server_seed_hash || 'Round not started yet')}" />
+            </div>
+            <div class="fairness-field">
+              <label class="fairness-label">${esc(t('client_seed'))}</label>
+              <input class="fairness-input" id="pf-client-seed" type="text" value="${esc(st.client_seed || customClientSeed)}" ${st.active ? 'readonly' : ''} />
+            </div>
+            <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0" />
+            <h4 style="margin:0;color:#F2D98B;font-size:14px">🔍 ${esc(t('verify_tool'))}</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="fairness-field">
+                <label class="fairness-label">${esc(t('server_seed'))}</label>
+                <input class="fairness-input" id="v-server-seed" placeholder="e.g. 32-byte hex seed" />
+              </div>
+              <div class="fairness-field">
+                <label class="fairness-label">${esc(t('client_seed'))}</label>
+                <input class="fairness-input" id="v-client-seed" placeholder="e.g. client seed" />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="fairness-field">
+                <label class="fairness-label">${esc(t('target_lane'))}</label>
+                <input class="fairness-input" id="v-lane" type="number" min="1" max="24" value="1" />
+              </div>
+              <div class="fairness-field">
+                <label class="fairness-label">${esc(t('difficulty') || 'Difficulty')}</label>
+                <select class="fairness-input" id="v-diff">
+                  <option value="easy">Easy (24)</option>
+                  <option value="medium">Medium (22)</option>
+                  <option value="hard">Hard (20)</option>
+                  <option value="hardcore">Hardcore (15)</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-gold" id="btn-run-verify" style="padding:8px 18px" type="button">
+                ${esc(t('verify_btn'))}
+              </button>
+            </div>
+            <div class="fairness-result-box" id="v-result" style="display:none"></div>
+          </div>`;
 
-    function controls() {
-      const ctl = $('rctl'), info = $('rinfo');
-      if (!st.active) {
-        info.innerHTML = `<span>${esc(t('balance'))}: <span class="highlight">${C.fmt(st.balance)}</span></span><span></span>`;
-        ctl.innerHTML = `<div id="rbet"></div><button class="bigbtn green" id="rstart">${esc(t('start'))}</button>`;
-        bet = betBar($('rbet'));
-        $('rstart').onclick = async () => {
-          if (busy) return; busy = true;
+        $('pf-client-seed').oninput = (e) => { customClientSeed = e.target.value; };
+        $('btn-run-verify').onclick = async () => {
+          const sSeed = $('v-server-seed').value.trim();
+          const cSeed = $('v-client-seed').value.trim();
+          const lane = Number($('v-lane').value);
+          const diff = $('v-diff').value;
+          const resBox = $('v-result');
+          if (!sSeed || !cSeed || !lane) {
+            resBox.style.display = 'block';
+            resBox.innerHTML = `<span style="color:#ef4444">Please enter server seed, client seed, and lane number.</span>`;
+            return;
+          }
           try {
-            st = await C.api('/games/road/start', { bet: bet.get() });
-            C.setBalance(st.balance); say($('rmsg'), ''); buildScene(); controls();
-          } catch (e) { C.fail(e); }
-          busy = false;
+            const r = await C.api('/games/road/verify', { server_seed: sSeed, client_seed: cSeed, lane, difficulty: diff });
+            resBox.style.display = 'block';
+            resBox.innerHTML = `
+              <div style="display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;color:${r.is_hazard ? '#ef4444' : '#4ade80'};margin-bottom:6px">
+                <span>${r.is_hazard ? '💥' : '✅'}</span>
+                <span>${r.is_hazard ? esc(t('verified_hazard')) : esc(t('verified_safe'))}</span>
+              </div>
+              <div style="font-family:monospace;font-size:11px;color:#9ca3af;word-break:break-all">
+                Hash: ${r.hash}<br/>
+                Computed Value: ${r.value} (Threshold p: ${r.crash_chance})
+              </div>`;
+          } catch (e) {
+            resBox.style.display = 'block';
+            resBox.innerHTML = `<span style="color:#ef4444">Verification error: ${esc(e.message || 'Invalid parameters')}</span>`;
+          }
         };
+      }
+    }
+
+    // Global helper for row click in history
+    window.verifyRoadRound = (serverSeed, clientSeed, lane, diff) => {
+      activeSubTab = 'fairness';
+      $('tab-fair-btn').classList.add('active');
+      $('tab-bets-btn').classList.remove('active');
+      renderSubTab();
+      setTimeout(() => {
+        if ($('v-server-seed')) $('v-server-seed').value = serverSeed;
+        if ($('v-client-seed')) $('v-client-seed').value = clientSeed;
+        if ($('v-lane')) $('v-lane').value = lane;
+        if ($('v-diff')) $('v-diff').value = diff;
+        if ($('btn-run-verify')) $('btn-run-verify').click();
+      }, 50);
+    };
+
+    // Render Road Track and Lanes
+    function renderScene() {
+      const track = $('rtrack');
+      if (!track) return;
+      const maxSteps = st.maxSteps || 24;
+      const ladder = st.ladder || [];
+
+      let lanesHtml = '';
+      for (let i = 1; i <= maxSteps; i++) {
+        const isCleared = st.active && i <= st.step;
+        const isTarget = st.active && i === st.step + 1;
+        const multVal = ladder[i - 1] ? Number(ladder[i - 1]).toFixed(2) : '1.00';
+
+        // Passing cars animation
+        const dir = i % 2 ? 'dn' : 'up';
+        const pool = dir === 'dn' ? CARS_DN : CARS_UP;
+        const car = pool[(i * 3) % pool.length];
+        const dur = (2.2 + ((i * 7) % 7) * 0.4).toFixed(2);
+        const delay = (-((i * 11) % 10) * 0.35).toFixed(2);
+        const carHtml = `<span class="lane-car ${car.cls} ${dir}" style="animation-duration:${dur}s;animation-delay:${delay}s">${car.e}</span>`;
+
+        let laneItem = '';
+        if (isCleared) {
+          laneItem = `
+            <div class="coin-badge">🪙</div>
+            <div class="road-barrier"></div>
+          `;
+        } else {
+          laneItem = `
+            <div class="manhole-badge">
+              <span class="manhole-mult">${multVal}×</span>
+              <span class="manhole-sub">LANE ${i}</span>
+            </div>
+            ${carHtml}
+          `;
+        }
+
+        lanesHtml += `
+          <div class="road-lane ${isCleared ? 'lane-cleared' : ''} ${isTarget ? 'lane-target' : ''}" id="road-ln-${i}">
+            ${laneItem}
+          </div>
+        `;
+      }
+
+      track.innerHTML = `
+        <div class="road-curb-start">
+          <span class="curb-label">START</span>
+          <span class="curb-icon">🏠</span>
+          <span class="curb-label">START</span>
+        </div>
+        ${lanesHtml}
+        <div class="road-curb-end">
+          <span class="curb-label" style="color:#F2D98B">FINISH</span>
+          <span class="curb-icon">🏆</span>
+          <span class="curb-label" style="color:#F2D98B">FINISH</span>
+        </div>
+        <div class="chicken-hero" id="road-chicken">
+          <div class="chicken-body">🐔</div>
+          <div class="chicken-tag" id="chicken-tag">1.00×</div>
+        </div>
+      `;
+
+      updateChickenPosition(st.active ? st.step : 0, false);
+    }
+
+    // Camera and Hero tracking
+    function updateChickenPosition(step, hop = true) {
+      const chicken = $('road-chicken');
+      const tag = $('chicken-tag');
+      const sc = $('rsc');
+      if (!chicken) return;
+
+      const lx = heroLeft(step);
+      chicken.style.transform = `translateX(${lx}px)`;
+
+      if (tag) {
+        if (step > 0 && st.mult) {
+          tag.textContent = Number(st.mult).toFixed(2) + '×';
+        } else {
+          tag.textContent = '1.00×';
+        }
+      }
+
+      if (hop) {
+        chicken.classList.remove('is-hopping');
+        void chicken.offsetWidth;
+        chicken.classList.add('is-hopping');
+        sfx.hop();
+        setTimeout(() => { if (chicken) chicken.classList.remove('is-hopping'); }, 450);
+      }
+
+      // Smooth horizontal camera tracking: keep chicken at ~25% from left edge
+      if (sc) {
+        const targetScroll = Math.max(0, lx - sc.clientWidth * 0.25);
+        sc.scrollTo({ left: targetScroll, behavior: 'smooth' });
+      }
+    }
+
+    // Update Controls & Buttons
+    function updateControls() {
+      const goBtn = $('rgo-btn');
+      const cashoutBtn = $('rcashout-btn');
+      const cashoutLabel = $('rcashout-label');
+      const shotVal = $('rshot-val');
+      const balVal = $('road-bal-val');
+
+      if (balVal && st.balance !== undefined) {
+        balVal.textContent = C.fmt(st.balance);
+      }
+
+      // Update next crash chance
+      if (shotVal) {
+        const ch = st.next_crash_chance;
+        shotVal.textContent = (ch !== undefined && ch !== null) ? `${Number(ch).toFixed(2)}%` : '—';
+      }
+
+      // Lock/unlock inputs based on active round
+      betInput.disabled = st.active;
+      $('bet-min').disabled = st.active;
+      $('bet-max').disabled = st.active;
+      $('bet-minus').disabled = st.active;
+      $('bet-plus').disabled = st.active;
+      body.querySelectorAll('.road-chip-btn').forEach((b) => { b.disabled = st.active; });
+      body.querySelectorAll('.road-seg-btn').forEach((b) => { b.disabled = st.active; });
+
+      if (!st.active) {
+        goBtn.disabled = false;
+        $('rgo-label').textContent = esc(t('start'));
+        cashoutBtn.disabled = true;
+        cashoutLabel.textContent = esc(t('cashout'));
+      } else {
+        goBtn.disabled = false;
+        $('rgo-label').textContent = `${esc(t('go'))} (Lane ${st.step + 1})`;
+        if (st.step >= 1) {
+          cashoutBtn.disabled = false;
+          const payoutAmt = Math.floor(st.bet * st.mult);
+          cashoutLabel.textContent = `${esc(t('cashout'))} +${C.fmt(payoutAmt)}`;
+        } else {
+          cashoutBtn.disabled = true;
+          cashoutLabel.textContent = esc(t('cashout'));
+        }
+      }
+    }
+
+    function lockButtons(locked) {
+      const goBtn = $('rgo-btn');
+      const cashoutBtn = $('rcashout-btn');
+      if (goBtn) goBtn.disabled = locked;
+      if (cashoutBtn) cashoutBtn.disabled = locked || (st.active && st.step < 1);
+    }
+
+    // Trigger feather burst on car collision
+    function spawnFeathers(laneEl) {
+      if (!laneEl) return;
+      for (let i = 0; i < 8; i++) {
+        const f = document.createElement('span');
+        f.className = 'feather-particle';
+        f.textContent = '🪶';
+        const angle = (i / 8) * 2 * Math.PI;
+        const dist = 50 + Math.random() * 50;
+        f.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+        f.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+        f.style.setProperty('--rot', `${Math.random() * 360}deg`);
+        f.style.left = '38px';
+        f.style.top = '170px';
+        laneEl.appendChild(f);
+        setTimeout(() => f.remove(), 1200);
+      }
+    }
+
+    // STEP ACTION
+    async function doStep() {
+      if (busy) return;
+      busy = true;
+      lockButtons(true);
+      say($('rmsg'), '');
+
+      // If game is not active yet, START IT!
+      if (!st.active) {
+        try {
+          st = await C.api('/games/road/start', {
+            bet: currentBetCents,
+            difficulty: curDiff,
+            client_seed: customClientSeed
+          });
+          C.setBalance(st.balance);
+          renderScene();
+          updateControls();
+          renderSubTab();
+        } catch (e) {
+          C.fail(e);
+        }
+        busy = false;
+        lockButtons(false);
         return;
       }
-      const cashAmt = st.step >= 1 ? C.fmt(Math.floor(st.bet * st.mult)) : '';
-      info.innerHTML = `
-        <span>${esc(t('bet'))}: <span class="highlight">${C.fmt(st.bet)}</span></span>
-        <span>${esc(t('lane'))} <span class="highlight">${st.step}/${st.maxSteps}</span></span>
-        <span>${esc(t('next_win'))}: <span class="highlight">×${st.next}</span></span>`;
-      ctl.innerHTML = `
-        <div class="road-actions">
-          <button class="bigbtn green" id="rgo2">🐔 ${esc(t('go'))}</button>
-          <button class="bigbtn" id="rco" ${st.step < 1 ? 'disabled' : ''}>
-            ${esc(t('cashout'))}${cashAmt ? ' +' + cashAmt : ''}
-          </button>
-        </div>`;
-      $('rgo2').onclick = stepFn;
-      $('rco').onclick = cashout;
-    }
 
-    function lock(x) {
-      ['rgo2', 'rco'].forEach((id) => {
-        const b = $(id); if (b) b.disabled = x || (id === 'rco' && st.step < 1);
-      });
-    }
+      // Taking step in active game
+      const targetLane = st.step + 1;
+      updateChickenPosition(targetLane, true);
 
-    async function stepFn() {
-      if (busy) return; busy = true; lock(true);
       try {
         const r = await C.api('/games/road/step', {});
+        C.setBalance(r.balance);
+
         if (r.crashed) {
-          placeHero(r.step);
-          await sleep(480);
-          const lane = $('ln' + r.step);
-          if (lane) {
-            const car = document.createElement('span');
-            car.className = 'crashcar'; car.textContent = '🚚';
-            car.style.left = '6px'; lane.appendChild(car);
-            void car.offsetHeight; car.style.top = '140px';
-            await sleep(320); sfx.crash();
-            const h = $('hero');
-            if (h) { h.classList.remove('hop', 'run'); h.textContent = '💥'; h.classList.add('dead'); }
-            await sleep(900);
+          // Crash Hazard
+          await sleep(200);
+          const laneEl = $('road-ln-' + targetLane);
+          if (laneEl) {
+            const hCar = document.createElement('div');
+            hCar.className = 'hazard-car';
+            hCar.textContent = '🏎️';
+            laneEl.appendChild(hCar);
+            sfx.horn();
+            await sleep(180);
+            sfx.crash();
+            const vp = $('rviewport');
+            if (vp) {
+              vp.classList.add('road-shake');
+              setTimeout(() => vp.classList.remove('road-shake'), 350);
+            }
+            const chicken = $('road-chicken');
+            if (chicken) chicken.classList.add('is-dead');
+            spawnFeathers(laneEl);
           }
-          say($('rmsg'), `💥 ${esc(t('crashed'))}`, 'lose'); sfx.lose(); C.setBalance(r.balance);
-          await sleep(1200);
-          st = { active: false, balance: r.balance, ladder: st.ladder, maxSteps: st.maxSteps };
-          buildScene(); controls();
+          say($('rmsg'), `💥 ${esc(t('crashed'))} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'lose');
+          sfx.lose();
+          await sleep(1400);
+
+          st = {
+            active: false,
+            balance: r.balance,
+            difficulty: curDiff,
+            ladder: r.ladder || st.ladder,
+            maxSteps: r.maxSteps || st.maxSteps,
+            next: (r.ladder && r.ladder[0]) || 1.01,
+            next_crash_chance: 1.8
+          };
+          renderScene();
+          updateControls();
+          loadHistory();
         } else if (r.finished) {
-          placeHero(st.maxSteps); await sleep(500); C.setBalance(r.balance);
-          say($('rmsg'), `🏆 ${esc(t('big_win'))} +${C.fmt(r.payout)}`, 'win'); sfx.win(); coinRain(stage);
-          st = { active: false, balance: r.balance, ladder: st.ladder, maxSteps: st.maxSteps };
-          await sleep(1500); controls();
+          // Win - Reached Final Lane!
+          await sleep(250);
+          sfx.coin();
+          sfx.win();
+          coinRain(stage);
+          say($('rmsg'), `🏆 ${esc(t('big_win'))} +${C.fmt(r.payout)}! (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'win');
+          await sleep(1400);
+
+          st = {
+            active: false,
+            balance: r.balance,
+            difficulty: curDiff,
+            ladder: r.ladder || st.ladder,
+            maxSteps: r.maxSteps || st.maxSteps,
+            next: (r.ladder && r.ladder[0]) || 1.01,
+            next_crash_chance: 1.8
+          };
+          renderScene();
+          updateControls();
+          loadHistory();
         } else {
-          st = r; placeHero(st.step); updateLaneStates(); controls();
+          // Safe step
+          sfx.coin();
+          st = r;
+          renderScene();
+          updateControls();
         }
-      } catch (e) { C.fail(e); lock(false); }
+      } catch (e) {
+        C.fail(e);
+        updateChickenPosition(st.step, false);
+      }
+
       busy = false;
+      lockButtons(false);
     }
 
-    async function cashout() {
-      if (busy) return; busy = true; lock(true);
+    // CASHOUT ACTION
+    async function doCashout() {
+      if (busy || !st.active || st.step < 1) return;
+      busy = true;
+      lockButtons(true);
       try {
         const r = await C.api('/games/road/cashout', {});
         C.setBalance(r.balance);
-        say($('rmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} 🎉`, 'win'); sfx.win(); coinRain(stage);
-        st = { active: false, balance: r.balance, ladder: st.ladder, maxSteps: st.maxSteps };
-        await sleep(400); controls();
-      } catch (e) { C.fail(e); lock(false); }
+        sfx.win();
+        coinRain(stage);
+        say($('rmsg'), `🎉 ${esc(t('win'))} +${C.fmt(r.payout)} (×${r.mult})!`, 'win');
+        await sleep(1200);
+
+        st = {
+          active: false,
+          balance: r.balance,
+          difficulty: curDiff,
+          ladder: r.ladder || st.ladder,
+          maxSteps: r.maxSteps || st.maxSteps,
+          next: (r.ladder && r.ladder[0]) || 1.01,
+          next_crash_chance: 1.8
+        };
+        renderScene();
+        updateControls();
+        loadHistory();
+      } catch (e) {
+        C.fail(e);
+      }
       busy = false;
+      lockButtons(false);
     }
 
-    buildScene(); controls();
+    $('rgo-btn').onclick = doStep;
+    $('rcashout-btn').onclick = doCashout;
+
+    // Keyboard Shortcuts: Space = GO, Enter = Cash Out
+    function handleKeyDown(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        doStep();
+      } else if (e.code === 'Enter') {
+        e.preventDefault();
+        if (st.active && st.step >= 1) doCashout();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    stopFns.push(() => window.removeEventListener('keydown', handleKeyDown));
+
+    // Initialize state
+    async function initGame() {
+      try {
+        const serverState = await C.api(`/games/road?difficulty=${curDiff}`);
+        if (serverState) {
+          st = serverState;
+          if (st.difficulty) curDiff = st.difficulty;
+        }
+      } catch (e) { /* ignore */ }
+      renderScene();
+      updateControls();
+      renderSubTab();
+      loadHistory();
+    }
+
+    initGame();
   }
 
   // =========================================================

@@ -10,9 +10,9 @@ const rnd = (n) => crypto.randomInt(0, n);
 function checkBet(bet) {
   if (!Number.isInteger(bet) || bet < MIN_BET || bet > MAX_BET) throw new Error('INVALID');
 }
-function saveRound(userId, game, bet, payout, detail, status = 'done', step = 0) {
-  return Number(db.prepare('INSERT INTO game_rounds (user_id, game, bet, payout, step, status, detail) VALUES (?,?,?,?,?,?,?)')
-    .run(userId, game, bet, payout, step, status, JSON.stringify(detail)).lastInsertRowid);
+function saveRound(userId, game, bet, payout, detail, status = 'done', step = 0, serverSeed = null, clientSeed = null, serverSeedHash = null, difficulty = null) {
+  return Number(db.prepare('INSERT INTO game_rounds (user_id, game, bet, payout, step, status, detail, server_seed, client_seed, server_seed_hash, difficulty) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+    .run(userId, game, bet, payout, step, status, JSON.stringify(detail), serverSeed, clientSeed, serverSeedHash, difficulty).lastInsertRowid);
 }
 
 // Helper: combinations nCr
@@ -83,61 +83,282 @@ function starSpin(userId, bet) {
   })();
 }
 
-// ---------- Road Dash (cross-the-road, cash out any time) ----------
-const SURVIVE = 80;   // % chance to survive each lane
-const MAX_STEPS = 10;
-const multAt = (step) => Math.floor((0.96 / Math.pow(SURVIVE / 100, step)) * 100) / 100;
+// ---------- Road Dash (Chicken Crossing - 4 Difficulties, Provably Fair) ----------
+const ROAD_CONFIG = {
+  rtp: 0.98,
+  difficulties: {
+    easy:     { lanes: 24, p0: 0.018, step: 0.0038 },
+    medium:   { lanes: 22, p0: 0.05,  step: 0.006  },
+    hard:     { lanes: 20, p0: 0.10,  step: 0.0085 },
+    hardcore: { lanes: 15, p0: 0.18,  step: 0.013  }
+  }
+};
+
+function getLaneCrashChance(difficulty, lane) {
+  const cfg = ROAD_CONFIG.difficulties[difficulty] || ROAD_CONFIG.difficulties.easy;
+  return Math.min(0.99, cfg.p0 + cfg.step * (lane - 1));
+}
+
+function getLadder(difficulty) {
+  const cfg = ROAD_CONFIG.difficulties[difficulty] || ROAD_CONFIG.difficulties.easy;
+  let prod = 1;
+  const ladder = [];
+  for (let i = 1; i <= cfg.lanes; i++) {
+    const pi = getLaneCrashChance(difficulty, i);
+    prod *= (1 - pi);
+    const m = Math.max(1.01, Math.floor((ROAD_CONFIG.rtp / prod) * 100) / 100);
+    ladder.push(m);
+  }
+  return ladder;
+}
+
+function getMultiplier(difficulty, step) {
+  if (step <= 0) return 0;
+  const ladder = getLadder(difficulty);
+  if (step > ladder.length) return ladder[ladder.length - 1];
+  return ladder[step - 1];
+}
+
+function isLaneHazard(serverSeed, clientSeed, lane, difficulty) {
+  const pi = getLaneCrashChance(difficulty, lane);
+  const msg = `${serverSeed}:${clientSeed}:${lane}`;
+  const hex = crypto.createHash('sha256').update(msg).digest('hex');
+  const val = parseInt(hex.slice(0, 8), 16) / 0x100000000;
+  return val < pi;
+}
 
 function activeRound(userId) {
   return db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='road' AND status='active'").get(userId);
 }
-const LADDER = Array.from({ length: MAX_STEPS }, (_, i) => multAt(i + 1));
-function roadState(userId) {
+
+function roadState(userId, difficulty = 'easy') {
+  const diff = ['easy', 'medium', 'hard', 'hardcore'].includes(difficulty) ? difficulty : 'easy';
   const r = activeRound(userId);
   const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
-  if (!r) return { active: false, balance, ladder: LADDER, maxSteps: MAX_STEPS };
-  return { active: true, step: r.step, bet: r.bet, mult: r.step ? multAt(r.step) : 0, next: multAt(r.step + 1), balance, maxSteps: MAX_STEPS, ladder: LADDER };
+  const activeDiff = r ? (r.difficulty || 'easy') : diff;
+  const ladder = getLadder(activeDiff);
+  const maxSteps = ROAD_CONFIG.difficulties[activeDiff].lanes;
+
+  if (!r) {
+    return {
+      active: false,
+      balance,
+      difficulty: diff,
+      ladder,
+      maxSteps,
+      next: ladder[0],
+      next_crash_chance: Number((getLaneCrashChance(diff, 1) * 100).toFixed(2)),
+      config: ROAD_CONFIG
+    };
+  }
+
+  const curDiff = r.difficulty || 'easy';
+  const nextStep = r.step + 1;
+  const nextMult = nextStep <= maxSteps ? getMultiplier(curDiff, nextStep) : 0;
+  const nextChance = nextStep <= maxSteps ? Number((getLaneCrashChance(curDiff, nextStep) * 100).toFixed(2)) : 0;
+  const curMult = r.step > 0 ? getMultiplier(curDiff, r.step) : 0;
+
+  return {
+    active: true,
+    step: r.step,
+    bet: r.bet,
+    difficulty: curDiff,
+    mult: curMult,
+    next: nextMult,
+    next_crash_chance: nextChance,
+    balance,
+    maxSteps,
+    ladder,
+    server_seed_hash: r.server_seed_hash,
+    client_seed: r.client_seed
+  };
 }
-function roadStart(userId, bet) {
+
+function roadStart(userId, bet, difficulty = 'easy', clientSeed = '') {
   checkBet(bet);
+  const diff = ['easy', 'medium', 'hard', 'hardcore'].includes(difficulty) ? difficulty : 'easy';
   return db.transaction(() => {
     if (activeRound(userId)) throw new Error('ACTIVE_ROUND');
-    const id = saveRound(userId, 'road', bet, 0, {}, 'active', 0);
+    const sSeed = crypto.randomBytes(32).toString('hex');
+    const sHash = crypto.createHash('sha256').update(sSeed).digest('hex');
+    const cSeed = String(clientSeed || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || crypto.randomBytes(16).toString('hex');
+
+    const id = saveRound(userId, 'road', bet, 0, {}, 'active', 0, sSeed, cSeed, sHash, diff);
     postLedger({ userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
-    return roadState(userId);
+    return roadState(userId, diff);
   })();
 }
-function roadPayout(r, userId) {
-  const payout = Math.floor(r.bet * multAt(r.step));
-  postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: r.id });
-  db.prepare("UPDATE game_rounds SET status='done', payout=? WHERE id=?").run(payout, r.id);
-  return payout;
-}
+
 function roadStep(userId) {
   return db.transaction(() => {
     const r = activeRound(userId);
     if (!r) throw new Error('NOT_FOUND');
-    const alive = rnd(100) < SURVIVE;
-    if (!alive) {
-      db.prepare("UPDATE game_rounds SET status='done', payout=0 WHERE id=?").run(r.id);
-      return { crashed: true, step: r.step + 1, ...roadState(userId) };
+    const diff = r.difficulty || 'easy';
+    const maxSteps = ROAD_CONFIG.difficulties[diff].lanes;
+    const nextLane = r.step + 1;
+
+    // Check if nextLane is a hazard according to provably fair formula
+    const hit = isLaneHazard(r.server_seed, r.client_seed, nextLane, diff);
+
+    if (hit) {
+      db.prepare("UPDATE game_rounds SET status='done', payout=0 WHERE id=? AND status='active'").run(r.id);
+      const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+      return {
+        result: 'hit',
+        crashed: true,
+        finished: true,
+        lane: nextLane,
+        step: nextLane,
+        multiplier: 0,
+        payout: 0,
+        balance,
+        active: false,
+        server_seed: r.server_seed,
+        server_seed_hash: r.server_seed_hash,
+        client_seed: r.client_seed,
+        ladder: getLadder(diff),
+        maxSteps
+      };
     }
-    db.prepare('UPDATE game_rounds SET step = step + 1 WHERE id=?').run(r.id);
-    const r2 = { ...r, step: r.step + 1 };
-    if (r2.step >= MAX_STEPS) {
-      const payout = roadPayout(r2, userId);
-      return { crashed: false, finished: true, payout, ...roadState(userId) };
+
+    const newStep = nextLane;
+    const curMult = getMultiplier(diff, newStep);
+
+    if (newStep >= maxSteps) {
+      // Auto cash-out at last lane
+      const payout = Math.floor(r.bet * curMult);
+      const info = db.prepare("UPDATE game_rounds SET status='done', step=?, payout=? WHERE id=? AND status='active'").run(newStep, payout, r.id);
+      if (info.changes === 0) throw new Error('INVALID');
+      postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: r.id });
+      const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+      return {
+        result: 'safe',
+        crashed: false,
+        finished: true,
+        lane: newStep,
+        step: newStep,
+        multiplier: curMult,
+        mult: curMult,
+        payout,
+        balance,
+        active: false,
+        server_seed: r.server_seed,
+        server_seed_hash: r.server_seed_hash,
+        client_seed: r.client_seed,
+        ladder: getLadder(diff),
+        maxSteps
+      };
     }
-    return { crashed: false, ...roadState(userId) };
+
+    db.prepare("UPDATE game_rounds SET step=? WHERE id=? AND status='active'").run(newStep, r.id);
+    const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+    const nextChance = Number((getLaneCrashChance(diff, newStep + 1) * 100).toFixed(2));
+    const nextMult = getMultiplier(diff, newStep + 1);
+
+    return {
+      result: 'safe',
+      crashed: false,
+      finished: false,
+      lane: newStep,
+      step: newStep,
+      multiplier: curMult,
+      mult: curMult,
+      next: nextMult,
+      next_multiplier: nextMult,
+      next_crash_chance: nextChance,
+      bet: r.bet,
+      difficulty: diff,
+      balance,
+      active: true,
+      maxSteps,
+      ladder: getLadder(diff),
+      server_seed_hash: r.server_seed_hash,
+      client_seed: r.client_seed
+    };
   })();
 }
+
 function roadCashout(userId) {
   return db.transaction(() => {
     const r = activeRound(userId);
     if (!r || r.step < 1) throw new Error('INVALID');
-    const payout = roadPayout(r, userId);
-    return { payout, ...roadState(userId) };
+    const diff = r.difficulty || 'easy';
+    const mult = getMultiplier(diff, r.step);
+    const payout = Math.floor(r.bet * mult);
+
+    const info = db.prepare("UPDATE game_rounds SET status='done', payout=? WHERE id=? AND status='active'").run(payout, r.id);
+    if (info.changes === 0) throw new Error('INVALID');
+    postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: r.id });
+    const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
+
+    return {
+      payout,
+      multiplier: mult,
+      mult,
+      finished: true,
+      active: false,
+      balance,
+      server_seed: r.server_seed,
+      server_seed_hash: r.server_seed_hash,
+      client_seed: r.client_seed,
+      ladder: getLadder(diff),
+      maxSteps: ROAD_CONFIG.difficulties[diff].lanes
+    };
   })();
+}
+
+function roadHistory(userId) {
+  const rows = db.prepare(`
+    SELECT id, bet, payout, step, difficulty, status, server_seed, client_seed, server_seed_hash, created_at
+    FROM game_rounds
+    WHERE user_id=? AND game='road'
+    ORDER BY id DESC LIMIT 20
+  `).all(userId);
+
+  const history = rows.map((r) => {
+    const diff = r.difficulty || 'easy';
+    const mult = r.payout > 0 ? Number((r.payout / r.bet).toFixed(2)) : (r.step > 0 ? getMultiplier(diff, r.step) : 0);
+    return {
+      id: r.id,
+      bet: r.bet,
+      payout: r.payout,
+      step: r.step,
+      difficulty: diff,
+      multiplier: mult,
+      result: r.payout > 0 ? 'win' : (r.status === 'done' ? 'crashed' : 'active'),
+      server_seed: r.status === 'done' ? r.server_seed : null,
+      server_seed_hash: r.server_seed_hash,
+      client_seed: r.client_seed,
+      created_at: r.created_at
+    };
+  });
+  return { history, rounds: history };
+}
+
+function roadVerify({ server_seed, client_seed, lane, difficulty = 'easy' }) {
+  if (!server_seed || !client_seed || !lane) throw new Error('INVALID');
+  const l = Number(lane);
+  const diff = ['easy', 'medium', 'hard', 'hardcore'].includes(difficulty) ? difficulty : 'easy';
+  const pi = getLaneCrashChance(diff, l);
+  const msg = `${server_seed}:${client_seed}:${l}`;
+  const hash = crypto.createHash('sha256').update(msg).digest('hex');
+  const val = parseInt(hash.slice(0, 8), 16) / 0x100000000;
+  const isHazard = val < pi;
+  const serverSeedHash = crypto.createHash('sha256').update(server_seed).digest('hex');
+
+  return {
+    server_seed,
+    server_seed_hash: serverSeedHash,
+    client_seed,
+    lane: l,
+    difficulty: diff,
+    p_i: Number(pi.toFixed(6)),
+    computed_hash: hash,
+    first_8_hex: hash.slice(0, 8),
+    numeric_value: val,
+    is_hazard: isHazard,
+    outcome: isHazard ? 'hit' : 'safe'
+  };
 }
 
 // ---------- Mines (5x5 grid diamond hunt) ----------
@@ -513,6 +734,9 @@ module.exports = {
   roadStart,
   roadStep,
   roadCashout,
+  roadHistory,
+  roadVerify,
+  ROAD_CONFIG,
   minesState,
   minesStart,
   minesStep,

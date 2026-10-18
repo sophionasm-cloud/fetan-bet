@@ -101,6 +101,10 @@ CREATE TABLE IF NOT EXISTS game_rounds (
   step INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'done',
   detail TEXT,
+  server_seed TEXT,
+  client_seed TEXT,
+  server_seed_hash TEXT,
+  difficulty TEXT DEFAULT 'easy',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS support_tickets (
@@ -159,6 +163,10 @@ CREATE TABLE IF NOT EXISTS agent_funding_requests (
 `);
 
 // Safe migrations for existing databases
+try { raw.exec('ALTER TABLE game_rounds ADD COLUMN server_seed TEXT;'); } catch {}
+try { raw.exec('ALTER TABLE game_rounds ADD COLUMN client_seed TEXT;'); } catch {}
+try { raw.exec('ALTER TABLE game_rounds ADD COLUMN server_seed_hash TEXT;'); } catch {}
+try { raw.exec('ALTER TABLE game_rounds ADD COLUMN difficulty TEXT DEFAULT "easy";'); } catch {}
 try { raw.exec('ALTER TABLE support_tickets ADD COLUMN subject TEXT DEFAULT "Support Request";'); } catch {}
 try { raw.exec('ALTER TABLE support_tickets ADD COLUMN status TEXT NOT NULL DEFAULT "open";'); } catch {}
 try { raw.exec('ALTER TABLE support_tickets ADD COLUMN assigned_agent_id INTEGER REFERENCES users(id);'); } catch {}

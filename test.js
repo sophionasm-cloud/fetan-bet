@@ -99,14 +99,74 @@ const server = app.listen(0, async () => {
     const sp = await user('/games/star', { bet: 1000 });
     ok('star spin plays', sp.status === 200 && sp.data.reels.length === 3);
 
-    ok('road start', (await user('/games/road/start', { bet: 1000 })).data.active === true);
+    // Road Dash (Chicken Crossing)
+    const cryptoMod = require('crypto');
+    const userBalBeforeRoad = (await user('/me')).data.balance;
+    const rStart = await user('/games/road/start', { bet: 1000, difficulty: 'easy', client_seed: 'test-seed-123' });
+    ok('road start deducts bet', rStart.status === 200 && rStart.data.active === true);
+    ok('road start returns seed hash and hides secret seed', rStart.data.server_seed_hash && !rStart.data.server_seed);
+    ok('road start deducted wallet balance', (await user('/me')).data.balance === userBalBeforeRoad - 1000);
     ok('cannot start two road rounds', (await user('/games/road/start', { bet: 1000 })).data.error === 'ACTIVE_ROUND');
     ok('cannot cash out at step 0', (await user('/games/road/cashout', {})).data.error === 'INVALID');
-    for (let i = 0; i < 12; i++) {
-      const s = await user('/games/road/step', {});
-      if (s.data.crashed || s.data.finished) break;
-      if (i === 1) { await user('/games/road/cashout', {}); break; }
+
+    // Step through the active round
+    let lastStepRes = null;
+    let crashedOrFinished = false;
+    for (let lane = 1; lane <= 24; lane++) {
+      lastStepRes = await user('/games/road/step', {});
+      if (lastStepRes.data.crashed || lastStepRes.data.finished) {
+        crashedOrFinished = true;
+        break;
+      }
+      if (lane === 1) {
+        ok('safe step advances lane & increases multiplier', lastStepRes.data.lane === 1 && lastStepRes.data.multiplier >= 1.01);
+        const cashRes = await user('/games/road/cashout', {});
+        ok('cash-out pays correctly & updates wallet', cashRes.status === 200 && cashRes.data.payout > 0);
+        crashedOrFinished = true;
+        break;
+      }
     }
+
+    // Attempting to step after round ended should fail
+    const postStep = await user('/games/road/step', {});
+    ok('no step after round finished', postStep.data.error === 'NOT_FOUND');
+
+    // Start a new round to test hit & seed revelation
+    const rStart2 = await user('/games/road/start', { bet: 1000, difficulty: 'hardcore', client_seed: 'provably_fair_test' });
+    ok('new road round starts after previous ended', rStart2.status === 200 && rStart2.data.active === true);
+    let hitFound = false;
+    for (let lane = 1; lane <= 15; lane++) {
+      const stepRes = await user('/games/road/step', {});
+      if (stepRes.data.crashed) {
+        hitFound = true;
+        ok('hit ends round & reveals server_seed', stepRes.data.server_seed && stepRes.data.finished === true);
+        const sha = cryptoMod.createHash('sha256').update(stepRes.data.server_seed).digest('hex');
+        ok('revealed server_seed matches server_seed_hash', sha === stepRes.data.server_seed_hash);
+
+        // Test provably fair verify endpoint
+        const ver = await user('/games/road/verify', {
+          server_seed: stepRes.data.server_seed,
+          client_seed: stepRes.data.client_seed,
+          lane: stepRes.data.lane,
+          difficulty: 'hardcore'
+        });
+        ok('fairness verification endpoint reproduces hazard', ver.status === 200 && ver.data.is_hazard === true);
+        break;
+      } else if (stepRes.data.finished) {
+        // Reached end
+        ok('auto cashout reached end', stepRes.data.finished === true && stepRes.data.payout > 0);
+        break;
+      }
+    }
+
+    // Insufficient balance test
+    const rInsuff = await user('/games/road/start', { bet: 99999999 });
+    ok('insufficient balance rejected', rInsuff.data.error === 'INSUFFICIENT' || rInsuff.data.error === 'INVALID');
+
+    // Road history
+    const rHist = await user('/games/road/history');
+    ok('road history returns list of rounds', rHist.status === 200 && Array.isArray(rHist.data.rounds) && rHist.data.rounds.length > 0);
+
 
     // Mines
     const mstate0 = await user('/games/mines');

@@ -401,10 +401,12 @@ const g = (fn) => [auth, need('user'), wrap((req) => fn(req))];
 app.post('/api/games/roulette', ...g((req) => games.roulette(req.user.id, Number(req.body.bet), req.body.kind,
   req.body.kind === 'number' ? Number(req.body.value) : req.body.value)));
 app.post('/api/games/star', ...g((req) => games.starSpin(req.user.id, Number(req.body.bet))));
-app.get('/api/games/road', ...g((req) => games.roadState(req.user.id)));
-app.post('/api/games/road/start', ...g((req) => games.roadStart(req.user.id, Number(req.body.bet))));
+app.get('/api/games/road', ...g((req) => games.roadState(req.user.id, req.query.difficulty)));
+app.post('/api/games/road/start', ...g((req) => games.roadStart(req.user.id, Number(req.body.bet), req.body.difficulty, req.body.client_seed)));
 app.post('/api/games/road/step', ...g((req) => games.roadStep(req.user.id)));
 app.post('/api/games/road/cashout', ...g((req) => games.roadCashout(req.user.id)));
+app.get('/api/games/road/history', ...g((req) => games.roadHistory(req.user.id)));
+app.post('/api/games/road/verify', ...g((req) => games.roadVerify(req.body)));
 app.get('/api/games/mines', ...g((req) => games.minesState(req.user.id)));
 app.post('/api/games/mines/start', ...g((req) => games.minesStart(req.user.id, Number(req.body.bet), req.body.mines)));
 app.post('/api/games/mines/step', ...g((req) => games.minesStep(req.user.id, req.body.cell)));
