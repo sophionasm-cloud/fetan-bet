@@ -778,7 +778,69 @@ window.Games = (function () {
   // =========================================================
   const LANE_W = 96, CURB_W = 90;
   const heroLeft = (step) =>
-    step === 0 ? CURB_W / 2 - 29 : CURB_W + (step - 1) * LANE_W + LANE_W / 2 - 29;
+    step === 0 ? CURB_W / 2 - 38 : CURB_W + (step - 1) * LANE_W + LANE_W / 2 - 38;
+
+  const CHICKEN_SVG = `<svg viewBox="0 0 542 460" width="100%" height="100%" class="chicken-svg">
+    <g id="chicken-character">
+      <g id="tail">
+        <path d="M 175 190 C 160 215, 135 248, 118 266 C 100 252, 92 238, 92 222 C 80 240, 68 250, 52 248 C 38 238, 35 220, 42 196 C 28 212, 18 212, 11 202 C 4 186, 7 165, 18 142 C 6 150, 4 140, 4 128 C 5 104, 18 78, 42 50 C 70 20, 105 10, 142 16 C 168 20, 178 35, 176 58 C 152 46, 126 48, 108 68 C 88 90, 85 118, 95 146 C 112 115, 136 94, 164 88 C 176 86, 178 92, 178 100 C 152 108, 132 128, 124 154 C 142 138, 162 135, 178 145 Z" fill="#D31820" stroke="#2B0508" stroke-width="5.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M 136 28 C 96 28, 62 58, 45 92 C 30 120, 26 154, 30 178" fill="none" stroke="#FF3B44" stroke-width="5" stroke-linecap="round"/>
+        <path d="M 148 55 C 118 56, 92 82, 80 112 C 72 132, 70 160, 75 182" fill="none" stroke="#B01017" stroke-width="5.5" stroke-linecap="round"/>
+        <path d="M 160 98 C 138 106, 118 126, 110 150 C 104 170, 106 195, 114 216" fill="none" stroke="#B01017" stroke-width="5" stroke-linecap="round"/>
+        <path d="M 168 144 C 150 152, 136 170, 132 190 C 128 208, 132 226, 140 242" fill="none" stroke="#B01017" stroke-width="4.5" stroke-linecap="round"/>
+      </g>
+      <g id="legs">
+        <g id="leg-right">
+          <path d="M 326 324 L 348 352" stroke="#451A03" stroke-width="8" stroke-linecap="round"/>
+          <path d="M 334 374 L 348 352 L 368 376 M 348 352 L 396 364 M 348 352 L 416 328" fill="none" stroke="#451A03" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 334 374 L 348 352 L 368 376 M 348 352 L 396 364 M 348 352 L 416 328" fill="none" stroke="#F59E0B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <g id="leg-left">
+          <path d="M 268 330 L 252 368" stroke="#451A03" stroke-width="8.5" stroke-linecap="round"/>
+          <path d="M 268 330 L 252 368" stroke="#F59E0B" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M 210 378 L 246 364 L 246 414 M 246 364 L 274 410 M 246 364 L 308 392" fill="none" stroke="#451A03" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 210 378 L 246 364 L 246 414 M 246 364 L 274 410 M 246 364 L 308 392" fill="none" stroke="#F59E0B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+      </g>
+      <g id="body">
+        <path d="M 175 190 C 174 150, 185 110, 218 138 C 246 158, 276 150, 312 142 C 322 178, 355 220, 396 230 C 370 286, 325 330, 268 330 C 214 330, 176 270, 175 190 Z" fill="#FAF6EB" stroke="#2B211B" stroke-width="5.5" stroke-linejoin="round"/>
+        <path d="M 188 238 C 204 290, 245 324, 292 322 C 334 320, 370 286, 392 240 C 362 270, 320 288, 274 286 C 232 284, 198 262, 188 238 Z" fill="#E5DCB8" opacity="0.85"/>
+      </g>
+      <g id="wing">
+        <path d="M 224 235 C 232 222, 248 214, 266 216 C 280 218, 290 226, 282 236 C 272 246, 252 248, 238 244 C 230 242, 226 238, 224 235 Z" fill="#EDE5CC" stroke="#2B211B" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M 252 244 C 265 248, 284 246, 292 235" fill="none" stroke="#2B211B" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+      <g id="head">
+        <path d="M 312 142 C 314 116, 332 75, 382 62 C 424 50, 462 70, 474 100 C 482 122, 484 140, 472 165 C 460 190, 440 214, 420 220 C 414 205, 412 195, 396 200 C 390 188, 382 182, 368 188 C 362 176, 350 172, 338 180 C 330 168, 320 162, 312 168 L 312 142 Z" fill="#FAF6EB" stroke="#2B211B" stroke-width="5.5" stroke-linejoin="round"/>
+        <path d="M 396 200 C 414 196, 420 216, 420 220 C 400 222, 380 214, 370 196 Z" fill="#E5DCB8" opacity="0.6"/>
+      </g>
+      <g id="comb">
+        <path d="M 382 62 C 370 42, 386 18, 412 24 C 426 26, 436 12, 456 16 C 474 20, 482 36, 480 48 C 494 48, 506 62, 498 78 C 492 90, 478 96, 464 94 C 440 76, 412 66, 382 62 Z" fill="#D31820" stroke="#2B0508" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M 402 34 C 418 28, 436 28, 452 24 C 466 22, 478 34, 480 44" fill="none" stroke="#FF4D52" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+      <g id="wattle">
+        <path d="M 444 190 C 462 192, 488 214, 488 238 C 488 256, 472 268, 456 260 C 442 254, 436 238, 438 220 Z" fill="#B8141A" stroke="#2B0508" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M 434 184 C 446 186, 454 204, 454 224 C 454 252, 440 274, 420 270 C 406 266, 404 246, 408 224 C 412 202, 422 186, 434 184 Z" fill="#D31820" stroke="#2B0508" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M 422 208 C 420 224, 418 244, 426 256" fill="none" stroke="#FF4D52" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <g id="beak">
+        <path d="M 432 128 C 450 124, 476 130, 498 142 C 518 154, 536 172, 538 186 C 538 194, 526 196, 510 196 C 486 196, 456 190, 434 184 C 430 162, 428 145, 432 128 Z" fill="#F97316" stroke="#381404" stroke-width="5.5" stroke-linejoin="round"/>
+        <path d="M 444 136 C 466 134, 492 142, 512 158 C 522 166, 530 178, 532 184" fill="none" stroke="#FBBF24" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+      <g id="eye">
+        <g id="eye-right">
+          <circle cx="488" cy="108" r="21" fill="#FFFDF5" stroke="#2B211B" stroke-width="4.5"/>
+          <circle cx="482" cy="110" r="8" fill="#1C140E"/>
+          <circle cx="480" cy="107" r="2.8" fill="#FFFFFF"/>
+        </g>
+        <g id="eye-left">
+          <circle cx="426" cy="106" r="27" fill="#FFFDF5" stroke="#2B211B" stroke-width="5"/>
+          <circle cx="420" cy="108" r="9.5" fill="#1C140E"/>
+          <circle cx="417" cy="104" r="3.2" fill="#FFFFFF"/>
+        </g>
+      </g>
+    </g>
+  </svg>`;
 
   const CARS_DN = [
     { e: '🚗', cls: 'md' }, { e: '🚕', cls: 'md' }, { e: '🚙', cls: 'md' },
@@ -1191,12 +1253,27 @@ window.Games = (function () {
           <span class="curb-label" style="color:#F2D98B">FINISH</span>
         </div>
         <div class="chicken-hero" id="road-chicken">
-          <div class="chicken-body">🐔</div>
+          <div class="chicken-svg-wrap">
+            ${CHICKEN_SVG}
+          </div>
           <div class="chicken-tag" id="chicken-tag">1.00×</div>
         </div>
       `;
 
       updateChickenPosition(st.active ? st.step : 0, false);
+    }
+
+    function spawnDustPuff(chicken) {
+      if (!chicken) return;
+      const puff = document.createElement('div');
+      puff.className = 'dust-puff';
+      puff.innerHTML = `<svg viewBox="0 0 50 16" width="44" height="14" fill="#a8a29e" opacity="0.75">
+        <ellipse cx="14" cy="9" rx="9" ry="4"/>
+        <ellipse cx="25" cy="8" rx="13" ry="5"/>
+        <ellipse cx="36" cy="9" rx="8" ry="4"/>
+      </svg>`;
+      chicken.appendChild(puff);
+      setTimeout(() => puff.remove(), 420);
     }
 
     // Camera and Hero tracking
@@ -1218,11 +1295,16 @@ window.Games = (function () {
       }
 
       if (hop) {
-        chicken.classList.remove('is-hopping');
+        chicken.classList.remove('is-hopping', 'is-dead', 'is-win');
         void chicken.offsetWidth;
         chicken.classList.add('is-hopping');
         sfx.hop();
-        setTimeout(() => { if (chicken) chicken.classList.remove('is-hopping'); }, 450);
+        setTimeout(() => {
+          if (chicken) {
+            chicken.classList.remove('is-hopping');
+            spawnDustPuff(chicken);
+          }
+        }, 450);
       }
 
       // Smooth horizontal camera tracking: keep chicken at ~25% from left edge
@@ -1320,6 +1402,8 @@ window.Games = (function () {
             client_seed: customClientSeed
           });
           C.setBalance(st.balance);
+          const chicken = $('road-chicken');
+          if (chicken) chicken.classList.remove('is-dead', 'is-win', 'is-hopping');
           renderScene();
           updateControls();
           renderSubTab();
@@ -1357,7 +1441,10 @@ window.Games = (function () {
               setTimeout(() => vp.classList.remove('road-shake'), 350);
             }
             const chicken = $('road-chicken');
-            if (chicken) chicken.classList.add('is-dead');
+            if (chicken) {
+              chicken.classList.remove('is-hopping', 'is-win');
+              chicken.classList.add('is-dead');
+            }
             spawnFeathers(laneEl);
           }
           say($('rmsg'), `💥 ${esc(t('crashed'))} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'lose');
@@ -1379,6 +1466,11 @@ window.Games = (function () {
         } else if (r.finished) {
           // Win - Reached Final Lane!
           await sleep(250);
+          const chicken = $('road-chicken');
+          if (chicken) {
+            chicken.classList.remove('is-hopping', 'is-dead');
+            chicken.classList.add('is-win');
+          }
           sfx.coin();
           sfx.win();
           coinRain(stage);
@@ -1421,6 +1513,11 @@ window.Games = (function () {
       try {
         const r = await C.api('/games/road/cashout', {});
         C.setBalance(r.balance);
+        const chicken = $('road-chicken');
+        if (chicken) {
+          chicken.classList.remove('is-hopping', 'is-dead');
+          chicken.classList.add('is-win');
+        }
         sfx.win();
         coinRain(stage);
         say($('rmsg'), `🎉 ${esc(t('win'))} +${C.fmt(r.payout)} (×${r.mult})!`, 'win');

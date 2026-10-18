@@ -1024,10 +1024,10 @@
 /* ---- THE CHICKEN HERO ---- */
 .chicken-hero {
   position: absolute;
-  bottom: 22px;
+  bottom: 20px;
   left: 0;
-  width: 58px;
-  height: 64px;
+  width: 76px;
+  height: 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1037,21 +1037,153 @@
   user-select: none;
   pointer-events: none;
 }
-.chicken-body {
-  font-size: 44px;
-  line-height: 1;
-  filter: drop-shadow(0 8px 10px rgba(0,0,0,0.85));
-  transition: transform 0.2s ease;
+
+.chicken-svg-wrap {
+  width: 76px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.85));
+  will-change: transform;
 }
-.chicken-hero.is-hopping .chicken-body {
-  animation: chicken-hop-arc 0.45s ease-out;
+
+.chicken-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* 1. IDLE ANIMATIONS */
+/* Gentle Bobbing on SVG body */
+.chicken-hero:not(.is-dead):not(.is-hopping):not(.is-win) .chicken-svg-wrap {
+  animation: chicken-idle-bob 2.4s ease-in-out infinite;
+}
+@keyframes chicken-idle-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3.5px); }
+}
+
+/* Eye Blink (every 3.8s) */
+#eye {
+  transform-origin: 450px 108px;
+  will-change: transform;
+}
+.chicken-hero:not(.is-dead) #eye {
+  animation: chicken-eye-blink 3.8s infinite;
+}
+@keyframes chicken-eye-blink {
+  0%, 91%, 97%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.08); }
+}
+
+/* Small Tail Wiggle */
+#tail {
+  transform-origin: 175px 185px;
+  will-change: transform;
+}
+.chicken-hero:not(.is-dead):not(.is-hopping):not(.is-win) #tail {
+  animation: chicken-tail-wiggle 2.8s ease-in-out infinite;
+}
+@keyframes chicken-tail-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  35% { transform: rotate(-4.5deg); }
+  75% { transform: rotate(3.5deg); }
+}
+
+/* Slight Head Tilt */
+#head, #comb, #beak, #wattle {
+  transform-origin: 340px 180px;
+  will-change: transform;
+}
+.chicken-hero:not(.is-dead):not(.is-hopping):not(.is-win) #head,
+.chicken-hero:not(.is-dead):not(.is-hopping):not(.is-win) #comb,
+.chicken-hero:not(.is-dead):not(.is-hopping):not(.is-win) #beak,
+.chicken-hero:not(.is-dead):not(.is-hopping):not(.is-win) #wattle {
+  animation: chicken-head-tilt 3.2s ease-in-out infinite;
+}
+@keyframes chicken-head-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  45% { transform: rotate(3deg); }
+  85% { transform: rotate(-2deg); }
+}
+
+/* 2. HOP ANIMATION: Jump Arc, Squash-and-Stretch */
+.chicken-hero.is-hopping .chicken-svg-wrap {
+  animation: chicken-hop-arc 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 @keyframes chicken-hop-arc {
-  0% { transform: translateY(0) scale(1, 1); }
-  35% { transform: translateY(-42px) scale(1.15, 0.88); }
-  65% { transform: translateY(-46px) scale(0.92, 1.12); }
-  85% { transform: translateY(4px) scale(1.08, 0.94); }
+  0% { transform: translateY(0) scale(1.08, 0.92); }
+  25% { transform: translateY(-28px) scale(0.92, 1.15); }
+  50% { transform: translateY(-44px) scale(0.95, 1.1); }
+  75% { transform: translateY(-20px) scale(1.05, 0.98); }
+  90% { transform: translateY(2px) scale(1.18, 0.86); }
   100% { transform: translateY(0) scale(1, 1); }
+}
+
+/* Wing flap during hop */
+#wing {
+  transform-origin: 230px 220px;
+  will-change: transform;
+}
+.chicken-hero.is-hopping #wing {
+  animation: chicken-wing-flap 0.45s ease-in-out;
+}
+@keyframes chicken-wing-flap {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-28deg) translateY(-8px); }
+  65% { transform: rotate(18deg) translateY(4px); }
+}
+
+/* Legs tucked in mid-air during hop */
+#legs {
+  transform-origin: 290px 330px;
+  will-change: transform;
+}
+.chicken-hero.is-hopping #legs {
+  animation: chicken-legs-tuck 0.45s ease-in-out;
+}
+@keyframes chicken-legs-tuck {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  30%, 70% { transform: translateY(-18px) scale(0.85, 0.65); }
+}
+
+/* Dust puff on landing */
+.dust-puff {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 8;
+  animation: dust-expand 0.4s ease-out forwards;
+}
+@keyframes dust-expand {
+  0% { transform: translateX(-50%) scale(0.2); opacity: 0.9; }
+  100% { transform: translateX(-50%) scale(1.8); opacity: 0; }
+}
+
+/* 3. CRASH: Flatten down on the road */
+.chicken-hero.is-dead .chicken-svg-wrap {
+  animation: chicken-crash-flatten 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes chicken-crash-flatten {
+  0% { transform: translateY(0) scale(1, 1); }
+  35% { transform: translateY(12px) scale(1.4, 0.5) rotate(-14deg); }
+  100% { transform: translateY(18px) scale(1.65, 0.32) rotate(-8deg); filter: grayscale(50%) brightness(0.85); }
+}
+
+/* 4. WIN: Happy Bounce loop */
+.chicken-hero.is-win .chicken-svg-wrap {
+  animation: chicken-win-bounce 0.6s ease-in-out infinite;
+}
+@keyframes chicken-win-bounce {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  35% { transform: translateY(-18px) scale(1.06, 0.94); }
+  55% { transform: translateY(0) scale(1.14, 0.88); }
+  75% { transform: translateY(-8px) scale(1.03, 0.97); }
 }
 
 /* Multiplier Tag Under Chicken */
@@ -1067,10 +1199,6 @@
   white-space: nowrap;
   margin-top: 2px;
   letter-spacing: 0.3px;
-}
-.chicken-hero.is-dead .chicken-body {
-  transform: rotate(90deg) scale(0.9);
-  filter: grayscale(80%) drop-shadow(0 4px 6px rgba(0,0,0,0.8));
 }
 .chicken-hero.is-dead .chicken-tag {
   border-color: #ef4444;
