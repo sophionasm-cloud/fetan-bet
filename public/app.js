@@ -189,16 +189,16 @@ function authView(app, initialMode = 'login') {
 
             <ul class="auth-features">
               <li class="auth-feat-item">
-                <span class="auth-feat-icon">🎰</span>
-                <span>${lang === 'am' ? '7 ዋና የካሲኖ ጨዋታዎች (ሮድ፣ ማይንስ፣ ፕሊንኮ፣ ኬኖ፣ ቢንጎ...)' : '7 Premium Casino Games (Road, Mines, Plinko, Keno, Bingo...)'}</span>
-              </li>
-              <li class="auth-feat-item">
-                <span class="auth-feat-icon">🪙</span>
-                <span>${lang === 'am' ? '1,000 ነፃ የሙከራ ክሬዲት ሲመዘገቡ' : '1,000 Free Welcome Demo Credits'}</span>
-              </li>
-              <li class="auth-feat-item">
                 <span class="auth-feat-icon">⚡</span>
-                <span>${lang === 'am' ? 'ፈጣን የወኪል ገንዘብ ማስገቢያ እና ማውጫ' : 'Instant Agent Deposits & Withdrawals'}</span>
+                <span>${lang === 'am' ? '<strong>ደህንነቱ የተጠበቀ እና ፈጣን ክፍያ፡</strong> ያሸነፉትን በፍጥነት እና በደህንነት ይቀበሉ።' : '<strong>Secure and Instant Payouts:</strong> Get your winnings quickly and safely.'}</span>
+              </li>
+              <li class="auth-feat-item">
+                <span class="auth-feat-icon">⚖️</span>
+                <span>${lang === 'am' ? '<strong>ፍትሃዊ ጨዋታ እና ግልጽነት፡</strong> የተረጋገጠ RNG ለሁሉም ጨዋታዎች።' : '<strong>Fair Play and Transparency:</strong> Verified RNG for all games, guaranteed.'}</span>
+              </li>
+              <li class="auth-feat-item">
+                <span class="auth-feat-icon">🎧</span>
+                <span>${lang === 'am' ? '<strong>የ24/7 የባለሙያ ድጋፍ፡</strong> በማንኛውም ሰዓት ዝግጁ የሆነ ቡድን።' : '<strong>24/7 Expert Support:</strong> Dedicated team available around the clock.'}</span>
               </li>
             </ul>
           </div>
