@@ -1055,7 +1055,7 @@ window.Games = (function () {
       g.fillStyle = hub; g.beginPath(); g.arc(cx, cy, 50, 0, 7); g.fill();
       g.fillStyle = '#1a0e00'; g.font = 'bold 20px Noto Sans Ethiopic,sans-serif';
       g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText('ፍ', cx, cy);
+      g.fillText('ፈ', cx, cy);
 
       // Top indicator pointer
       g.fillStyle = '#c9a227';

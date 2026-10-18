@@ -602,7 +602,7 @@ app.get('/api/admin/support', ...admin, wrap((req) => {
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
-  app.listen(PORT, () => console.log(`ፍጣን ቤት / Fetan Bet running at http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`ፈጣን ቤት / Fetan Bet running at http://localhost:${PORT}`));
 }
 module.exports = app;
 

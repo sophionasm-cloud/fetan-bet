@@ -173,7 +173,7 @@ const server = app.listen(0, async () => {
       WHERE w.balance != COALESCE((SELECT SUM(amount) FROM ledger l WHERE l.user_id = w.user_id), 0)`).all();
     ok('wallet balance equals sum of ledger for every user', bad.length === 0);
     ok('audit log has entries', db.prepare('SELECT COUNT(*) c FROM audit_logs').get().c > 3);
-    ok('amharic translations load', (await fetch(base + '/i18n/am').then((r) => r.json())).brand === 'ፍጣን ቤት');
+    ok('amharic translations load', (await fetch(base + '/i18n/am').then((r) => r.json())).brand === 'ፈጣን ቤት');
 
     console.log(`\nAll ${passed} checks passed.`);
     server.close(); process.exit(0);

@@ -31,7 +31,7 @@ function getAiResponse(userMessage, context = {}) {
   const greetings = ['hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening', 'selam', 'ሰላም', 'እንደምን'];
   if (greetings.some((g) => lower.startsWith(g) || lower === g || msg.startsWith(g))) {
     const reply = isAmharic
-      ? `ሰላም ${user.name || 'ደንበኛ'}! ወደ ፍጣን ቤት እንኳን በደህና መጡ። ዛሬ እንዴት ልረዳዎ እችላለሁ? ስለ ገንዘብ ማስገባት፣ ማውጣት፣ ወይም ስለ ጨዋታዎቻችን መጠየቅ ይችላሉ።`
+      ? `ሰላም ${user.name || 'ደንበኛ'}! ወደ ፈጣን ቤት እንኳን በደህና መጡ። ዛሬ እንዴት ልረዳዎ እችላለሁ? ስለ ገንዘብ ማስገባት፣ ማውጣት፣ ወይም ስለ ጨዋታዎቻችን መጠየቅ ይችላሉ።`
       : `Hi ${user.name || 'there'}! Welcome to Fetan Bet. How can I assist you today? Feel free to ask about deposits, withdrawals, game rules, or your account.`;
     return { reply, shouldEscalate: false };
   }

@@ -1,6 +1,6 @@
 // ፍጣን ቤት front-end — Stake-inspired professional UI, no build step.
 'use strict';
-let T = {}, lang = localStorage.getItem('lang') || 'am', me = null, balance = 0,
+let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0,
     limits = { min: 100, max: 100000 }, tab = 'games', agentSubtab = 'deposits';
 
 const $ = (id) => document.getElementById(id);
@@ -59,7 +59,7 @@ async function loadLang(l) {
   $('depTxt').textContent = t('deposit');
   $('headerLoginBtn').textContent = t('login');
   $('headerRegBtn').textContent = t('register');
-  document.title = 'ፍጣን ቤት | Fetan Bet';
+  document.title = 'ፈጣን ቤት | Fetan Bet';
 }
 
 async function refreshMe() {
@@ -174,17 +174,17 @@ function authView(app, initialMode = 'login') {
         <div class="auth-showcase">
           <div>
             <div class="auth-brand-head" style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-              <div class="logo">ፍ</div>
+              <div class="logo">ፈ</div>
               <span class="brand-sub" style="font-size:12px;letter-spacing:1px;color:var(--gold-bright)">FETAN BET CASINO</span>
             </div>
 
             <div class="auth-hero-title-group">
-              <div class="auth-welcome-sub">Welcome to</div>
-              <div class="auth-brand-giant">FETAN BET</div>
+              <div class="auth-welcome-sub">${lang === 'am' ? 'እንኳን ወደ' : 'WELCOME TO'}</div>
+              <div class="auth-brand-giant">${lang === 'am' ? 'ፈጣን ቤት' : 'FETAN BET'}</div>
             </div>
 
             <div class="auth-brand-tagline">
-              ${lang === 'am' ? 'በፍጣን ቤት በሚወዷቸው የካሲኖ እና የስፖርት ጨዋታዎች ይደሰቱ' : 'Bet on your favorite sports and casino games with FETAN BET'}
+              ${lang === 'am' ? 'በፈጣን ቤት በሚወዷቸው የካሲኖ እና የስፖርት ጨዋታዎች ይደሰቱ' : 'Bet on your favorite sports and casino games with FETAN BET'}
             </div>
 
             <ul class="auth-features">
@@ -726,7 +726,7 @@ async function supportView(app) {
   const { ticket, messages, ai_enabled } = await api('/support');
 
   const defaultGreeting = lang === 'am'
-    ? `ሰላም ${esc(me.name)}! ወደ ፍጣን ቤት የደንበኞች ድጋፍ ማዕከል እንኳን በደህና መጡ። እኔ የፍጣን ቤት AI ረዳት ነኝ። ዛሬ እንዴት ልረዳዎ እችላለሁ? ስለ ገንዘብ ማስገባት፣ ማውጣት፣ ወይም ስለ ጨዋታዎቻችን መጠየቅ ይችላሉ።`
+    ? `ሰላም ${esc(me.name)}! ወደ ፈጣን ቤት የደንበኞች ድጋፍ ማዕከል እንኳን በደህና መጡ። እኔ የፈጣን ቤት AI ረዳት ነኝ። ዛሬ እንዴት ልረዳዎ እችላለሁ? ስለ ገንዘብ ማስገባት፣ ማውጣት፣ ወይም ስለ ጨዋታዎቻችን መጠየቅ ይችላሉ።`
     : `Hi ${esc(me.name)}! Welcome to Fetan Bet Support. I am your AI Support Assistant. How can I assist you today? Feel free to ask about deposits, withdrawals, or game rules.`;
 
   const allMessages = messages && messages.length ? messages : [

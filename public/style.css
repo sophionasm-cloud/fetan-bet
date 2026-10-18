@@ -583,7 +583,11 @@ button {
    ============================================================ */
 .auth-wrapper {
   max-width: 960px;
-  margin: 24px auto 40px;
+  margin: 24px auto;
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-split-card {
