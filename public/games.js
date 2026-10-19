@@ -1761,6 +1761,13 @@ window.Games = (function () {
       return true;
     }
 
+    // Consistent speed per lane so cars in the same lane never overtake each other
+    function getLaneSpeed(laneNum, reduced) {
+      if (reduced) return 1.4 + ((laneNum * 3) % 4) * 0.2;
+      // Range: 2.2 to 3.6 px/frame
+      return 2.2 + ((laneNum * 7) % 5) * 0.35;
+    }
+
     function spawnCarInLane(laneNum, forceType = null, customY = -170, customSpeed = null) {
       const trafficLayer = $('lane-traffic-' + laneNum);
       if (!trafficLayer) return null;
@@ -1772,7 +1779,7 @@ window.Games = (function () {
       trafficLayer.appendChild(el);
 
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const baseSpeed = customSpeed || (reduced ? 1.4 + Math.random() * 1.0 : 2.5 + Math.random() * 2.0);
+      const baseSpeed = customSpeed || getLaneSpeed(laneNum, reduced);
 
       const carObj = {
         id: ++carIdSeq,
@@ -1825,15 +1832,16 @@ window.Games = (function () {
       for (let i = firstVisLane; i <= lastVisLane; i++) {
         if (!canSpawnInLane(i)) continue;
 
-        if (!laneNextSpawn[i]) laneNextSpawn[i] = now + Math.random() * (reduced ? 3500 : 2200);
+        if (!laneNextSpawn[i]) laneNextSpawn[i] = now + Math.random() * (reduced ? 3500 : 2000);
 
         if (now >= laneNextSpawn[i]) {
           const carsInLane = activeVehicles.filter((v) => v.lane === i && !v.fading);
-          const topCar = carsInLane.reduce((min, c) => (c.y < min ? c.y : min), 9999);
-          if (topCar > -10) { // Safe gap at spawn top
+          // Strictly prevent double cars: only spawn if lane is empty OR the previous car is almost completely off screen (y > 270)
+          const canSpawnNewCar = carsInLane.length === 0 || (carsInLane.length === 1 && carsInLane[0].y > 270);
+          if (canSpawnNewCar) {
             spawnCarInLane(i);
           }
-          const interval = reduced ? 4500 + Math.random() * 3000 : 2200 + Math.random() * 2600;
+          const interval = reduced ? 4500 + Math.random() * 3000 : 2500 + Math.random() * 2500;
           laneNextSpawn[i] = now + interval;
         }
       }
@@ -1850,15 +1858,33 @@ window.Games = (function () {
           removeCar(v);
         }
       }
+
+      // Anti-tailgating & anti-overlap physics clamp: enforce strict gap between cars in same lane
+      for (let i = 1; i <= maxSteps; i++) {
+        const inLane = activeVehicles.filter((v) => v.lane === i && !v.fading).sort((a, b) => b.y - a.y);
+        for (let k = 1; k < inLane.length; k++) {
+          const leader = inLane[k - 1];
+          const trailer = inLane[k];
+          const minGap = 180; // Minimum bumper-to-bumper gap in pixels
+          if (leader.y - trailer.y < minGap) {
+            trailer.speed = leader.speed;
+            trailer.y = leader.y - minGap;
+            if (trailer.el) {
+              trailer.el.style.transform = `translate3d(0, ${trailer.y}px, 0)`;
+            }
+          }
+        }
+      }
     }
 
-    // Development Check: in dev mode, log console warning if vehicle overlaps chicken, tag, or barrier
+    // Development Check: in dev mode, log console warning if vehicle overlaps chicken, tag, barrier, or another vehicle
     function devCheckCollisions() {
       const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || window.DEV_MODE;
       if (!isDev || isCrashAnimActive) return;
 
       const currentL = st.active ? st.step : 0;
-      for (const v of activeVehicles) {
+      for (let i = 0; i < activeVehicles.length; i++) {
+        const v = activeVehicles[i];
         if (v.fading) continue;
 
         // 1. Check overlap with chicken & tag in chicken's current lane (y range ~125 to 225)
@@ -1883,6 +1909,16 @@ window.Games = (function () {
         if (currentL > 0 && v.lane <= currentL && v.y < 50) {
           console.warn(`[Road Dash Dev Check] Vehicle ${v.id} spawned or moving in passed lane ${v.lane}! (carY: ${v.y.toFixed(1)})`);
         }
+
+        // 4. Check if two vehicles overlap in the same lane (Double car check!)
+        for (let j = i + 1; j < activeVehicles.length; j++) {
+          const v2 = activeVehicles[j];
+          if (v.lane === v2.lane && !v2.fading) {
+            if (v.y + v.h > v2.y && v2.y + v2.h > v.y) {
+              console.warn(`[Road Dash Dev Check] Double car overlap in lane ${v.lane}! Car ${v.id} (${v.type}, y: ${v.y.toFixed(1)}) and Car ${v2.id} (${v2.type}, y: ${v2.y.toFixed(1)})`);
+            }
+          }
+        }
       }
     }
 
@@ -1896,7 +1932,6 @@ window.Games = (function () {
       devCheckCollisions();
       trafficAnimId = requestAnimationFrame(trafficLoop);
     }
-
     // Visibility Listener
     function onVisChange() {
       if (document.hidden) {
