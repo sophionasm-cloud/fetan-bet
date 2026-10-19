@@ -250,9 +250,60 @@ const server = app.listen(0, async () => {
     });
     ok('fairness verification reproduces the layout', verifyRes.status === 200 && JSON.stringify(verifyRes.data.mines) === JSON.stringify(hitStepRes.data.mines));
 
-    // Plinko
-    const pk = await user('/games/plinko', { bet: 1000 });
-    ok('plinko plays', pk.status === 200 && pk.data.bucket >= 0 && pk.data.bucket <= 10 && Array.isArray(pk.data.steps));
+    // Plinko: comprehensive testing
+    // 1. Table symmetry, length (rows+1) and RTP between 0.97 and 0.995 for every rows (8-16) and risk (low, medium, high)
+    const comb = (n, r) => {
+      if (r < 0 || r > n) return 0;
+      if (r === 0 || r === n) return 1;
+      let c = 1;
+      for (let i = 1; i <= r; i++) c = (c * (n - i + 1)) / i;
+      return c;
+    };
+    const calcRtp = (rows, mults) => {
+      const p = mults.map((_, i) => comb(rows, i) / Math.pow(2, rows));
+      return mults.reduce((sum, m, i) => sum + m * p[i], 0);
+    };
+
+    let allTablesValid = true;
+    for (let r = 8; r <= 16; r++) {
+      for (const rk of ['low', 'medium', 'high']) {
+        const tbl = games.PLINKO_PAYOUTS[r][rk];
+        if (tbl.length !== r + 1) allTablesValid = false;
+        for (let i = 0; i < tbl.length; i++) {
+          if (tbl[i] !== tbl[tbl.length - 1 - i]) allTablesValid = false;
+        }
+        const val = calcRtp(r, tbl);
+        if (val < 0.97 || val > 0.995) allTablesValid = false;
+      }
+    }
+    ok('every plinko table is symmetric, has rows+1 entries, and rtp between 0.97 and 0.995', allTablesValid);
+
+    // 2. Invalid rows or risk rejected
+    const badRows = await user('/games/plinko', { bet: 1000, rows: 7, risk: 'medium' });
+    ok('plinko invalid rows rejected', badRows.status === 400 || badRows.data.error === 'INVALID');
+    const badRisk = await user('/games/plinko', { bet: 1000, rows: 10, risk: 'extreme' });
+    ok('plinko invalid risk rejected', badRisk.status === 400 || badRisk.data.error === 'INVALID');
+
+    // 3. Bet deducted and payout credited through ledger
+    const prePlinkoBal = (await user('/me')).data.balance;
+    const pk = await user('/games/plinko', { bet: 1000, rows: 10, risk: 'medium', client_seed: 'custom_pk_seed', nonce: 5 });
+    ok('plinko plays and returns valid bucket and path', pk.status === 200 && pk.data.bucket >= 0 && pk.data.bucket <= 10 && Array.isArray(pk.data.path) && pk.data.path.length === 10);
+    const postPlinkoBal = (await user('/me')).data.balance;
+    ok('plinko bet deducted and payout credited through ledger', postPlinkoBal === prePlinkoBal - 1000 + pk.data.payout);
+
+    // 4. Insufficient balance rejected
+    const hugeBet = await user('/games/plinko', { bet: 100000000, rows: 10, risk: 'medium' });
+    ok('plinko insufficient balance rejected', hugeBet.status === 400 || hugeBet.data.error === 'INVALID' || hugeBet.data.error === 'INSUFFICIENT');
+
+    // 5. Fairness check reproduces the path
+    const pkVerify = await user('/games/plinko/verify', {
+      server_seed: pk.data.server_seed,
+      client_seed: pk.data.client_seed,
+      nonce: 5,
+      rows: 10,
+      risk: 'medium'
+    });
+    ok('plinko fairness check reproduces path and bucket', pkVerify.status === 200 && JSON.stringify(pkVerify.data.path) === JSON.stringify(pk.data.path) && pkVerify.data.bucket === pk.data.bucket);
 
     // Keno
     const knBad = await user('/games/keno', { bet: 1000, picks: [] });

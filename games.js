@@ -677,32 +677,100 @@ const PLINKO_PAYOUTS = {
   },
 };
 
-function plinko(userId, bet, rows = 10, risk = 'medium') {
+function generatePlinkoPath(serverSeed, clientSeed, nonce, rowCount) {
+  const path = [];
+  let bucket = 0;
+  for (let r = 0; r < rowCount; r++) {
+    const msg = `${serverSeed}:${clientSeed}:${nonce}:${r}`;
+    const hash = crypto.createHash('sha256').update(msg).digest('hex');
+    const val = parseInt(hash.slice(0, 8), 16);
+    const bit = val % 2; // 0 = left, 1 = right
+    path.push(bit);
+    bucket += bit;
+  }
+  return { path, bucket };
+}
+
+function plinko(userId, bet, rows = 10, risk = 'medium', clientSeed = '', nonce = 1) {
   checkBet(bet);
-  const rowCount = Number(rows) >= 8 && Number(rows) <= 16 ? Number(rows) : 10;
-  const riskLevel = ['low', 'medium', 'high'].includes(risk) ? risk : 'medium';
-  const table = PLINKO_PAYOUTS[rowCount] ? PLINKO_PAYOUTS[rowCount][riskLevel] : PLINKO_PAYOUTS[10].medium;
+  const rowCount = Number(rows);
+  if (!Number.isInteger(rowCount) || rowCount < 8 || rowCount > 16) throw new Error('INVALID');
+  const riskLevel = String(risk).toLowerCase();
+  if (!['low', 'medium', 'high'].includes(riskLevel)) throw new Error('INVALID');
+
+  const table = PLINKO_PAYOUTS[rowCount][riskLevel];
+  const sSeed = crypto.randomBytes(32).toString('hex');
+  const sHash = crypto.createHash('sha256').update(sSeed).digest('hex');
+  const nextServerSeed = crypto.randomBytes(32).toString('hex');
+  const nextSeedHash = crypto.createHash('sha256').update(nextServerSeed).digest('hex');
+  const cSeed = String(clientSeed || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || crypto.randomBytes(16).toString('hex');
+  const nNonce = Number(nonce) || 1;
+
+  const { path, bucket } = generatePlinkoPath(sSeed, cSeed, nNonce, rowCount);
+  const mult = table[bucket] !== undefined ? table[bucket] : 1;
+  const payout = Math.floor(bet * mult);
 
   return db.transaction(() => {
-    const roundId = saveRound(userId, 'plinko', bet, 0, {});
+    const detail = {
+      path,
+      steps: path,
+      bucket,
+      mult,
+      rows: rowCount,
+      risk: riskLevel,
+      nonce: nNonce
+    };
+    const roundId = saveRound(userId, 'plinko', bet, payout, detail, 'done', rowCount, sSeed, cSeed, sHash);
     postLedger({ userId, delta: -bet, type: 'bet', refType: 'round', refId: roundId });
-
-    const steps = [];
-    let bucket = 0;
-    for (let r = 0; r < rowCount; r++) {
-      const step = rnd(2); // 0 = bounce left, 1 = bounce right
-      steps.push(step);
-      bucket += step;
+    if (payout > 0) {
+      postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: roundId });
     }
 
-    const mult = table[bucket] !== undefined ? table[bucket] : 1;
-    const payout = Math.floor(bet * mult);
-    if (payout > 0) postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: roundId });
-    db.prepare('UPDATE game_rounds SET payout=?, detail=? WHERE id=?')
-      .run(payout, JSON.stringify({ bucket, mult, steps, rows: rowCount, risk: riskLevel }), roundId);
     const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
-    return { bucket, mult, payout, balance, steps, rows: rowCount, risk: riskLevel };
+    return {
+      path,
+      steps: path,
+      bucket,
+      multiplier: mult,
+      mult,
+      payout,
+      balance,
+      rows: rowCount,
+      risk: riskLevel,
+      server_seed: sSeed,
+      server_seed_hash: sHash,
+      client_seed: cSeed,
+      nonce: nNonce,
+      next_server_seed_hash: nextSeedHash
+    };
   })();
+}
+
+function plinkoVerify({ server_seed, client_seed, nonce = 1, rows = 10, risk = 'medium' }) {
+  if (!server_seed || !client_seed) throw new Error('INVALID');
+  const rowCount = Number(rows);
+  if (!Number.isInteger(rowCount) || rowCount < 8 || rowCount > 16) throw new Error('INVALID');
+  const riskLevel = String(risk).toLowerCase();
+  if (!['low', 'medium', 'high'].includes(riskLevel)) throw new Error('INVALID');
+
+  const { path, bucket } = generatePlinkoPath(server_seed, client_seed, Number(nonce) || 1, rowCount);
+  const table = PLINKO_PAYOUTS[rowCount][riskLevel];
+  const mult = table[bucket];
+  const serverSeedHash = crypto.createHash('sha256').update(server_seed).digest('hex');
+
+  return {
+    server_seed,
+    server_seed_hash: serverSeedHash,
+    client_seed,
+    nonce: Number(nonce) || 1,
+    rows: rowCount,
+    risk: riskLevel,
+    path,
+    steps: path,
+    bucket,
+    multiplier: mult,
+    mult
+  };
 }
 
 
@@ -903,6 +971,9 @@ module.exports = {
   getMinesNextMultipliers,
   generateMinesLayout,
   plinko,
+  plinkoVerify,
+  generatePlinkoPath,
+  PLINKO_PAYOUTS,
   keno,
   bingoStart,
   bingoState,

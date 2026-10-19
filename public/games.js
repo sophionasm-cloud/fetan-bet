@@ -987,43 +987,74 @@ window.Games = (function () {
   // =========================================================
   // PLINKO (Stake Reference / AnsonH)
   // =========================================================
+  // =========================================================
+  // PLINKO (Stake Reference / Multi-Ball / Auto Mode / Provably Fair)
+  // =========================================================
   const PLINKO_TABLES = {
     8: {
-      low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
-      medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
-      high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29],
+      low: [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
+      medium: [13, 3.0, 1.3, 0.7, 0.4, 0.7, 1.3, 3.0, 13],
+      high: [29, 4.0, 1.5, 0.3, 0.2, 0.3, 1.5, 4.0, 29]
+    },
+    9: {
+      low: [5.6, 2.0, 1.6, 1.0, 0.7, 0.7, 1.0, 1.6, 2.0, 5.6],
+      medium: [18, 4.0, 1.7, 0.9, 0.5, 0.5, 0.9, 1.7, 4.0, 18],
+      high: [43, 7.0, 2.0, 0.6, 0.2, 0.2, 0.6, 2.0, 7.0, 43]
     },
     10: {
-      low: [8.9, 3, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 3, 8.9],
-      medium: [22, 5, 2, 1.4, 0.6, 0.4, 0.6, 1.4, 2, 5, 22],
-      high: [76, 10, 3, 0.9, 0.3, 0.2, 0.3, 0.9, 3, 10, 76],
+      low: [8.9, 3.0, 1.4, 1.1, 1.0, 0.5, 1.0, 1.1, 1.4, 3.0, 8.9],
+      medium: [22, 5.0, 2.0, 1.4, 0.6, 0.4, 0.6, 1.4, 2.0, 5.0, 22],
+      high: [76, 10, 3.0, 0.9, 0.3, 0.2, 0.3, 0.9, 3.0, 10, 76]
+    },
+    11: {
+      low: [8.4, 3.0, 1.9, 1.3, 1.0, 0.7, 0.7, 1.0, 1.3, 1.9, 3.0, 8.4],
+      medium: [24, 6.0, 3.0, 1.8, 0.7, 0.5, 0.5, 0.7, 1.8, 3.0, 6.0, 24],
+      high: [120, 14, 5.2, 1.4, 0.4, 0.2, 0.2, 0.4, 1.4, 5.2, 14, 120]
     },
     12: {
-      low: [10, 3, 1.6, 1.4, 1.1, 1, 0.5, 1, 1.1, 1.4, 1.6, 3, 10],
-      medium: [33, 11, 4, 2, 1.1, 0.6, 0.3, 0.6, 1.1, 2, 4, 11, 33],
-      high: [170, 24, 8.1, 2, 0.7, 0.2, 0.2, 0.2, 0.7, 2, 8.1, 24, 170],
+      low: [10, 3.0, 1.6, 1.4, 1.1, 1.0, 0.5, 1.0, 1.1, 1.4, 1.6, 3.0, 10],
+      medium: [33, 11, 4.0, 2.0, 1.1, 0.6, 0.3, 0.6, 1.1, 2.0, 4.0, 11, 33],
+      high: [170, 24, 8.1, 2.0, 0.7, 0.2, 0.2, 0.2, 0.7, 2.0, 8.1, 24, 170]
+    },
+    13: {
+      low: [8.1, 4.0, 3.0, 1.9, 1.2, 0.9, 0.7, 0.7, 0.9, 1.2, 1.9, 3.0, 4.0, 8.1],
+      medium: [43, 13, 6.0, 3.0, 1.3, 0.7, 0.4, 0.4, 0.7, 1.3, 3.0, 6.0, 13, 43],
+      high: [260, 37, 11, 4.0, 1.0, 0.2, 0.2, 0.2, 0.2, 1.0, 4.0, 11, 37, 260]
     },
     14: {
-      low: [7.1, 4, 1.9, 1.4, 1.3, 1.1, 1, 0.5, 1, 1.1, 1.3, 1.4, 1.9, 4, 7.1],
-      medium: [58, 15, 7, 4, 1.9, 1, 0.5, 0.2, 0.5, 1, 1.9, 4, 7, 15, 58],
-      high: [420, 56, 18, 5, 1.9, 0.3, 0.2, 0.2, 0.2, 0.3, 1.9, 5, 18, 56, 420],
+      low: [7.1, 4.0, 1.9, 1.4, 1.3, 1.1, 1.0, 0.5, 1.0, 1.1, 1.3, 1.4, 1.9, 4.0, 7.1],
+      medium: [58, 15, 7.0, 4.0, 1.9, 1.0, 0.5, 0.2, 0.5, 1.0, 1.9, 4.0, 7.0, 15, 58],
+      high: [420, 56, 18, 5.0, 1.9, 0.3, 0.2, 0.2, 0.2, 0.3, 1.9, 5.0, 18, 56, 420]
+    },
+    15: {
+      low: [15, 8.0, 3.0, 2.0, 1.5, 1.1, 1.0, 0.7, 0.7, 1.0, 1.1, 1.5, 2.0, 3.0, 8.0, 15],
+      medium: [88, 18, 11, 5.0, 3.0, 1.3, 0.5, 0.3, 0.3, 0.5, 1.3, 3.0, 5.0, 11, 18, 88],
+      high: [620, 83, 27, 8.0, 3.0, 0.5, 0.2, 0.2, 0.2, 0.2, 0.5, 3.0, 8.0, 27, 83, 620]
     },
     16: {
-      low: [16, 9, 2, 1.4, 1.4, 1.2, 1.1, 1, 0.5, 1, 1.1, 1.2, 1.4, 1.4, 2, 9, 16],
-      medium: [110, 41, 10, 5, 3, 1.5, 1, 0.5, 0.3, 0.5, 1, 1.5, 3, 5, 10, 41, 110],
-      high: [1000, 130, 26, 9, 4, 2, 0.2, 0.2, 0.2, 0.2, 0.2, 2, 4, 9, 26, 130, 1000],
-    },
+      low: [16, 9.0, 2.0, 1.4, 1.4, 1.2, 1.1, 1.0, 0.5, 1.0, 1.1, 1.2, 1.4, 1.4, 2.0, 9.0, 16],
+      medium: [110, 41, 10, 5.0, 3.0, 1.5, 1.0, 0.5, 0.3, 0.5, 1.0, 1.5, 3.0, 5.0, 10, 41, 110],
+      high: [1000, 130, 26, 9.0, 4.0, 2.0, 0.2, 0.2, 0.2, 0.2, 0.2, 2.0, 4.0, 9.0, 26, 130, 1000]
+    }
   };
 
+  // Format multiplier label: plain number without 'x', 1 decimal under 10, integer >= 10
+  function formatBucketLabel(m) {
+    if (m >= 10) return String(Math.round(m));
+    return Number(m).toFixed(1);
+  }
+
+  // Smooth continuous gradient from low multipliers (cool slate/dark) to high (bright gold/orange/red)
   function getBinColors(count) {
     const colors = [];
     const mid = (count - 1) / 2;
     for (let i = 0; i < count; i++) {
       const dist = Math.abs(i - mid) / mid; // 0 at center, 1 at edges
-      if (dist > 0.75) colors.push('#dc2626');       // Red
-      else if (dist > 0.5) colors.push('#ea580c');   // Orange
-      else if (dist > 0.25) colors.push('#d97706');  // Amber
-      else colors.push('#334155');                   // Slate
+      if (dist >= 0.85) colors.push('#ef4444');      // Intense Red
+      else if (dist >= 0.65) colors.push('#f97316'); // Orange
+      else if (dist >= 0.45) colors.push('#f59e0b'); // Amber / Gold
+      else if (dist >= 0.25) colors.push('#0d9488'); // Dark Teal / Cool
+      else colors.push('#1e293b');                    // Dark Slate (Center)
     }
     return colors;
   }
@@ -1032,52 +1063,248 @@ window.Games = (function () {
     const { t, esc } = C;
     let selectedRows = 10;
     let selectedRisk = 'medium';
+    let currentMode = 'manual'; // 'manual' or 'auto'
     const recentWins = [];
+    let stats = { bets: 0, wins: 0, profit: 0 };
 
-    const W = Math.min(380, window.innerWidth - 60);
-    const H = 350;
+    // Auto Mode state
+    let autoRunning = false;
+    let autoRemaining = 0; // 0 = infinite or counter
+    let autoStartBal = 0;
+    let autoBaseBet = 1000;
+    let autoStopProfit = null;
+    let autoStopLoss = null;
+    let autoOnWinAction = 'reset'; // 'reset' or 'increase'
+    let autoOnWinPct = 0;
+    let autoOnLossAction = 'reset';
+    let autoOnLossPct = 0;
+    let autoTimer = null;
+
+    // Multi-ball active simulation state
+    let activeBalls = [];
+    let animFrameId = null;
+    let roundNonceSeq = 0;
+    let activeClientSeed = 'client_' + Math.random().toString(36).slice(2, 10);
+    let lastServerSeed = '', lastSeedHash = '', nextServerSeedHash = '';
+
+    const W = 620;
+    const H = 460;
 
     body.innerHTML = `
-      <div id="pbet"></div>
-      <div class="plinko-controls">
-        <label>
-          ${esc(t('risk') || 'Risk')}:
-          <select id="p-risk">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-          </select>
-        </label>
-        <label>
-          ${esc(t('rows') || 'Rows')}:
-          <select id="p-rows">
-            <option value="8">8</option>
-            <option value="10" selected>10</option>
-            <option value="12">12</option>
-            <option value="14">14</option>
-            <option value="16">16</option>
-          </select>
-        </label>
+      <div class="plinko-arena">
+        <!-- LEFT CONTROL PANEL -->
+        <div class="plinko-sidebar">
+          <!-- Manual / Auto Mode Tabs -->
+          <div class="plinko-mode-tabs">
+            <button type="button" class="plinko-mode-btn active" id="ptab-manual">${esc(t('manual'))}</button>
+            <button type="button" class="plinko-mode-btn" id="ptab-auto">${esc(t('auto'))}</button>
+          </div>
+
+          <!-- Bet Amount Bar -->
+          <div class="plinko-sidebar-section">
+            <div class="plinko-sidebar-label"><span>${esc(t('bet'))}</span></div>
+            <div id="pbet"></div>
+          </div>
+
+          <!-- Risk Selector -->
+          <div class="plinko-sidebar-section">
+            <div class="plinko-sidebar-label"><span>${esc(t('risk'))}</span></div>
+            <select id="p-risk" class="plinko-select">
+              <option value="low">${esc(t('low'))}</option>
+              <option value="medium" selected>${esc(t('medium'))}</option>
+              <option value="high">${esc(t('high'))}</option>
+            </select>
+          </div>
+
+          <!-- Rows Selector (8 to 16) -->
+          <div class="plinko-sidebar-section">
+            <div class="plinko-sidebar-label"><span>${esc(t('rows'))}</span></div>
+            <select id="p-rows" class="plinko-select">
+              ${[8, 9, 10, 11, 12, 13, 14, 15, 16].map((r) => `
+                <option value="${r}" ${r === 10 ? 'selected' : ''}>${r}</option>
+              `).join('')}
+            </select>
+          </div>
+
+          <!-- AUTO MODE CONTROLS (Hidden in manual mode) -->
+          <div id="p-auto-controls" style="display:none;flex-direction:column;gap:10px">
+            <div class="plinko-sidebar-section">
+              <div class="plinko-sidebar-label">
+                <span>${esc(t('auto_bets'))}</span>
+                <span style="font-size:11px;color:#cbd5e1">0 = ${esc(t('infinity'))}</span>
+              </div>
+              <div class="plinko-input-box">
+                <input type="number" id="p-auto-count" min="0" max="1000" step="1" value="10">
+              </div>
+            </div>
+
+            <div class="plinko-sidebar-section">
+              <div class="plinko-sidebar-label"><span>${esc(t('stop_profit'))}</span></div>
+              <div class="plinko-input-box">
+                <input type="number" id="p-stop-profit" placeholder="Optional (credits)">
+              </div>
+            </div>
+
+            <div class="plinko-sidebar-section">
+              <div class="plinko-sidebar-label"><span>${esc(t('stop_loss'))}</span></div>
+              <div class="plinko-input-box">
+                <input type="number" id="p-stop-loss" placeholder="Optional (credits)">
+              </div>
+            </div>
+
+            <!-- On Win / On Loss Strategy -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <label style="font-size:11px;color:#94a3b8;font-weight:700">${esc(t('on_win'))}</label>
+                <select id="p-win-action" class="plinko-select" style="padding:4px 6px;font-size:11px">
+                  <option value="reset">${esc(t('reset'))}</option>
+                  <option value="increase">+%</option>
+                </select>
+                <input id="p-win-pct" type="number" placeholder="%" value="50" style="display:none;width:100%;margin-top:4px;background:#0f1923;border:1px solid #2f4553;color:#fff;border-radius:6px;padding:3px;font-size:11px">
+              </div>
+              <div>
+                <label style="font-size:11px;color:#94a3b8;font-weight:700">${esc(t('on_loss'))}</label>
+                <select id="p-loss-action" class="plinko-select" style="padding:4px 6px;font-size:11px">
+                  <option value="reset">${esc(t('reset'))}</option>
+                  <option value="increase">+%</option>
+                </select>
+                <input id="p-loss-pct" type="number" placeholder="%" value="50" style="display:none;width:100%;margin-top:4px;background:#0f1923;border:1px solid #2f4553;color:#fff;border-radius:6px;padding:3px;font-size:11px">
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Drop & Stop Buttons -->
+          <div class="plinko-desktop-drop" style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+            <button class="btn-plinko-drop" id="pdrop">
+              <span>⚡</span> ${esc(t('drop_ball'))}
+            </button>
+            <button class="btn-plinko-stop" id="pstop" style="display:none">
+              🛑 ${esc(t('stop_auto'))}
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT MAIN AREA -->
+        <div class="plinko-main-area">
+          <!-- Recent Results Strip -->
+          <div class="plinko-recent-bar" id="p-recent"></div>
+
+          <!-- Board Canvas & Buckets Container -->
+          <div class="plinko-board-container" id="pboard-wrap">
+            <div class="plinko-canvas-wrap">
+              <canvas id="plinko-canvas" width="${W}" height="${H}"></canvas>
+            </div>
+            <div class="plinko-buckets" id="plinko-buckets"></div>
+          </div>
+
+          <!-- Bottom Bar: Sound, Stats, Fairness Button -->
+          <div class="plinko-bottom-bar">
+            <div class="plinko-stats-group">
+              <div class="plinko-stat">${esc(t('bets'))}: <span class="val" id="pstat-bets">0</span></div>
+              <div class="plinko-stat">${esc(t('wins'))}: <span class="val green" id="pstat-wins">0</span></div>
+              <div class="plinko-stat">${esc(t('profit'))}: <span class="val" id="pstat-profit">🪙 0</span></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button type="button" class="chip" id="pbtn-sound" style="font-size:11px">🔊 ${esc(t('sound_toggle'))}</button>
+              <button type="button" class="chip" id="pbtn-fair" style="font-size:11px">🛡️ ${esc(t('fairness'))}</button>
+            </div>
+          </div>
+
+          <!-- PROVABLY FAIR CARD (Toggleable) -->
+          <div class="plinko-fair-card" id="pfair-card" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <h4 style="margin:0;color:#facc15;font-size:14px">🛡️ ${esc(t('plinko_verify_title'))}</h4>
+              <button type="button" class="chip" id="pfair-close" style="font-size:11px">✕</button>
+            </div>
+            <p style="font-size:12px;color:#94a3b8;margin:0 0 8px">${esc(t('plinko_verify_desc'))}</p>
+            <div style="font-size:11px;color:#facc15;margin-bottom:8px">${esc(t('formula'))}</div>
+
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+              <div>
+                <label style="color:#aaa">${esc(t('server_seed_hash'))}:</label>
+                <input id="pfair-hash" type="text" readonly style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#94a3b8;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
+              </div>
+              <div>
+                <label style="color:#aaa">${esc(t('server_seed'))}:</label>
+                <input id="pfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1">
+                  <label style="color:#aaa">${esc(t('client_seed'))}:</label>
+                  <input id="pfair-client-seed" type="text" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+                </div>
+                <div style="width:80px">
+                  <label style="color:#aaa">Nonce:</label>
+                  <input id="pfair-nonce" type="number" value="1" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-size:11px">
+                </div>
+              </div>
+              <button type="button" class="btn btn-gold" id="pfair-verify-btn" style="padding:6px;margin-top:4px;font-size:12px">${esc(t('verify_btn'))}</button>
+              <div id="pfair-result" style="font-size:12px;margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="plinko-recent" id="p-recent"></div>
-      <div class="plinko-canvas-wrap">
-        <canvas id="plinko-canvas" width="${W}" height="${H}"></canvas>
+
+      <!-- MOBILE STICKY BOTTOM BAR -->
+      <div class="plinko-mobile-sticky-bar" id="pmob-bar">
+        <button class="btn-plinko-drop" id="pmob-drop">
+          <span>⚡</span> ${esc(t('drop_ball'))}
+        </button>
+        <button class="btn-plinko-stop" id="pmob-stop" style="display:none">
+          🛑 ${esc(t('stop_auto'))}
+        </button>
       </div>
-      <div class="plinko-buckets" id="plinko-buckets" style="max-width:${W}px"></div>
-      <button class="bigbtn" id="pdrop" style="margin-top:14px">⚡ ${esc(t('plinko_drop'))}</button>
-      <div class="msg" id="pmsg"></div>`;
+    `;
 
     const cv = $('plinko-canvas');
     const ctx = cv.getContext('2d');
     let pegRows = [];
     let bucketsCount = selectedRows + 1;
     let colSpacing = 0, rowSpacing = 0;
-    const padX = 20, padY = 24;
+    const padX = 26, padY = 32;
 
+    const bet = betBar($('pbet'));
+
+    // Sound toggle in plinko bottom bar
+    const sBtn = $('pbtn-sound');
+    if (sBtn) {
+      let isMute = localStorage.getItem('mute') === '1';
+      sBtn.textContent = (isMute ? '🔇 ' : '🔊 ') + C.t('sound_toggle');
+      sBtn.onclick = () => {
+        isMute = !isMute;
+        localStorage.setItem('mute', isMute ? '1' : '0');
+        sBtn.textContent = (isMute ? '🔇 ' : '🔊 ') + C.t('sound_toggle');
+      };
+    }
+
+    // Manual vs Auto Tab Switching
+    $('ptab-manual').onclick = () => {
+      if (autoRunning) return;
+      currentMode = 'manual';
+      $('ptab-manual').classList.add('active');
+      $('ptab-auto').classList.remove('active');
+      $('p-auto-controls').style.display = 'none';
+    };
+    $('ptab-auto').onclick = () => {
+      if (autoRunning) return;
+      currentMode = 'auto';
+      $('ptab-auto').classList.add('active');
+      $('ptab-manual').classList.remove('active');
+      $('p-auto-controls').style.display = 'flex';
+    };
+
+    $('p-win-action').onchange = (e) => {
+      $('p-win-pct').style.display = e.target.value === 'increase' ? 'block' : 'none';
+    };
+    $('p-loss-action').onchange = (e) => {
+      $('p-loss-pct').style.display = e.target.value === 'increase' ? 'block' : 'none';
+    };
+
+    // Calculate Peg Geometry & Render Buckets
     function buildGeometry() {
       bucketsCount = selectedRows + 1;
       colSpacing = (W - padX * 2) / (bucketsCount - 1);
-      rowSpacing = (H - padY - 45) / (selectedRows + 1);
+      rowSpacing = (H - padY - 50) / (selectedRows + 1);
 
       pegRows = [];
       for (let r = 0; r < selectedRows; r++) {
@@ -1091,13 +1318,13 @@ window.Games = (function () {
         pegRows.push(rowList);
       }
 
-      // Render bottom buckets
+      // Render Bottom Buckets with Plain Numbers & Smooth Gradient
       const mults = PLINKO_TABLES[selectedRows][selectedRisk];
       const colors = getBinColors(bucketsCount);
       const host = $('plinko-buckets');
       host.innerHTML = mults.map((m, i) => `
-        <div class="plinko-bucket" id="p-bk-${i}" style="background:${colors[i]};color:#fff;font-size:${selectedRows >= 14 ? '9px' : '11px'}">
-          ×${m}
+        <div class="plinko-bucket" id="p-bk-${i}" style="background:${colors[i]};color:#ffffff;font-size:${selectedRows >= 14 ? '9.5px' : '11px'}">
+          ${formatBucketLabel(m)}
         </div>
       `).join('');
     }
@@ -1105,176 +1332,356 @@ window.Games = (function () {
     function renderRecent() {
       const el = $('p-recent');
       if (!el) return;
-      el.innerHTML = recentWins.slice(-6).map((item) => `
-        <span class="plinko-pill" style="background:${item.color}">${item.mult}×</span>
+      el.innerHTML = recentWins.slice(-10).map((item) => `
+        <span class="plinko-pill" style="background:${item.color}">${item.mult >= 10 ? Math.round(item.mult) : item.mult.toFixed(1)}</span>
       `).join('');
     }
 
-    function drawBoard(ball = null, activeBucket = -1, pulsePeg = null) {
+    function updateStats() {
+      $('pstat-bets').textContent = stats.bets;
+      $('pstat-wins').textContent = stats.wins;
+      const profEl = $('pstat-profit');
+      profEl.textContent = `${stats.profit >= 0 ? '+' : ''}${C.fmt(stats.profit)}`;
+      profEl.className = 'val ' + (stats.profit >= 0 ? 'green' : 'red');
+    }
+
+    function showFloatingWin(bucketIdx, payout) {
+      if (payout <= 0) return;
+      const wrap = $('pboard-wrap');
+      if (!wrap) return;
+      const targetX = padX + bucketIdx * colSpacing;
+      const notice = document.createElement('div');
+      notice.className = 'plinko-floating-win';
+      notice.textContent = `+${C.fmt(payout)}`;
+      notice.style.left = `${(targetX / W) * 100}%`;
+      notice.style.bottom = '46px';
+      wrap.appendChild(notice);
+      setTimeout(() => notice.remove(), 1250);
+    }
+
+    // Master Animation Loop (Supports Multiple Balls Concurrently)
+    function animLoop() {
       ctx.clearRect(0, 0, W, H);
 
-      // Canvas background gradient
+      // Background Gradient
       const bg = ctx.createLinearGradient(0, 0, 0, H);
       bg.addColorStop(0, '#0a101d');
       bg.addColorStop(1, '#05080f');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // Triangular pegs
-      const pegR = selectedRows >= 14 ? 3 : 3.8;
+      // Draw Pegs (with flash hit effect)
+      const now = performance.now();
+      const pegR = selectedRows >= 14 ? 3.2 : 3.8;
       pegRows.forEach((row, ri) => {
         row.forEach((p, ci) => {
+          let isFlashing = false;
+          for (let b of activeBalls) {
+            if (b.lastPeg && b.lastPeg.r === ri && b.lastPeg.c === ci && (now - b.lastPeg.time < 180)) {
+              isFlashing = true;
+              break;
+            }
+          }
           ctx.beginPath();
           ctx.arc(p.x, p.y, pegR, 0, Math.PI * 2);
-          const isPulse = pulsePeg && pulsePeg.r === ri && pulsePeg.c === ci;
-          ctx.fillStyle = isPulse ? '#ffffff' : '#c9a227';
-          if (isPulse) {
+          ctx.fillStyle = isFlashing ? '#ffffff' : '#c9a227';
+          if (isFlashing) {
             ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = 14;
           }
           ctx.fill();
           ctx.shadowBlur = 0;
         });
       });
 
-      // Bottom bin dividers
-      for (let b = 0; b <= bucketsCount; b++) {
-        const bx = padX + b * colSpacing - colSpacing / 2;
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(bx, H - 36);
-        ctx.lineTo(bx, H);
-        ctx.stroke();
-      }
+      // Update & Draw All Active Balls
+      for (let i = activeBalls.length - 1; i >= 0; i--) {
+        const ball = activeBalls[i];
+        ball.progress += ball.speed;
+        const p0 = ball.path[ball.seg];
+        const p1 = ball.path[ball.seg + 1];
 
-      // Winning bucket highlight
-      if (activeBucket >= 0) {
-        const bx = padX + activeBucket * colSpacing - colSpacing / 2;
-        ctx.fillStyle = 'rgba(201,162,39,0.35)';
-        ctx.fillRect(bx + 1, H - 36, colSpacing - 2, 36);
-      }
+        if (!p1) {
+          // Ball arrived in bucket!
+          activeBalls.splice(i, 1);
+          const bk = $(`p-bk-${ball.targetBucket}`);
+          if (bk) {
+            bk.classList.add('hit');
+            setTimeout(() => bk.classList.remove('hit'), 400);
+          }
+          sfx.coin();
+          showFloatingWin(ball.targetBucket, ball.payout);
 
-      // Ball
-      if (ball) {
+          const colors = getBinColors(bucketsCount);
+          recentWins.push({ mult: ball.mult, color: colors[ball.targetBucket] || '#d97706' });
+          renderRecent();
+
+          stats.bets++;
+          if (ball.payout > ball.bet) stats.wins++;
+          stats.profit += (ball.payout - ball.bet);
+          updateStats();
+
+          if (ball.onFinish) ball.onFinish(ball);
+          continue;
+        }
+
+        const ease = ball.progress * ball.progress * (3 - 2 * ball.progress);
+        const arc = Math.sin(ball.progress * Math.PI) * 5.5;
+        const bx = p0.x + (p1.x - p0.x) * ease + ball.wobble * (1 - ball.progress);
+        const by = p0.y + (p1.y - p0.y) * ease - arc;
+
+        if (ball.progress >= 1) {
+          ball.seg++;
+          ball.progress = 0;
+          if (ball.path[ball.seg] && ball.path[ball.seg].r !== undefined) {
+            ball.lastPeg = { r: ball.path[ball.seg].r, c: ball.path[ball.seg].c, time: performance.now() };
+            sfx.plink();
+          }
+        }
+
+        // Draw Glowing Ball
+        const ballR = selectedRows >= 14 ? 5.8 : 7.2;
         ctx.beginPath();
-        const ballR = selectedRows >= 14 ? 5.5 : 6.8;
-        ctx.arc(ball.x, ball.y, ballR, 0, Math.PI * 2);
-        const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, ballR);
+        ctx.arc(bx, by, ballR, 0, Math.PI * 2);
+        const grad = ctx.createRadialGradient(bx - 2, by - 2, 1, bx, by, ballR);
         grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(1, '#ef4444');
+        grad.addColorStop(0.3, '#facc15');
+        grad.addColorStop(1, '#ea580c');
         ctx.fillStyle = grad;
-        ctx.shadowColor = 'rgba(239,68,68,0.7)';
-        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(250, 204, 21, 0.85)';
+        ctx.shadowBlur = 12;
         ctx.fill();
         ctx.shadowBlur = 0;
       }
+
+      if (activeBalls.length > 0 || autoRunning) {
+        animFrameId = requestAnimationFrame(animLoop);
+      } else {
+        animFrameId = null;
+      }
     }
 
-    async function runBall(steps, targetBucket) {
-      return new Promise((res) => {
-        const path = [{ x: W / 2, y: 10 }];
+    function startAnimLoopIfNeeded() {
+      if (!animFrameId) {
+        animFrameId = requestAnimationFrame(animLoop);
+      }
+    }
+
+    // Launch single ball through queue
+    async function launchBall(onFinishCallback = null) {
+      const currentBet = bet.get();
+      roundNonceSeq++;
+      const thisNonce = roundNonceSeq;
+
+      try {
+        const r = await C.api('/games/plinko', {
+          bet: currentBet,
+          rows: selectedRows,
+          risk: selectedRisk,
+          client_seed: activeClientSeed,
+          nonce: thisNonce
+        });
+
+        C.setBalance(r.balance);
+        lastServerSeed = r.server_seed;
+        lastSeedHash = r.server_seed_hash;
+        nextServerSeedHash = r.next_server_seed_hash || '';
+
+        $('pfair-hash').value = lastSeedHash;
+        $('pfair-server-seed').value = lastServerSeed;
+        $('pfair-client-seed').value = activeClientSeed;
+        $('pfair-nonce').value = thisNonce;
+
+        const steps = r.path || Array.from({ length: selectedRows }, () => Math.round(Math.random()));
+        const targetBucket = r.bucket;
+
+        // Construct 2D trajectory path
+        const path = [{ x: W / 2, y: 12 }];
         let curCol = 0;
-        for (let r = 0; r < selectedRows; r++) {
-          const rowPegs = pegRows[r];
+        for (let rowIdx = 0; rowIdx < selectedRows; rowIdx++) {
+          const rowPegs = pegRows[rowIdx];
           const peg = rowPegs[Math.min(curCol, rowPegs.length - 1)];
-          path.push({ x: peg.x, y: peg.y, r, c: curCol });
-          if (steps[r] === 1) curCol++;
+          path.push({ x: peg.x, y: peg.y, r: rowIdx, c: curCol });
+          if (steps[rowIdx] === 1) curCol++;
         }
         const finalX = padX + targetBucket * colSpacing;
-        path.push({ x: finalX, y: H - 18 });
+        path.push({ x: finalX, y: H - 16 });
 
-        let seg = 0, progress = 0;
-        const SEG_FRAMES = 12;
-        let lastPulse = null;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const ballObj = {
+          path,
+          seg: 0,
+          progress: 0,
+          speed: reduced ? 0.35 : 0.082 + Math.random() * 0.012, // subtle natural wobble in timing
+          wobble: (Math.random() - 0.5) * 2,
+          targetBucket,
+          mult: r.mult,
+          payout: r.payout,
+          bet: currentBet,
+          lastPeg: null,
+          onFinish: onFinishCallback
+        };
 
-        function stepFrame() {
-          if (seg >= path.length - 1) {
-            drawBoard(path[path.length - 1], targetBucket, null);
-            const bk = $(`p-bk-${targetBucket}`);
-            if (bk) {
-              bk.classList.add('hit');
-              setTimeout(() => bk.classList.remove('hit'), 450);
-            }
-            res(); return;
-          }
-          const p0 = path[seg], p1 = path[seg + 1];
-          progress += 1 / SEG_FRAMES;
-          const ease = progress * progress * (3 - 2 * progress);
-          const arc = Math.sin(progress * Math.PI) * 5;
-          const bx = p0.x + (p1.x - p0.x) * ease;
-          const by = p0.y + (p1.y - p0.y) * ease - arc;
-
-          if (progress >= 1) {
-            seg++; progress = 0;
-            if (path[seg].r !== undefined) {
-              lastPulse = { r: path[seg].r, c: path[seg].c };
-              sfx.plink();
-            }
-          }
-          drawBoard({ x: bx, y: by }, -1, lastPulse);
-          requestAnimationFrame(stepFrame);
-        }
-        stepFrame();
-      });
+        activeBalls.push(ballObj);
+        startAnimLoopIfNeeded();
+        return r;
+      } catch (e) {
+        C.fail(e);
+        throw e;
+      }
     }
 
-    buildGeometry();
-    drawBoard();
-    const bet = betBar($('pbet'));
-
+    // Row & Risk change handlers
     $('p-rows').onchange = (e) => {
       selectedRows = Number(e.target.value);
       buildGeometry();
-      drawBoard();
+      startAnimLoopIfNeeded();
     };
     $('p-risk').onchange = (e) => {
       selectedRisk = e.target.value;
       buildGeometry();
-      drawBoard();
+      startAnimLoopIfNeeded();
     };
 
-    $('pdrop').onclick = async () => {
-      const btn = $('pdrop');
-      if (btn.disabled) return;
-      btn.disabled = true;
+    // Provably Fair Verifier
+    $('pbtn-fair').onclick = () => {
+      const card = $('pfair-card');
+      card.style.display = card.style.display === 'none' ? 'block' : 'none';
+    };
+    $('pfair-close').onclick = () => { $('pfair-card').style.display = 'none'; };
+
+    $('pfair-verify-btn').onclick = async () => {
+      const sSeed = $('pfair-server-seed').value.trim();
+      const cSeed = $('pfair-client-seed').value.trim();
+      const nonce = Number($('pfair-nonce').value) || 1;
+      if (!sSeed || !cSeed) {
+        $('pfair-result').innerHTML = `<span style="color:#ef4444">Enter Server Seed and Client Seed</span>`;
+        return;
+      }
+      try {
+        const res = await C.api('/games/plinko/verify', {
+          server_seed: sSeed,
+          client_seed: cSeed,
+          nonce,
+          rows: selectedRows,
+          risk: selectedRisk
+        });
+        const matchHash = res.server_seed_hash === lastSeedHash;
+        $('pfair-result').innerHTML = `
+          <div style="background:#071824;padding:8px;border-radius:6px;border:1px solid #10b981;color:#10b981">
+            <b>✓ Verification Reproducible!</b><br>
+            <span style="color:#cbd5e1;font-size:11px">Landed Bucket: ${res.bucket} (×${res.multiplier})</span><br>
+            <span style="font-size:10px;color:#94a3b8">Path: [${res.path.map((b) => b ? 'R' : 'L').join(', ')}] ${matchHash ? '✓ Matches Round Hash' : ''}</span>
+          </div>`;
+      } catch (e) {
+        $('pfair-result').innerHTML = `<span style="color:#ef4444">${esc(e.message || 'Verification failed')}</span>`;
+      }
+    };
+
+    // Auto Mode Engine
+    function startAuto() {
+      if (autoRunning) return;
+      autoRunning = true;
+      $('pdrop').style.display = 'none';
+      $('pstop').style.display = 'block';
+      $('pmob-drop').style.display = 'none';
+      $('pmob-stop').style.display = 'block';
       bet.lock(true);
       $('p-rows').disabled = true;
       $('p-risk').disabled = true;
-      say($('pmsg'), '');
-      try {
-        const r = await C.api('/games/plinko', {
-          bet: bet.get(),
-          rows: selectedRows,
-          risk: selectedRisk,
-        });
-        C.setBalance(r.balance);
-        const steps = r.steps || Array.from({ length: selectedRows }, () => Math.round(Math.random()));
-        const target = typeof r.bucket === 'number' ? r.bucket : Math.floor(bucketsCount / 2);
-        await runBall(steps, target);
 
-        const colors = getBinColors(bucketsCount);
-        recentWins.push({ mult: r.mult, color: colors[target] || '#d97706' });
-        renderRecent();
+      const countInput = Number($('p-auto-count').value);
+      autoRemaining = countInput > 0 ? countInput : Infinity;
+      autoBaseBet = bet.get();
+      autoStartBal = C.roadState?.balance || 0;
+      autoStopProfit = Number($('p-stop-profit').value) || null;
+      autoStopLoss = Number($('p-stop-loss').value) || null;
+      autoOnWinAction = $('p-win-action').value;
+      autoOnWinPct = Number($('p-win-pct').value) || 0;
+      autoOnLossAction = $('p-loss-action').value;
+      autoOnLossPct = Number($('p-loss-pct').value) || 0;
 
-        if (r.payout) {
-          say($('pmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} (×${r.mult}) 🎉`, 'win');
-          sfx.win();
-          if (r.mult >= 2) coinRain(stage);
-        } else {
-          say($('pmsg'), `${esc(t('lose'))} (×${r.mult})`, 'lose');
-          sfx.lose();
-        }
-        await sleep(1200);
-        drawBoard();
-      } catch (e) {
-        C.fail(e);
-      }
-      btn.disabled = false;
+      scheduleNextAutoDrop();
+    }
+
+    function stopAuto() {
+      autoRunning = false;
+      if (autoTimer) clearTimeout(autoTimer);
+      autoTimer = null;
+      $('pdrop').style.display = 'block';
+      $('pstop').style.display = 'none';
+      $('pmob-drop').style.display = 'block';
+      $('pmob-stop').style.display = 'none';
       bet.lock(false);
       $('p-rows').disabled = false;
       $('p-risk').disabled = false;
+    }
+
+    async function scheduleNextAutoDrop() {
+      if (!autoRunning) return;
+
+      // Check Stop on Profit / Loss
+      if (autoStopProfit !== null && stats.profit >= autoStopProfit * 100) {
+        stopAuto(); return;
+      }
+      if (autoStopLoss !== null && stats.profit <= -autoStopLoss * 100) {
+        stopAuto(); return;
+      }
+
+      if (autoRemaining !== Infinity) {
+        if (autoRemaining <= 0) {
+          stopAuto(); return;
+        }
+        autoRemaining--;
+      }
+
+      try {
+        await launchBall((finishedBall) => {
+          if (!autoRunning) return;
+          const isWin = finishedBall.payout > finishedBall.bet;
+          const betInput = $('pbet').querySelector('input');
+          if (isWin) {
+            if (autoOnWinAction === 'increase' && autoOnWinPct > 0) {
+              const nextVal = Math.min(C.limits.max / 100, Math.round(Number(betInput.value) * (1 + autoOnWinPct / 100)));
+              betInput.value = nextVal;
+            } else {
+              betInput.value = autoBaseBet / 100;
+            }
+          } else {
+            if (autoOnLossAction === 'increase' && autoOnLossPct > 0) {
+              const nextVal = Math.min(C.limits.max / 100, Math.round(Number(betInput.value) * (1 + autoOnLossPct / 100)));
+              betInput.value = nextVal;
+            } else {
+              betInput.value = autoBaseBet / 100;
+            }
+          }
+        });
+
+        // Stake-style drop cadence: allow another ball every 380ms
+        autoTimer = setTimeout(scheduleNextAutoDrop, 380);
+      } catch (e) {
+        stopAuto();
+      }
+    }
+
+    $('pstop').onclick = stopAuto;
+    $('pmob-stop').onclick = stopAuto;
+
+    // Drop Button Click
+    const handleDrop = () => {
+      if (currentMode === 'auto') {
+        if (autoRunning) stopAuto();
+        else startAuto();
+      } else {
+        launchBall(); // Manual mode drops single ball, queueable simultaneously
+      }
     };
+
+    $('pdrop').onclick = handleDrop;
+    $('pmob-drop').onclick = handleDrop;
+
+    buildGeometry();
+    startAnimLoopIfNeeded();
   }
 
   // =========================================================
