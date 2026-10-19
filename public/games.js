@@ -1124,8 +1124,10 @@ window.Games = (function () {
     let customClientSeed = 'fetan_' + Math.random().toString(36).slice(2, 10);
 
     // Active downward traffic state
-    let activeVehicles = []; // { id, lane, el, y, speed, h }
+    let activeVehicles = []; // { id, lane, el, y, speed, h, fading }
     let laneNextSpawn = {};
+    let clearingTargetLane = null;
+    let isCrashAnimActive = false;
     let trafficRunning = true;
     let trafficAnimId = null;
     let lastTrafficTime = performance.now();
@@ -1335,7 +1337,7 @@ window.Games = (function () {
         sfx.tick();
         try {
           st = await C.api(`/games/road?difficulty=${curDiff}`);
-          renderScene();
+          renderScene(true);
           updateControls();
         } catch (e) { /* ignore */ }
       };
@@ -1502,43 +1504,95 @@ window.Games = (function () {
       }, 50);
     };
 
-    // Render Road Lanes & Objects
-    function renderScene() {
+    // Render Road Lanes & Objects with layer separation
+    function renderScene(fullReset = true) {
       const lanesWrap = $('rlanes');
       if (!lanesWrap) return;
       const maxSteps = st.maxSteps || 24;
       const ladder = st.ladder || [];
 
-      // Clear existing vehicles from removed lanes
-      activeVehicles.forEach((v) => { if (v.el) v.el.remove(); });
-      activeVehicles = [];
+      if (fullReset) {
+        // Clear all vehicles and reset spawn schedules on fresh round or reset
+        activeVehicles.forEach((v) => { if (v.el) v.el.remove(); });
+        activeVehicles = [];
+        laneNextSpawn = {};
+        clearingTargetLane = null;
+        isCrashAnimActive = false;
 
-      let html = '';
-      for (let i = 1; i <= maxSteps; i++) {
-        const isCleared = st.active && i <= st.step;
-        const isTarget = st.active && i === st.step + 1;
-        const multVal = ladder[i - 1] ? Number(ladder[i - 1]).toFixed(2) : '1.00';
+        let html = '';
+        for (let i = 1; i <= maxSteps; i++) {
+          const isCleared = st.active && i <= st.step;
+          const isTarget = st.active && i === st.step + 1;
+          const multVal = ladder[i - 1] ? Number(ladder[i - 1]).toFixed(2) : '1.00';
 
-        let laneContent = '';
-        if (isCleared) {
-          laneContent = `
-            ${makeBarrierHtml()}
-            ${makeCoinEmblemHtml()}
-          `;
-        } else {
-          laneContent = makeManholeHtml(i, multVal, isTarget);
-        }
+          let layers = '';
+          if (isCleared) {
+            layers = `
+              <div class="lane-traffic-layer" id="lane-traffic-${i}"></div>
+              <div class="lane-barrier-layer">${makeBarrierHtml()}</div>
+              <div class="lane-coin-layer">${makeCoinEmblemHtml()}</div>
+            `;
+          } else {
+            layers = `
+              <div class="lane-manhole-layer">${makeManholeHtml(i, multVal, isTarget)}</div>
+              <div class="lane-traffic-layer" id="lane-traffic-${i}"></div>
+            `;
+          }
 
-        html += `
-          <div class="road-lane ${isCleared ? 'lane-cleared' : ''} ${isTarget ? 'lane-target' : ''}" id="road-ln-${i}" data-lane="${i}">
-            <div class="lane-traffic-layer" id="lane-traffic-${i}"></div>
-            <div class="lane-item-anchor">
-              ${laneContent}
+          html += `
+            <div class="road-lane ${isCleared ? 'lane-cleared' : ''} ${isTarget ? 'lane-target' : ''}" id="road-ln-${i}" data-lane="${i}">
+              ${layers}
             </div>
-          </div>
-        `;
+          `;
+        }
+        lanesWrap.innerHTML = html;
+      } else {
+        // Incremental update on hop to preserve ahead traffic animation
+        const currentL = st.active ? st.step : 0;
+        for (let i = 1; i <= maxSteps; i++) {
+          const laneEl = $('road-ln-' + i);
+          if (!laneEl) continue;
+          const isCleared = st.active && i <= currentL;
+          const isTarget = st.active && i === currentL + 1;
+          const multVal = ladder[i - 1] ? Number(ladder[i - 1]).toFixed(2) : '1.00';
+
+          laneEl.classList.toggle('lane-cleared', isCleared);
+          laneEl.classList.toggle('lane-target', isTarget);
+
+          if (isCleared) {
+            const mhLayer = laneEl.querySelector('.lane-manhole-layer');
+            if (mhLayer) mhLayer.remove();
+
+            if (!laneEl.querySelector('.lane-barrier-layer')) {
+              const bLayer = document.createElement('div');
+              bLayer.className = 'lane-barrier-layer';
+              bLayer.innerHTML = makeBarrierHtml();
+              laneEl.appendChild(bLayer);
+            }
+            if (!laneEl.querySelector('.lane-coin-layer')) {
+              const cLayer = document.createElement('div');
+              cLayer.className = 'lane-coin-layer';
+              cLayer.innerHTML = makeCoinEmblemHtml();
+              laneEl.appendChild(cLayer);
+            }
+          } else {
+            let mhLayer = laneEl.querySelector('.lane-manhole-layer');
+            if (!mhLayer) {
+              mhLayer = document.createElement('div');
+              mhLayer.className = 'lane-manhole-layer';
+              mhLayer.innerHTML = makeManholeHtml(i, multVal, isTarget);
+              laneEl.insertBefore(mhLayer, laneEl.firstChild);
+            } else {
+              const cover = mhLayer.querySelector('.manhole-cover');
+              if (cover) {
+                cover.classList.toggle('is-target', isTarget);
+                const txt = cover.querySelector('.manhole-mult-text');
+                if (txt) txt.classList.toggle('target-glow', isTarget);
+              }
+            }
+          }
+        }
       }
-      lanesWrap.innerHTML = html;
 
       updateChickenPosition(st.active ? st.step : 0, false);
     }
@@ -1677,8 +1731,36 @@ window.Games = (function () {
     }
 
     // =========================================================
-    // TRAFFIC ENGINE: DOWNWARD ONLY
+    // TRAFFIC ENGINE: DOWNWARD ONLY, PASSED LANES ARE TRAFFIC-FREE
     // =========================================================
+    function fadeCar(v) {
+      if (!v || v.fading) return;
+      v.fading = true;
+      if (v.el) {
+        v.el.classList.add('car-fade-out');
+      }
+      setTimeout(() => {
+        removeCar(v);
+      }, 240);
+    }
+
+    function removeCar(v) {
+      if (v.el) {
+        v.el.remove();
+      }
+      const idx = activeVehicles.indexOf(v);
+      if (idx !== -1) activeVehicles.splice(idx, 1);
+    }
+
+    function canSpawnInLane(laneNum) {
+      // If round is active:
+      // 1. Any lane <= current chicken step is passed -> Traffic is strictly forbidden!
+      if (st.active && laneNum <= st.step) return false;
+      // 2. If this lane is the target lane currently being cleared before hop landing -> Do not spawn!
+      if (clearingTargetLane !== null && laneNum === clearingTargetLane) return false;
+      return true;
+    }
+
     function spawnCarInLane(laneNum, forceType = null, customY = -170, customSpeed = null) {
       const trafficLayer = $('lane-traffic-' + laneNum);
       if (!trafficLayer) return null;
@@ -1695,24 +1777,35 @@ window.Games = (function () {
       const carObj = {
         id: ++carIdSeq,
         lane: laneNum,
+        type,
         el,
         y: customY,
         speed: baseSpeed,
-        h: type === 'bus' ? 160 : type === 'fire_truck' ? 148 : 120
+        h: type === 'bus' ? 160 : type === 'fire_truck' ? 148 : 120,
+        fading: false
       };
       el.style.transform = `translate3d(0, ${carObj.y}px, 0)`;
       activeVehicles.push(carObj);
       return carObj;
     }
 
-    function clearLaneTrafficNearLanding(laneNum) {
-      // Clear cars in landing zone so safe hop never hits visually
-      laneNextSpawn[laneNum] = performance.now() + 1000;
-      for (let i = activeVehicles.length - 1; i >= 0; i--) {
-        const v = activeVehicles[i];
-        if (v.lane === laneNum && v.y >= 30 && v.y <= 270) {
-          if (v.el) v.el.remove();
-          activeVehicles.splice(i, 1);
+    function clearPassedLanes(currentL) {
+      if (currentL <= 0) return;
+      for (let i = 1; i <= currentL; i++) {
+        laneNextSpawn[i] = Infinity;
+      }
+      for (const v of activeVehicles) {
+        if (v.lane <= currentL && !v.fading) {
+          v.speed = Math.max(v.speed * 2.8, 9.5);
+          // If above or near barrier/chicken (y < 235), fade out immediately so it never touches barrier/chicken
+          if (v.y < 235) {
+            fadeCar(v);
+          } else {
+            // Lower vehicle speeds off bottom; if still visible after ~550ms, fade out
+            setTimeout(() => {
+              if (v && !v.fading) fadeCar(v);
+            }, 550);
+          }
         }
       }
     }
@@ -1728,13 +1821,14 @@ window.Games = (function () {
       const firstVisLane = Math.max(1, Math.floor((scrollL - CURB_W) / LANE_W) - 1);
       const lastVisLane = Math.min(maxSteps, Math.ceil((scrollL + viewW - CURB_W) / LANE_W) + 2);
 
-      // Spawn traffic only in lanes visible or soon to be visible
+      // Spawn traffic ONLY in valid ahead lanes (lanes > current chicken lane)
       for (let i = firstVisLane; i <= lastVisLane; i++) {
+        if (!canSpawnInLane(i)) continue;
+
         if (!laneNextSpawn[i]) laneNextSpawn[i] = now + Math.random() * (reduced ? 3500 : 2200);
 
         if (now >= laneNextSpawn[i]) {
-          // Check top clearance in lane i
-          const carsInLane = activeVehicles.filter((v) => v.lane === i);
+          const carsInLane = activeVehicles.filter((v) => v.lane === i && !v.fading);
           const topCar = carsInLane.reduce((min, c) => (c.y < min ? c.y : min), 9999);
           if (topCar > -10) { // Safe gap at spawn top
             spawnCarInLane(i);
@@ -1753,8 +1847,41 @@ window.Games = (function () {
         }
         // Remove if exited bottom
         if (v.y > 380) {
-          if (v.el) v.el.remove();
-          activeVehicles.splice(i, 1);
+          removeCar(v);
+        }
+      }
+    }
+
+    // Development Check: in dev mode, log console warning if vehicle overlaps chicken, tag, or barrier
+    function devCheckCollisions() {
+      const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || window.DEV_MODE;
+      if (!isDev || isCrashAnimActive) return;
+
+      const currentL = st.active ? st.step : 0;
+      for (const v of activeVehicles) {
+        if (v.fading) continue;
+
+        // 1. Check overlap with chicken & tag in chicken's current lane (y range ~125 to 225)
+        if (currentL > 0 && v.lane === currentL) {
+          const carTop = v.y;
+          const carBottom = v.y + v.h;
+          if (carBottom > 125 && carTop < 225) {
+            console.warn(`[Road Dash Dev Check] Overlap detected: Vehicle ${v.id} (${v.type}) overlaps chicken/tag in current lane ${v.lane}! (carY: ${v.y.toFixed(1)}, carBottom: ${carBottom.toFixed(1)})`);
+          }
+        }
+
+        // 2. Check overlap with barrier in any passed lane <= currentL (barrier at y: 60 to 98)
+        if (currentL > 0 && v.lane <= currentL) {
+          const carTop = v.y;
+          const carBottom = v.y + v.h;
+          if (carBottom > 58 && carTop < 100) {
+            console.warn(`[Road Dash Dev Check] Overlap detected: Vehicle ${v.id} (${v.type}) overlaps barrier in passed lane ${v.lane}! (carY: ${v.y.toFixed(1)})`);
+          }
+        }
+
+        // 3. Check if vehicle is in passed lane above road
+        if (currentL > 0 && v.lane <= currentL && v.y < 50) {
+          console.warn(`[Road Dash Dev Check] Vehicle ${v.id} spawned or moving in passed lane ${v.lane}! (carY: ${v.y.toFixed(1)})`);
         }
       }
     }
@@ -1766,6 +1893,7 @@ window.Games = (function () {
       const dtScale = dt / 16.67;
 
       updateTraffic(dtScale, now);
+      devCheckCollisions();
       trafficAnimId = requestAnimationFrame(trafficLoop);
     }
 
@@ -1810,7 +1938,7 @@ window.Games = (function () {
           C.setBalance(st.balance);
           const chicken = $('road-chicken');
           if (chicken) chicken.classList.remove('is-dead', 'is-win', 'is-hopping');
-          renderScene();
+          renderScene(true); // Full reset: all lanes active, traffic in every lane
           updateControls();
           renderSubTab();
         } catch (e) {
@@ -1823,19 +1951,45 @@ window.Games = (function () {
 
       // Active round -> Hop to next lane
       const targetLane = st.step + 1;
+      clearingTargetLane = targetLane;
+      laneNextSpawn[targetLane] = Infinity;
 
-      // Safe lane landing protection
-      clearLaneTrafficNearLanding(targetLane);
+      // Immediately accelerate vehicles in target lane so chicken row is empty before landing
+      for (const v of activeVehicles) {
+        if (v.lane === targetLane && !v.fading) {
+          v.speed = Math.max(v.speed * 3.2, 10.5);
+          if (v.y < 100) {
+            setTimeout(() => {
+              if (v && !v.fading) fadeCar(v);
+            }, 200);
+          }
+        }
+      }
 
-      // Begin hop motion
+      // Begin hop motion (450ms)
       updateChickenPosition(targetLane, true);
+
+      // At landing time (430ms): remove any vehicle whose box still overlaps chicken row
+      setTimeout(() => {
+        for (const v of activeVehicles) {
+          if (v.lane === targetLane && v.y + v.h > 105 && v.y < 235) {
+            fadeCar(v);
+          }
+        }
+      }, 430);
 
       try {
         const r = await C.api('/games/road/step', {});
         C.setBalance(r.balance);
 
         if (r.crashed) {
-          // Crash hazard sequence
+          isCrashAnimActive = true;
+          clearingTargetLane = null;
+          // Fade ambient cars in target lane so only the crash car hits
+          for (const v of activeVehicles) {
+            if (v.lane === targetLane) fadeCar(v);
+          }
+
           await sleep(180);
           const laneEl = $('road-ln-' + targetLane);
           // Spawn dedicated crash car entering from top downward
@@ -1859,6 +2013,7 @@ window.Games = (function () {
           sfx.lose();
           await sleep(1400);
 
+          isCrashAnimActive = false;
           st = {
             active: false,
             balance: r.balance,
@@ -1868,11 +2023,14 @@ window.Games = (function () {
             next: (r.ladder && r.ladder[0]) || 1.01,
             next_crash_chance: 1.8
           };
-          renderScene();
+          renderScene(true); // Full reset for upcoming round
           updateControls();
           loadHistory();
         } else if (r.finished) {
           // Final lane reached! Maximum win
+          clearingTargetLane = null;
+          clearPassedLanes(targetLane);
+          renderScene(false);
           await sleep(250);
           const chicken = $('road-chicken');
           if (chicken) {
@@ -1894,17 +2052,20 @@ window.Games = (function () {
             next: (r.ladder && r.ladder[0]) || 1.01,
             next_crash_chance: 1.8
           };
-          renderScene();
+          renderScene(true); // Reset for new round
           updateControls();
           loadHistory();
         } else {
-          // Safe step
+          // Safe step landed!
           sfx.coin();
           st = r;
-          renderScene();
+          clearingTargetLane = null;
+          clearPassedLanes(st.step);
+          renderScene(false); // Incremental update
           updateControls();
         }
       } catch (e) {
+        clearingTargetLane = null;
         C.fail(e);
         updateChickenPosition(st.step, false);
       }
@@ -1942,7 +2103,7 @@ window.Games = (function () {
           next: (r.ladder && r.ladder[0]) || 1.01,
           next_crash_chance: 1.8
         };
-        renderScene();
+        renderScene(true); // Reset for new round!
         updateControls();
         loadHistory();
       } catch (e) {
@@ -1978,12 +2139,11 @@ window.Games = (function () {
           if (st.difficulty) curDiff = st.difficulty;
         }
       } catch (e) { /* ignore */ }
-      renderScene();
+      renderScene(true);
       updateControls();
       renderSubTab();
       loadHistory();
     }
-
     initGame();
   }
   // =========================================================

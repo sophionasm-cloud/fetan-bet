@@ -857,34 +857,13 @@
   border-right-color: rgba(242, 217, 139, 0.65);
 }
 
-/* Lane traffic layer (downward only) */
-.lane-traffic-layer {
+/* Layer 3: Manhole Badges */
+.lane-manhole-layer {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  overflow: hidden;
-}
-.traffic-car-wrap {
-  position: absolute;
-  left: calc(50% - 33px);
-  top: 0;
-  will-change: transform;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55));
-}
-.topdown-car {
-  display: block;
-}
-
-/* Lane item anchor (manhole, coins, barriers) */
-.lane-item-anchor {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
   z-index: 3;
+  pointer-events: none;
 }
-
-/* 3D Metallic Grate Manhole Multiplier Badge */
 .manhole-cover {
   position: absolute;
   left: calc(50% - 38px);
@@ -894,6 +873,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 3;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
   opacity: 0.65;
   filter: brightness(0.85);
@@ -923,38 +903,45 @@
   text-shadow: 0 0 8px rgba(242, 217, 139, 0.6), 0 1px 3px rgba(0,0,0,0.9);
 }
 
-/* Cleared lane: 3D Golden Coin Emblem */
-.cleared-coin-emblem {
+/* Layer 4: Vehicles (strictly downward, below barriers & chicken) */
+.lane-traffic-layer {
   position: absolute;
-  left: calc(50% - 38px);
-  top: 137px;
-  width: 76px;
-  height: 76px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 6px 14px rgba(234, 179, 8, 0.5));
-  animation: coin-emblem-pop 0.35s cubic-bezier(.175,.885,.32,1.275) both;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
 }
-@keyframes coin-emblem-pop {
-  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
-  70% { transform: scale(1.15) rotate(8deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+.traffic-car-wrap {
+  position: absolute;
+  left: calc(50% - 33px);
+  top: 0;
+  z-index: 4;
+  will-change: transform;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55));
+  transition: opacity 0.24s ease-out;
 }
-.coin-svg {
-  width: 100%;
-  height: 100%;
+.traffic-car-wrap.car-fade-out {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.topdown-car {
   display: block;
 }
 
-/* Cleared lane: Construction Barrier Drop */
+/* Layer 5: Construction Barriers (solid, above vehicles) */
+.lane-barrier-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
 .road-barrier-hazard {
   position: absolute;
   left: calc(50% - 41px);
   top: 60px;
   width: 82px;
   height: 38px;
-  z-index: 4;
+  z-index: 5;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.65));
   animation: barrier-drop 0.32s cubic-bezier(.175,.885,.32,1.275) both;
 }
@@ -988,20 +975,38 @@
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* Feather particles on crash */
-.feather-particle {
+/* Layer 6: Cleared Gold Coin Badges */
+.lane-coin-layer {
   position: absolute;
-  font-size: 22px;
-  z-index: 15;
+  inset: 0;
   pointer-events: none;
-  animation: feather-float 1.2s cubic-bezier(.25, .46, .45, .94) forwards;
+  z-index: 6;
 }
-@keyframes feather-float {
-  0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
-  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity: 0; }
+.cleared-coin-emblem {
+  position: absolute;
+  left: calc(50% - 38px);
+  top: 137px;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  filter: drop-shadow(0 6px 14px rgba(234, 179, 8, 0.5));
+  animation: coin-emblem-pop 0.35s cubic-bezier(.175,.885,.32,1.275) both;
+}
+@keyframes coin-emblem-pop {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  70% { transform: scale(1.15) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.coin-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-/* ---- THE CHICKEN HERO ---- */
+/* Layer 7: The Chicken Hero */
 .chicken-hero {
   position: absolute;
   top: 132px;
@@ -1012,17 +1017,17 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  z-index: 10;
+  z-index: 7;
   transition: transform 0.45s cubic-bezier(0.25, 1, 0.35, 1);
   user-select: none;
   pointer-events: none;
 }
-
 .chicken-svg-wrap {
   width: 76px;
   height: 64px;
   display: grid;
   place-items: center;
+  z-index: 7;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.75));
   will-change: transform;
 }
@@ -1031,6 +1036,71 @@
   height: 100%;
   display: block;
   overflow: visible;
+}
+
+/* Layer 8: Multiplier Tag Under Chicken */
+.chicken-tag.blue-sign {
+  position: relative;
+  background: #1e3a8a;
+  border: 1.5px solid #38bdf8;
+  color: #FFFFFF;
+  border-radius: 6px;
+  padding: 2px 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.65);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  min-width: 54px;
+  z-index: 8;
+}
+.tag-pointer {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid #38bdf8;
+}
+.tag-mult-text {
+  font-family: var(--font-heading, sans-serif);
+  font-size: 13px;
+  font-weight: 900;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+}
+.chicken-hero.is-dead .chicken-tag.blue-sign {
+  background: #7f1d1d;
+  border-color: #ef4444;
+}
+.chicken-hero.is-dead .tag-pointer {
+  border-bottom-color: #ef4444;
+}
+
+/* Layer 9: Effects (Dust, Feathers, Coin Burst) */
+.dust-puff {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 9;
+  animation: dust-expand 0.4s ease-out forwards;
+}
+.feather-particle {
+  position: absolute;
+  font-size: 22px;
+  z-index: 9;
+  pointer-events: none;
+  animation: feather-float 1.2s cubic-bezier(.25, .46, .45, .94) forwards;
+}
+.coin {
+  z-index: 9;
 }
 
 /* 1. IDLE ANIMATIONS */
