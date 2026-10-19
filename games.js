@@ -87,10 +87,10 @@ function starSpin(userId, bet) {
 const ROAD_CONFIG = {
   rtp: 0.98,
   difficulties: {
-    easy:     { lanes: 24, p0: 0.018, step: 0.0038 },
-    medium:   { lanes: 22, p0: 0.05,  step: 0.006  },
-    hard:     { lanes: 20, p0: 0.10,  step: 0.0085 },
-    hardcore: { lanes: 15, p0: 0.18,  step: 0.013  }
+    easy:     { lanes: 24, p0: 0.033, step: 0.0050 },
+    medium:   { lanes: 22, p0: 0.075, step: 0.0085 },
+    hard:     { lanes: 20, p0: 0.140, step: 0.0110 },
+    hardcore: { lanes: 15, p0: 0.240, step: 0.0160 }
   }
 };
 

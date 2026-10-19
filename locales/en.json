@@ -230,5 +230,6 @@
   "sound_toggle": "Sound",
   "fullscreen": "Fullscreen",
   "go": "GO",
-  "target_lane": "Target Lane"
+  "target_lane": "Target Lane",
+  "menu": "Menu"
 }

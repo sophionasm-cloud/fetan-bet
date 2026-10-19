@@ -776,9 +776,9 @@ window.Games = (function () {
   // =========================================================
   // ROAD DASH (Chicken Crossing — Chicken Road 3G Style)
   // =========================================================
-  const LANE_W = 96, CURB_W = 90;
+  const LANE_W = 118, CURB_W = 140;
   const heroLeft = (step) =>
-    step === 0 ? CURB_W / 2 - 38 : CURB_W + (step - 1) * LANE_W + LANE_W / 2 - 38;
+    step === 0 ? (CURB_W - 76) / 2 : CURB_W + (step - 1) * LANE_W + (LANE_W - 76) / 2;
 
   const CHICKEN_SVG = `<svg viewBox="0 0 542 460" width="100%" height="100%" class="chicken-svg">
     <g id="chicken-character">
@@ -842,14 +842,276 @@ window.Games = (function () {
     </g>
   </svg>`;
 
-  const CARS_DN = [
-    { e: '🚗', cls: 'md' }, { e: '🚕', cls: 'md' }, { e: '🚙', cls: 'md' },
-    { e: '🚌', cls: 'lg' }, { e: '🚓', cls: 'md' }, { e: '🏎️', cls: 'sm' },
-  ];
-  const CARS_UP = [
-    { e: '🚐', cls: 'md' }, { e: '🚑', cls: 'md' }, { e: '🚒', cls: 'lg' },
-    { e: '🛻', cls: 'md' }, { e: '🚛', cls: 'lg' }, { e: '🏍️', cls: 'sm' },
-  ];
+  // Original Sidewalk Start Zone (width: 140px, height: 350px)
+  const SIDEWALK_SVG = `
+    <svg viewBox="0 0 140 350" width="140" height="350" class="sidewalk-svg" preserveAspectRatio="none">
+      <defs>
+        <pattern id="sw-tiles" width="35" height="35" patternUnits="userSpaceOnUse">
+          <rect width="35" height="35" fill="#4e555e" stroke="#3d434a" stroke-width="1.5"/>
+          <rect x="1" y="1" width="33" height="33" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+        </pattern>
+        <radialGradient id="sw-lamp-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fef08a" stop-opacity="0.6"/>
+          <stop offset="35%" stop-color="#fde047" stop-opacity="0.32"/>
+          <stop offset="70%" stop-color="#eab308" stop-opacity="0.1"/>
+          <stop offset="100%" stop-color="#ca8a04" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="140" height="350" fill="url(#sw-tiles)"/>
+      <rect x="0" y="0" width="36" height="350" fill="#15803d"/>
+      <rect x="32" y="0" width="4" height="350" fill="#166534"/>
+      <rect x="135" y="0" width="5" height="350" fill="#2d333a"/>
+      <line x1="135" y1="0" x2="135" y2="350" stroke="#64748b" stroke-width="2"/>
+      <!-- Tree on grass -->
+      <ellipse cx="19" cy="88" rx="22" ry="22" fill="rgba(0,0,0,0.35)"/>
+      <circle cx="17" cy="85" r="21" fill="#14532d"/>
+      <circle cx="16" cy="83" r="17" fill="#16a34a"/>
+      <circle cx="15" cy="80" r="12" fill="#22c55e"/>
+      <circle cx="13" cy="78" r="7" fill="#4ade80"/>
+      <circle cx="17" cy="85" r="4.5" fill="#78350f" stroke="#451a03" stroke-width="1"/>
+      <!-- Bushes -->
+      <circle cx="17" cy="240" r="13" fill="#166534"/>
+      <circle cx="16" cy="239" r="10" fill="#22c55e"/>
+      <circle cx="17" cy="290" r="12" fill="#14532d"/>
+      <circle cx="16" cy="289" r="9" fill="#16a34a"/>
+      <!-- Street lamp post with warm glow -->
+      <circle cx="100" cy="52" r="75" fill="url(#sw-lamp-glow)"/>
+      <ellipse cx="106" cy="56" rx="14" ry="14" fill="rgba(0,0,0,0.4)"/>
+      <circle cx="100" cy="52" r="8" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+      <rect x="91" y="50.5" width="18" height="3" rx="1.5" fill="#334155"/>
+      <rect x="98.5" y="43" width="3" height="18" rx="1.5" fill="#334155"/>
+      <circle cx="100" cy="52" r="4.5" fill="#fef08a" stroke="#facc15" stroke-width="1"/>
+    </svg>
+  `;
+
+  // 7 Original Detailed Top-Down SVGs (Downward Only: headlights & bumper at bottom, taillights at top)
+  const VEHICLE_SVGS = {
+    taxi: `<svg viewBox="0 0 64 114" width="64" height="114" class="topdown-car">
+      <rect x="2" y="16" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="56" y="16" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="2" y="80" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="56" y="80" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="6" y="4" width="52" height="106" rx="14" fill="#f59e0b" stroke="#b45309" stroke-width="2"/>
+      <path d="M 12 108 Q 32 112 52 108" stroke="#78350f" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="14" cy="104" rx="4.5" ry="3" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/>
+      <ellipse cx="50" cy="104" rx="4.5" ry="3" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/>
+      <path d="M 14 74 L 14 86 Q 32 92 50 86 L 50 74 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+      <path d="M 18 76 L 24 76 L 36 88 L 30 88 Z" fill="rgba(255,255,255,0.3)"/>
+      <rect x="12" y="32" width="40" height="42" rx="6" fill="#d97706" stroke="#92400e" stroke-width="1.5"/>
+      <rect x="20" y="48" width="24" height="11" rx="3" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+      <text x="32" y="56.5" font-family="sans-serif" font-weight="900" font-size="6.5" fill="#1e293b" text-anchor="middle" letter-spacing="0.5">TAXI</text>
+      <path d="M 14 30 L 14 20 Q 32 16 50 20 L 50 30 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+      <rect x="10" y="6" width="9" height="4" rx="1.5" fill="#ef4444" stroke="#991b1b" stroke-width="1"/>
+      <rect x="45" y="6" width="9" height="4" rx="1.5" fill="#ef4444" stroke="#991b1b" stroke-width="1"/>
+      <rect x="1" y="70" width="5" height="8" rx="2" fill="#d97706"/>
+      <rect x="58" y="70" width="5" height="8" rx="2" fill="#d97706"/>
+    </svg>`,
+
+    police: `<svg viewBox="0 0 64 118" width="64" height="118" class="topdown-car">
+      <rect x="2" y="18" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="56" y="18" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="2" y="82" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="56" y="82" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="6" y="4" width="52" height="110" rx="14" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <path d="M 6 86 C 6 100 16 114 32 114 C 48 114 58 100 58 86 Z" fill="#0f172a"/>
+      <path d="M 6 28 C 6 14 16 4 32 4 C 48 4 58 14 58 28 Z" fill="#0f172a"/>
+      <rect x="14" y="112" width="36" height="4" rx="2" fill="#334155"/>
+      <ellipse cx="14" cy="107" rx="4.5" ry="3" fill="#60a5fa" stroke="#1d4ed8" stroke-width="1"/>
+      <ellipse cx="50" cy="107" rx="4.5" ry="3" fill="#60a5fa" stroke="#1d4ed8" stroke-width="1"/>
+      <path d="M 13 74 L 13 84 Q 32 90 51 84 L 51 74 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+      <path d="M 17 76 L 23 76 L 35 87 L 29 87 Z" fill="rgba(255,255,255,0.3)"/>
+      <rect x="12" y="32" width="40" height="42" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+      <rect x="16" y="49" width="32" height="9" rx="2.5" fill="#1e293b"/>
+      <rect x="17" y="50" width="14" height="7" rx="2" fill="#ef4444"/>
+      <rect x="33" y="50" width="14" height="7" rx="2" fill="#3b82f6"/>
+      <path d="M 13 32 L 13 22 Q 32 18 51 22 L 51 32 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+      <rect x="10" y="6" width="9" height="4" rx="1.5" fill="#ef4444"/>
+      <rect x="45" y="6" width="9" height="4" rx="1.5" fill="#ef4444"/>
+      <rect x="1" y="72" width="5" height="8" rx="2" fill="#0f172a"/>
+      <rect x="58" y="72" width="5" height="8" rx="2" fill="#0f172a"/>
+    </svg>`,
+
+    fire_truck: `<svg viewBox="0 0 70 148" width="70" height="148" class="topdown-car">
+      <rect x="1" y="20" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="63" y="20" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="1" y="54" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="63" y="54" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="1" y="108" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="63" y="108" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="6" y="4" width="58" height="140" rx="8" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+      <rect x="8" y="141" width="54" height="5" rx="2" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+      <rect x="11" y="136" width="8" height="4" rx="1" fill="#fef08a"/>
+      <rect x="51" y="136" width="8" height="4" rx="1" fill="#fef08a"/>
+      <rect x="10" y="96" width="50" height="38" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+      <rect x="12" y="122" width="46" height="12" rx="2" fill="#0f172a"/>
+      <ellipse cx="16" cy="100" rx="4" ry="4" fill="#ef4444"/>
+      <ellipse cx="54" cy="100" rx="4" ry="4" fill="#ef4444"/>
+      <rect x="22" y="8" width="26" height="82" rx="2" fill="#94a3b8" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="22" y1="18" x2="48" y2="18" stroke="#cbd5e1" stroke-width="2"/>
+      <line x1="22" y1="30" x2="48" y2="30" stroke="#cbd5e1" stroke-width="2"/>
+      <line x1="22" y1="42" x2="48" y2="42" stroke="#cbd5e1" stroke-width="2"/>
+      <line x1="22" y1="54" x2="48" y2="54" stroke="#cbd5e1" stroke-width="2"/>
+      <line x1="22" y1="66" x2="48" y2="66" stroke="#cbd5e1" stroke-width="2"/>
+      <line x1="22" y1="78" x2="48" y2="78" stroke="#cbd5e1" stroke-width="2"/>
+      <rect x="8" y="14" width="10" height="74" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1"/>
+      <rect x="52" y="14" width="10" height="74" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1"/>
+      <rect x="1" y="118" width="5" height="10" rx="2" fill="#475569"/>
+      <rect x="64" y="118" width="5" height="10" rx="2" fill="#475569"/>
+    </svg>`,
+
+    delivery_truck: `<svg viewBox="0 0 68 138" width="68" height="138" class="topdown-car">
+      <rect x="1" y="18" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="61" y="18" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="1" y="98" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="61" y="98" width="6" height="20" rx="2" fill="#18181b"/>
+      <rect x="6" y="4" width="56" height="84" rx="4" fill="#e2d9cc" stroke="#a89f91" stroke-width="2"/>
+      <line x1="12" y1="18" x2="56" y2="18" stroke="#c4baa9" stroke-width="1.5"/>
+      <line x1="12" y1="34" x2="56" y2="34" stroke="#c4baa9" stroke-width="1.5"/>
+      <line x1="12" y1="50" x2="56" y2="50" stroke="#c4baa9" stroke-width="1.5"/>
+      <line x1="12" y1="66" x2="56" y2="66" stroke="#c4baa9" stroke-width="1.5"/>
+      <rect x="8" y="4" width="52" height="4" fill="#78716c"/>
+      <rect x="8" y="88" width="52" height="44" rx="10" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+      <path d="M 13 116 L 13 126 Q 34 130 55 126 L 55 116 Z" fill="#1e293b"/>
+      <path d="M 17 118 L 23 118 L 37 127 L 31 127 Z" fill="rgba(255,255,255,0.3)"/>
+      <ellipse cx="14" cy="130" rx="4" ry="2.5" fill="#fef08a"/>
+      <ellipse cx="54" cy="130" rx="4" ry="2.5" fill="#fef08a"/>
+      <rect x="1" y="108" width="5" height="10" rx="2" fill="#1e293b"/>
+      <rect x="62" y="108" width="5" height="10" rx="2" fill="#1e293b"/>
+    </svg>`,
+
+    bus: `<svg viewBox="0 0 70 160" width="70" height="160" class="topdown-car">
+      <rect x="1" y="22" width="6" height="22" rx="2" fill="#18181b"/>
+      <rect x="63" y="22" width="6" height="22" rx="2" fill="#18181b"/>
+      <rect x="1" y="116" width="6" height="22" rx="2" fill="#18181b"/>
+      <rect x="63" y="116" width="6" height="22" rx="2" fill="#18181b"/>
+      <rect x="6" y="4" width="58" height="152" rx="12" fill="#0284c7" stroke="#0369a1" stroke-width="2"/>
+      <rect x="12" y="24" width="46" height="108" rx="6" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.5"/>
+      <rect x="20" y="38" width="30" height="16" rx="3" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/>
+      <rect x="20" y="82" width="30" height="16" rx="3" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/>
+      <path d="M 10 138 C 10 152 20 156 35 156 C 50 156 60 152 60 138 Z" fill="#0f172a"/>
+      <ellipse cx="15" cy="152" rx="4" ry="2.5" fill="#fef08a"/>
+      <ellipse cx="55" cy="152" rx="4" ry="2.5" fill="#fef08a"/>
+      <rect x="12" y="8" width="46" height="10" rx="3" fill="#0f172a"/>
+      <rect x="8" y="6" width="8" height="4" rx="1.5" fill="#ef4444"/>
+      <rect x="54" y="6" width="8" height="4" rx="1.5" fill="#ef4444"/>
+      <rect x="0" y="136" width="6" height="9" rx="2" fill="#0369a1"/>
+      <rect x="64" y="136" width="6" height="9" rx="2" fill="#0369a1"/>
+    </svg>`,
+
+    ice_cream: `<svg viewBox="0 0 66 124" width="66" height="124" class="topdown-car">
+      <rect x="1" y="16" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="59" y="16" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="1" y="88" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="59" y="88" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="6" y="4" width="54" height="116" rx="12" fill="#f472b6" stroke="#db2777" stroke-width="2"/>
+      <rect x="10" y="24" width="46" height="58" rx="6" fill="#fff1f2" stroke="#fbcfe8" stroke-width="1.5"/>
+      <polygon points="33,66 26,44 40,44" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+      <circle cx="33" cy="38" r="9" fill="#ec4899"/>
+      <circle cx="33" cy="32" r="6" fill="#38bdf8"/>
+      <circle cx="33" cy="27" r="3" fill="#ef4444"/>
+      <path d="M 8 92 C 8 110 18 118 33 118 C 48 118 58 110 58 92 Z" fill="#fb7185"/>
+      <path d="M 12 96 L 12 106 Q 33 110 54 106 L 54 96 Z" fill="#0f172a"/>
+      <ellipse cx="14" cy="112" rx="4" ry="2.5" fill="#fef08a"/>
+      <ellipse cx="52" cy="112" rx="4" ry="2.5" fill="#fef08a"/>
+      <rect x="8" y="6" width="8" height="4" rx="1.5" fill="#ef4444"/>
+      <rect x="50" y="6" width="8" height="4" rx="1.5" fill="#ef4444"/>
+      <rect x="1" y="94" width="5" height="8" rx="2" fill="#db2777"/>
+      <rect x="60" y="94" width="5" height="8" rx="2" fill="#db2777"/>
+    </svg>`,
+
+    sports_car: `<svg viewBox="0 0 64 112" width="64" height="112" class="topdown-car">
+      <rect x="2" y="16" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="56" y="16" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="2" y="78" width="6" height="18" rx="2" fill="#18181b"/>
+      <rect x="56" y="78" width="6" height="18" rx="2" fill="#18181b"/>
+      <path d="M 8 16 C 6 36 6 80 8 96 C 14 112 50 112 56 96 C 58 80 58 36 56 16 C 48 4 16 4 8 16 Z" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
+      <rect x="26" y="6" width="4" height="100" fill="#0f172a"/>
+      <rect x="34" y="6" width="4" height="100" fill="#0f172a"/>
+      <path d="M 16 52 C 16 40 22 36 32 36 C 42 36 48 40 48 52 C 48 72 44 80 32 80 C 20 80 16 72 16 52 Z" fill="#0f172a"/>
+      <path d="M 20 48 C 22 42 26 40 32 40 C 34 40 36 41 38 42 L 32 64 Z" fill="rgba(255,255,255,0.25)"/>
+      <rect x="6" y="8" width="52" height="6" rx="2" fill="#1e293b" stroke="#0f172a" stroke-width="1"/>
+      <polygon points="12,100 18,106 14,107" fill="#67e8f9"/>
+      <polygon points="52,100 46,106 50,107" fill="#67e8f9"/>
+      <line x1="12" y1="12" x2="22" y2="12" stroke="#ef4444" stroke-width="2.5"/>
+      <line x1="42" y1="12" x2="52" y2="12" stroke="#ef4444" stroke-width="2.5"/>
+      <rect x="1" y="62" width="5" height="7" rx="2" fill="#0f172a"/>
+      <rect x="58" y="62" width="5" height="7" rx="2" fill="#0f172a"/>
+    </svg>`
+  };
+  const VEHICLE_KEYS = Object.keys(VEHICLE_SVGS);
+
+  // 3D Metallic Grate Manhole Badge HTML
+  function makeManholeHtml(laneNum, multVal, isTarget) {
+    return `
+      <div class="manhole-cover ${isTarget ? 'is-target' : ''}" id="manhole-${laneNum}">
+        <svg viewBox="0 0 76 76" width="76" height="76" class="manhole-svg">
+          <defs>
+            <radialGradient id="mh-grad-${laneNum}" cx="38%" cy="32%" r="65%">
+              <stop offset="0%" stop-color="${isTarget ? '#524322' : '#3d444e'}"/>
+              <stop offset="60%" stop-color="${isTarget ? '#292112' : '#222830'}"/>
+              <stop offset="100%" stop-color="${isTarget ? '#141008' : '#11151a'}"/>
+            </radialGradient>
+          </defs>
+          <circle cx="38" cy="38" r="36" fill="url(#mh-grad-${laneNum})" stroke="${isTarget ? '#F2D98B' : '#56606e'}" stroke-width="${isTarget ? '3' : '2.5'}"/>
+          <circle cx="38" cy="38" r="30" fill="${isTarget ? '#1d170d' : '#161a20'}" stroke="${isTarget ? '#b45309' : '#0d1014'}" stroke-width="2"/>
+          <g stroke="${isTarget ? '#78350f' : '#2d3440'}" stroke-width="2.5" stroke-linecap="round">
+            <line x1="20" y1="24" x2="20" y2="52"/>
+            <line x1="26" y1="18" x2="26" y2="58"/>
+            <line x1="32" y1="14" x2="32" y2="62"/>
+            <line x1="38" y1="12" x2="38" y2="64"/>
+            <line x1="44" y1="14" x2="44" y2="62"/>
+            <line x1="50" y1="18" x2="50" y2="58"/>
+            <line x1="56" y1="24" x2="56" y2="52"/>
+          </g>
+          <rect x="11" y="25" width="54" height="26" rx="13" fill="${isTarget ? '#1a140a' : '#14181f'}" stroke="${isTarget ? '#F2D98B' : '#4b5563'}" stroke-width="1.5" opacity="0.95"/>
+        </svg>
+        <span class="manhole-mult-text ${isTarget ? 'target-glow' : ''}">${multVal}×</span>
+      </div>
+    `;
+  }
+
+  // 3D Gold Coin Emblem (Cleared Lane)
+  function makeCoinEmblemHtml() {
+    return `
+      <div class="cleared-coin-emblem">
+        <svg viewBox="0 0 76 76" width="76" height="76" class="coin-svg">
+          <defs>
+            <radialGradient id="coin-gold-grad" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#fffbeb"/>
+              <stop offset="35%" stop-color="#fde047"/>
+              <stop offset="70%" stop-color="#d97706"/>
+              <stop offset="100%" stop-color="#78350f"/>
+            </radialGradient>
+          </defs>
+          <circle cx="38" cy="38" r="36" fill="url(#coin-gold-grad)" stroke="#fef08a" stroke-width="2.5"/>
+          <circle cx="38" cy="38" r="30" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+          <g stroke="#f59e0b" stroke-width="2" stroke-linecap="round" opacity="0.65">
+            <line x1="20" y1="24" x2="20" y2="52"/>
+            <line x1="26" y1="18" x2="26" y2="58"/>
+            <line x1="32" y1="14" x2="32" y2="62"/>
+            <line x1="38" y1="12" x2="38" y2="64"/>
+            <line x1="44" y1="14" x2="44" y2="62"/>
+            <line x1="50" y1="18" x2="50" y2="58"/>
+            <line x1="56" y1="24" x2="56" y2="52"/>
+          </g>
+          <ellipse cx="38" cy="38" rx="14" ry="14" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+          <text x="38" y="44" font-size="16" text-anchor="middle">🍗</text>
+        </svg>
+      </div>
+    `;
+  }
+
+  // Striped Hazard Construction Barrier
+  function makeBarrierHtml() {
+    return `
+      <div class="road-barrier-hazard">
+        <div class="barrier-beam top"></div>
+        <div class="barrier-beam bot"></div>
+        <div class="barrier-post left"></div>
+        <div class="barrier-post right"></div>
+      </div>
+    `;
+  }
 
   function road(body, stage) {
     const { t, esc } = C;
@@ -861,34 +1123,68 @@ window.Games = (function () {
     let roundHistory = [];
     let customClientSeed = 'fetan_' + Math.random().toString(36).slice(2, 10);
 
+    // Active downward traffic state
+    let activeVehicles = []; // { id, lane, el, y, speed, h }
+    let laneNextSpawn = {};
+    let trafficRunning = true;
+    let trafficAnimId = null;
+    let lastTrafficTime = performance.now();
+    let carIdSeq = 1;
+
     body.innerHTML = `
       <div class="road-container">
-        <!-- Top bar -->
+        <!-- Slim in-game top bar -->
         <div class="road-topbar">
           <div class="road-brand-pill">
             <span class="road-brand-badge">ፈ</span>
-            <span>${esc(t('road_title'))}</span>
+            <span class="road-brand-title">${esc(t('road_title'))}</span>
           </div>
           <div class="road-topbar-actions">
-            <button class="road-btn-icon" id="road-how-btn">
+            <button class="road-btn-icon" id="road-how-btn" type="button">
               <span>❓</span> ${esc(t('how_to_play'))}
             </button>
             <div class="road-balance-pill" id="road-bal-pill">
               <span>🪙</span> <span id="road-bal-val">${C.fmt(st.balance || 0)}</span>
             </div>
-            <button class="road-btn-icon" id="road-sound-btn">
+            <button class="road-btn-icon" id="road-sound-btn" type="button" title="${esc(t('sound_toggle'))}">
               <span id="road-sound-icon">${muted ? '🔇' : '🔊'}</span>
             </button>
-            <button class="road-btn-icon" id="road-fs-btn" title="${esc(t('fullscreen'))}">
+            <button class="road-btn-icon" id="road-fs-btn" type="button" title="${esc(t('fullscreen'))}">
               <span>⛶</span>
+            </button>
+            <button class="road-btn-icon" id="road-menu-btn" type="button" title="${esc(t('menu'))}">
+              <span>☰</span>
             </button>
           </div>
         </div>
 
-        <!-- Road scene with horizontal camera tracking -->
+        <!-- Road scene with edge-to-edge asphalt & camera tracking -->
         <div class="road-viewport" id="rviewport">
           <div class="road-scroll" id="rsc">
-            <div class="road-track" id="rtrack"></div>
+            <div class="road-track" id="rtrack">
+              <!-- Sidewalk start zone -->
+              <div class="road-sidewalk-start" id="rsidewalk">
+                ${SIDEWALK_SVG}
+              </div>
+              <!-- Lanes container -->
+              <div class="road-lanes-wrap" id="rlanes"></div>
+              <!-- Finish line -->
+              <div class="road-finish-curb">
+                <span class="finish-text">FINISH</span>
+                <span class="finish-trophy">🏆</span>
+                <span class="finish-text">FINISH</span>
+              </div>
+              <!-- The Chicken Hero -->
+              <div class="chicken-hero" id="road-chicken">
+                <div class="chicken-svg-wrap">
+                  ${CHICKEN_SVG}
+                </div>
+                <div class="chicken-tag blue-sign" id="chicken-tag">
+                  <div class="tag-pointer"></div>
+                  <span class="tag-mult-text">1.00×</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -904,10 +1200,10 @@ window.Games = (function () {
               <button class="road-step-btn" id="bet-max" type="button">MAX</button>
             </div>
             <div class="road-chips-group">
-              <button class="road-chip-btn" id="chip-1" type="button">+1</button>
-              <button class="road-chip-btn" id="chip-5" type="button">+5</button>
-              <button class="road-chip-btn" id="chip-10" type="button">+10</button>
-              <button class="road-chip-btn" id="chip-50" type="button">+50</button>
+              <button class="road-chip-btn" id="chip-1" type="button">🪙 1</button>
+              <button class="road-chip-btn" id="chip-2" type="button">🪙 2</button>
+              <button class="road-chip-btn" id="chip-5" type="button">🪙 5</button>
+              <button class="road-chip-btn" id="chip-10" type="button">🪙 10</button>
               <button class="road-chip-btn" id="chip-half" type="button">½</button>
               <button class="road-chip-btn" id="chip-double" type="button">2×</button>
             </div>
@@ -915,11 +1211,14 @@ window.Games = (function () {
 
           <!-- Difficulty segmented selector & Shot down indicator -->
           <div class="road-diff-row">
-            <div class="road-segmented" id="rdiff-segment">
-              <button class="road-seg-btn ${curDiff === 'easy' ? 'active' : ''}" data-diff="easy" type="button">${esc(t('diff_easy'))}</button>
-              <button class="road-seg-btn ${curDiff === 'medium' ? 'active' : ''}" data-diff="medium" type="button">${esc(t('diff_medium'))}</button>
-              <button class="road-seg-btn ${curDiff === 'hard' ? 'active' : ''}" data-diff="hard" type="button">${esc(t('diff_hard'))}</button>
-              <button class="road-seg-btn ${curDiff === 'hardcore' ? 'active' : ''}" data-diff="hardcore" type="button">${esc(t('diff_hardcore'))}</button>
+            <div class="road-diff-block">
+              <span class="road-diff-label">${esc(t('difficulty') || 'Difficulty')}</span>
+              <div class="road-segmented" id="rdiff-segment">
+                <button class="road-seg-btn ${curDiff === 'easy' ? 'active' : ''}" data-diff="easy" type="button">${esc(t('diff_easy'))}</button>
+                <button class="road-seg-btn ${curDiff === 'medium' ? 'active' : ''}" data-diff="medium" type="button">${esc(t('diff_medium'))}</button>
+                <button class="road-seg-btn ${curDiff === 'hard' ? 'active' : ''}" data-diff="hard" type="button">${esc(t('diff_hard'))}</button>
+                <button class="road-seg-btn ${curDiff === 'hardcore' ? 'active' : ''}" data-diff="hardcore" type="button">${esc(t('diff_hardcore'))}</button>
+              </div>
             </div>
             <div class="road-shot-down">
               <span>⚠️ ${esc(t('chance_shot_down'))}:</span>
@@ -927,19 +1226,21 @@ window.Games = (function () {
             </div>
           </div>
 
-          <!-- Action buttons (GO & CASH OUT) -->
-          <div class="road-actions-row">
-            <button class="btn-road-cashout" id="rcashout-btn" disabled type="button">
+          <!-- Action buttons (Play / GO & CASH OUT) -->
+          <div class="road-actions-row" id="ractions-row">
+            <button class="btn-road-cashout" id="rcashout-btn" disabled type="button" style="display:none">
               <span>💰</span>
               <span id="rcashout-label">${esc(t('cashout'))}</span>
             </button>
             <button class="btn-road-go" id="rgo-btn" type="button">
-              <span id="rgo-icon">🐔</span>
-              <span id="rgo-label">${esc(t('go'))}</span>
+              <span id="rgo-icon">▶</span>
+              <span id="rgo-label">${esc(t('play') || 'Play')}</span>
             </button>
           </div>
 
-          <div class="msg" id="rmsg" style="text-align:center;margin-top:4px"></div>
+          <!-- Virtual demo credits note -->
+          <div class="road-demo-notice">${esc(t('demo_notice'))}</div>
+          <div class="msg" id="rmsg" style="text-align:center;margin-top:2px"></div>
         </div>
 
         <!-- Sub-tabs: My bets & Provably Fair -->
@@ -977,6 +1278,11 @@ window.Games = (function () {
       }
     };
 
+    // Menu toggle -> Lobby
+    $('road-menu-btn').onclick = () => {
+      if ($('gback')) $('gback').click();
+    };
+
     // Rules modal
     $('road-how-btn').onclick = () => showRulesModal();
     function showRulesModal() {
@@ -1011,10 +1317,10 @@ window.Games = (function () {
     $('bet-max').onclick = () => setBetDisplay(1000);
     $('bet-minus').onclick = () => setBetDisplay(Math.max(1, parseFloat(betInput.value) - 1));
     $('bet-plus').onclick = () => setBetDisplay(Math.min(1000, parseFloat(betInput.value) + 1));
-    $('chip-1').onclick = () => setBetDisplay(parseFloat(betInput.value) + 1);
-    $('chip-5').onclick = () => setBetDisplay(parseFloat(betInput.value) + 5);
-    $('chip-10').onclick = () => setBetDisplay(parseFloat(betInput.value) + 10);
-    $('chip-50').onclick = () => setBetDisplay(parseFloat(betInput.value) + 50);
+    $('chip-1').onclick = () => setBetDisplay(1);
+    $('chip-2').onclick = () => setBetDisplay(2);
+    $('chip-5').onclick = () => setBetDisplay(5);
+    $('chip-10').onclick = () => setBetDisplay(10);
     $('chip-half').onclick = () => setBetDisplay(Math.max(1, Math.floor(parseFloat(betInput.value) / 2)));
     $('chip-double').onclick = () => setBetDisplay(Math.min(1000, parseFloat(betInput.value) * 2));
 
@@ -1196,78 +1502,53 @@ window.Games = (function () {
       }, 50);
     };
 
-    // Render Road Track and Lanes
+    // Render Road Lanes & Objects
     function renderScene() {
-      const track = $('rtrack');
-      if (!track) return;
+      const lanesWrap = $('rlanes');
+      if (!lanesWrap) return;
       const maxSteps = st.maxSteps || 24;
       const ladder = st.ladder || [];
 
-      let lanesHtml = '';
+      // Clear existing vehicles from removed lanes
+      activeVehicles.forEach((v) => { if (v.el) v.el.remove(); });
+      activeVehicles = [];
+
+      let html = '';
       for (let i = 1; i <= maxSteps; i++) {
         const isCleared = st.active && i <= st.step;
         const isTarget = st.active && i === st.step + 1;
         const multVal = ladder[i - 1] ? Number(ladder[i - 1]).toFixed(2) : '1.00';
 
-        // Passing cars animation
-        const dir = i % 2 ? 'dn' : 'up';
-        const pool = dir === 'dn' ? CARS_DN : CARS_UP;
-        const car = pool[(i * 3) % pool.length];
-        const dur = (2.2 + ((i * 7) % 7) * 0.4).toFixed(2);
-        const delay = (-((i * 11) % 10) * 0.35).toFixed(2);
-        const carHtml = `<span class="lane-car ${car.cls} ${dir}" style="animation-duration:${dur}s;animation-delay:${delay}s">${car.e}</span>`;
-
-        let laneItem = '';
+        let laneContent = '';
         if (isCleared) {
-          laneItem = `
-            <div class="coin-badge">🪙</div>
-            <div class="road-barrier"></div>
+          laneContent = `
+            ${makeBarrierHtml()}
+            ${makeCoinEmblemHtml()}
           `;
         } else {
-          laneItem = `
-            <div class="manhole-badge">
-              <span class="manhole-mult">${multVal}×</span>
-              <span class="manhole-sub">LANE ${i}</span>
-            </div>
-            ${carHtml}
-          `;
+          laneContent = makeManholeHtml(i, multVal, isTarget);
         }
 
-        lanesHtml += `
-          <div class="road-lane ${isCleared ? 'lane-cleared' : ''} ${isTarget ? 'lane-target' : ''}" id="road-ln-${i}">
-            ${laneItem}
+        html += `
+          <div class="road-lane ${isCleared ? 'lane-cleared' : ''} ${isTarget ? 'lane-target' : ''}" id="road-ln-${i}" data-lane="${i}">
+            <div class="lane-traffic-layer" id="lane-traffic-${i}"></div>
+            <div class="lane-item-anchor">
+              ${laneContent}
+            </div>
           </div>
         `;
       }
-
-      track.innerHTML = `
-        <div class="road-curb-start">
-          <span class="curb-label">START</span>
-          <span class="curb-icon">🏠</span>
-          <span class="curb-label">START</span>
-        </div>
-        ${lanesHtml}
-        <div class="road-curb-end">
-          <span class="curb-label" style="color:#F2D98B">FINISH</span>
-          <span class="curb-icon">🏆</span>
-          <span class="curb-label" style="color:#F2D98B">FINISH</span>
-        </div>
-        <div class="chicken-hero" id="road-chicken">
-          <div class="chicken-svg-wrap">
-            ${CHICKEN_SVG}
-          </div>
-          <div class="chicken-tag" id="chicken-tag">1.00×</div>
-        </div>
-      `;
+      lanesWrap.innerHTML = html;
 
       updateChickenPosition(st.active ? st.step : 0, false);
     }
 
+    // Dust puff on chicken landing
     function spawnDustPuff(chicken) {
       if (!chicken) return;
       const puff = document.createElement('div');
       puff.className = 'dust-puff';
-      puff.innerHTML = `<svg viewBox="0 0 50 16" width="44" height="14" fill="#a8a29e" opacity="0.75">
+      puff.innerHTML = `<svg viewBox="0 0 50 16" width="44" height="14" fill="#cbd5e1" opacity="0.8">
         <ellipse cx="14" cy="9" rx="9" ry="4"/>
         <ellipse cx="25" cy="8" rx="13" ry="5"/>
         <ellipse cx="36" cy="9" rx="8" ry="4"/>
@@ -1279,18 +1560,18 @@ window.Games = (function () {
     // Camera and Hero tracking
     function updateChickenPosition(step, hop = true) {
       const chicken = $('road-chicken');
-      const tag = $('chicken-tag');
+      const tagText = chicken ? chicken.querySelector('.tag-mult-text') : null;
       const sc = $('rsc');
       if (!chicken) return;
 
       const lx = heroLeft(step);
       chicken.style.transform = `translateX(${lx}px)`;
 
-      if (tag) {
+      if (tagText) {
         if (step > 0 && st.mult) {
-          tag.textContent = Number(st.mult).toFixed(2) + '×';
+          tagText.textContent = Number(st.mult).toFixed(2) + '×';
         } else {
-          tag.textContent = '1.00×';
+          tagText.textContent = '1.00×';
         }
       }
 
@@ -1307,9 +1588,9 @@ window.Games = (function () {
         }, 450);
       }
 
-      // Smooth horizontal camera tracking: keep chicken at ~25% from left edge
+      // Smooth horizontal camera tracking: keep chicken at ~1/8th (12.5%) from left edge
       if (sc) {
-        const targetScroll = Math.max(0, lx - sc.clientWidth * 0.25);
+        const targetScroll = Math.max(0, lx - sc.clientWidth * 0.125);
         sc.scrollTo({ left: targetScroll, behavior: 'smooth' });
       }
     }
@@ -1326,7 +1607,7 @@ window.Games = (function () {
         balVal.textContent = C.fmt(st.balance);
       }
 
-      // Update next crash chance
+      // Next lane crash chance
       if (shotVal) {
         const ch = st.next_crash_chance;
         shotVal.textContent = (ch !== undefined && ch !== null) ? `${Number(ch).toFixed(2)}%` : '—';
@@ -1343,12 +1624,15 @@ window.Games = (function () {
 
       if (!st.active) {
         goBtn.disabled = false;
-        $('rgo-label').textContent = esc(t('start'));
+        $('rgo-icon').textContent = '▶';
+        $('rgo-label').textContent = esc(t('play') || 'Play');
+        cashoutBtn.style.display = 'none';
         cashoutBtn.disabled = true;
-        cashoutLabel.textContent = esc(t('cashout'));
       } else {
         goBtn.disabled = false;
+        $('rgo-icon').textContent = '🐔';
         $('rgo-label').textContent = `${esc(t('go'))} (Lane ${st.step + 1})`;
+        cashoutBtn.style.display = 'inline-flex';
         if (st.step >= 1) {
           cashoutBtn.disabled = false;
           const payoutAmt = Math.floor(st.bet * st.mult);
@@ -1363,8 +1647,14 @@ window.Games = (function () {
     function lockButtons(locked) {
       const goBtn = $('rgo-btn');
       const cashoutBtn = $('rcashout-btn');
-      if (goBtn) goBtn.disabled = locked;
-      if (cashoutBtn) cashoutBtn.disabled = locked || (st.active && st.step < 1);
+      if (goBtn) {
+        goBtn.disabled = locked;
+        goBtn.classList.toggle('is-dimmed', locked);
+      }
+      if (cashoutBtn) {
+        cashoutBtn.disabled = locked || (st.active && st.step < 1);
+        cashoutBtn.classList.toggle('is-dimmed', locked);
+      }
     }
 
     // Trigger feather burst on car collision
@@ -1379,21 +1669,137 @@ window.Games = (function () {
         f.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
         f.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
         f.style.setProperty('--rot', `${Math.random() * 360}deg`);
-        f.style.left = '38px';
+        f.style.left = '50%';
         f.style.top = '170px';
         laneEl.appendChild(f);
         setTimeout(() => f.remove(), 1200);
       }
     }
 
+    // =========================================================
+    // TRAFFIC ENGINE: DOWNWARD ONLY
+    // =========================================================
+    function spawnCarInLane(laneNum, forceType = null, customY = -170, customSpeed = null) {
+      const trafficLayer = $('lane-traffic-' + laneNum);
+      if (!trafficLayer) return null;
+
+      const type = forceType || VEHICLE_KEYS[Math.floor(Math.random() * VEHICLE_KEYS.length)];
+      const el = document.createElement('div');
+      el.className = 'traffic-car-wrap';
+      el.innerHTML = VEHICLE_SVGS[type] || VEHICLE_SVGS.taxi;
+      trafficLayer.appendChild(el);
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const baseSpeed = customSpeed || (reduced ? 1.4 + Math.random() * 1.0 : 2.5 + Math.random() * 2.0);
+
+      const carObj = {
+        id: ++carIdSeq,
+        lane: laneNum,
+        el,
+        y: customY,
+        speed: baseSpeed,
+        h: type === 'bus' ? 160 : type === 'fire_truck' ? 148 : 120
+      };
+      el.style.transform = `translate3d(0, ${carObj.y}px, 0)`;
+      activeVehicles.push(carObj);
+      return carObj;
+    }
+
+    function clearLaneTrafficNearLanding(laneNum) {
+      // Clear cars in landing zone so safe hop never hits visually
+      laneNextSpawn[laneNum] = performance.now() + 1000;
+      for (let i = activeVehicles.length - 1; i >= 0; i--) {
+        const v = activeVehicles[i];
+        if (v.lane === laneNum && v.y >= 30 && v.y <= 270) {
+          if (v.el) v.el.remove();
+          activeVehicles.splice(i, 1);
+        }
+      }
+    }
+
+    function updateTraffic(dtScale, now) {
+      const sc = $('rsc');
+      const maxSteps = st.maxSteps || 24;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Determine visible lanes
+      const scrollL = sc ? sc.scrollLeft : 0;
+      const viewW = sc ? sc.clientWidth : 800;
+      const firstVisLane = Math.max(1, Math.floor((scrollL - CURB_W) / LANE_W) - 1);
+      const lastVisLane = Math.min(maxSteps, Math.ceil((scrollL + viewW - CURB_W) / LANE_W) + 2);
+
+      // Spawn traffic only in lanes visible or soon to be visible
+      for (let i = firstVisLane; i <= lastVisLane; i++) {
+        if (!laneNextSpawn[i]) laneNextSpawn[i] = now + Math.random() * (reduced ? 3500 : 2200);
+
+        if (now >= laneNextSpawn[i]) {
+          // Check top clearance in lane i
+          const carsInLane = activeVehicles.filter((v) => v.lane === i);
+          const topCar = carsInLane.reduce((min, c) => (c.y < min ? c.y : min), 9999);
+          if (topCar > -10) { // Safe gap at spawn top
+            spawnCarInLane(i);
+          }
+          const interval = reduced ? 4500 + Math.random() * 3000 : 2200 + Math.random() * 2600;
+          laneNextSpawn[i] = now + interval;
+        }
+      }
+
+      // Move active vehicles strictly DOWNWARD
+      for (let i = activeVehicles.length - 1; i >= 0; i--) {
+        const v = activeVehicles[i];
+        v.y += v.speed * dtScale;
+        if (v.el) {
+          v.el.style.transform = `translate3d(0, ${v.y}px, 0)`;
+        }
+        // Remove if exited bottom
+        if (v.y > 380) {
+          if (v.el) v.el.remove();
+          activeVehicles.splice(i, 1);
+        }
+      }
+    }
+
+    function trafficLoop(now) {
+      if (!trafficRunning) return;
+      const dt = Math.min(100, now - lastTrafficTime);
+      lastTrafficTime = now;
+      const dtScale = dt / 16.67;
+
+      updateTraffic(dtScale, now);
+      trafficAnimId = requestAnimationFrame(trafficLoop);
+    }
+
+    // Visibility Listener
+    function onVisChange() {
+      if (document.hidden) {
+        trafficRunning = false;
+        if (trafficAnimId) cancelAnimationFrame(trafficAnimId);
+      } else {
+        trafficRunning = true;
+        lastTrafficTime = performance.now();
+        trafficAnimId = requestAnimationFrame(trafficLoop);
+      }
+    }
+    document.addEventListener('visibilitychange', onVisChange);
+    stopFns.push(() => {
+      trafficRunning = false;
+      if (trafficAnimId) cancelAnimationFrame(trafficAnimId);
+      document.removeEventListener('visibilitychange', onVisChange);
+    });
+
+    // Start traffic loop
+    trafficAnimId = requestAnimationFrame(trafficLoop);
+
+    // =========================================================
     // STEP ACTION
+    // =========================================================
     async function doStep() {
       if (busy) return;
       busy = true;
       lockButtons(true);
       say($('rmsg'), '');
 
-      // If game is not active yet, START IT!
+      // Inactive round -> Start it!
       if (!st.active) {
         try {
           st = await C.api('/games/road/start', {
@@ -1415,8 +1821,13 @@ window.Games = (function () {
         return;
       }
 
-      // Taking step in active game
+      // Active round -> Hop to next lane
       const targetLane = st.step + 1;
+
+      // Safe lane landing protection
+      clearLaneTrafficNearLanding(targetLane);
+
+      // Begin hop motion
       updateChickenPosition(targetLane, true);
 
       try {
@@ -1424,29 +1835,26 @@ window.Games = (function () {
         C.setBalance(r.balance);
 
         if (r.crashed) {
-          // Crash Hazard
-          await sleep(200);
+          // Crash hazard sequence
+          await sleep(180);
           const laneEl = $('road-ln-' + targetLane);
-          if (laneEl) {
-            const hCar = document.createElement('div');
-            hCar.className = 'hazard-car';
-            hCar.textContent = '🏎️';
-            laneEl.appendChild(hCar);
-            sfx.horn();
-            await sleep(180);
-            sfx.crash();
-            const vp = $('rviewport');
-            if (vp) {
-              vp.classList.add('road-shake');
-              setTimeout(() => vp.classList.remove('road-shake'), 350);
-            }
-            const chicken = $('road-chicken');
-            if (chicken) {
-              chicken.classList.remove('is-hopping', 'is-win');
-              chicken.classList.add('is-dead');
-            }
-            spawnFeathers(laneEl);
+          // Spawn dedicated crash car entering from top downward
+          const crashCar = spawnCarInLane(targetLane, 'police', -180, 18);
+          sfx.horn();
+          await sleep(150);
+          sfx.crash();
+
+          const vp = $('rviewport');
+          if (vp) {
+            vp.classList.add('road-shake');
+            setTimeout(() => vp.classList.remove('road-shake'), 320);
           }
+          const chicken = $('road-chicken');
+          if (chicken) {
+            chicken.classList.remove('is-hopping', 'is-win');
+            chicken.classList.add('is-dead');
+          }
+          spawnFeathers(laneEl);
           say($('rmsg'), `💥 ${esc(t('crashed'))} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'lose');
           sfx.lose();
           await sleep(1400);
@@ -1464,7 +1872,7 @@ window.Games = (function () {
           updateControls();
           loadHistory();
         } else if (r.finished) {
-          // Win - Reached Final Lane!
+          // Final lane reached! Maximum win
           await sleep(250);
           const chicken = $('road-chicken');
           if (chicken) {
@@ -1505,7 +1913,9 @@ window.Games = (function () {
       lockButtons(false);
     }
 
+    // =========================================================
     // CASHOUT ACTION
+    // =========================================================
     async function doCashout() {
       if (busy || !st.active || st.step < 1) return;
       busy = true;
@@ -1576,7 +1986,6 @@ window.Games = (function () {
 
     initGame();
   }
-
   // =========================================================
   // ROULETTE
   // =========================================================

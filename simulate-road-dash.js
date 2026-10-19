@@ -42,6 +42,7 @@ function simulateDifficulty(diff) {
   let totalWonTarget = 0;
 
   let survivedLastLane = 0;
+  let survived5Lanes = 0;
   const lanesCrossedList = new Uint8Array(ROUNDS_PER_DIFF);
 
   console.log(`\n==================================================`);
@@ -77,6 +78,10 @@ function simulateDifficulty(diff) {
 
     lanesCrossedList[i] = clearedLanes;
 
+    if (clearedLanes >= 5) {
+      survived5Lanes++;
+    }
+
     // Strategy 1: Push all the way to final lane
     if (!crashed && clearedLanes === lanesCount) {
       survivedLastLane++;
@@ -96,16 +101,18 @@ function simulateDifficulty(diff) {
   const medianLanes = sorted[Math.floor(sorted.length / 2)];
   const avgLanes = (sorted.reduce((a, b) => a + b, 0) / sorted.length).toFixed(2);
 
-  const survivalRate = ((survivedLastLane / ROUNDS_PER_DIFF) * 100).toFixed(4);
+  const survivalRate5 = ((survived5Lanes / ROUNDS_PER_DIFF) * 100).toFixed(2);
+  const survivalRateLast = ((survivedLastLane / ROUNDS_PER_DIFF) * 100).toFixed(4);
   const rtpAllOut = ((totalWonAllOut / totalBetAllOut) * 100).toFixed(2);
   const rtpTarget = ((totalWonTarget / totalBetTarget) * 100).toFixed(2);
 
   console.log(`Completed in: ${durationSec}s`);
-  console.log(`Survival Rate to Last Lane: ${survivalRate}% (${survivedLastLane} / ${ROUNDS_PER_DIFF})`);
-  console.log(`Median Lanes Crossed:       ${medianLanes}`);
-  console.log(`Average Lanes Crossed:      ${avgLanes}`);
-  console.log(`Measured RTP (Push to End): ${rtpAllOut}%`);
-  console.log(`Measured RTP (Cashout @ ${targetStep}): ${rtpTarget}%`);
+  console.log(`Survival Rate (First 5 Lanes): ${survivalRate5}% (${survived5Lanes} / ${ROUNDS_PER_DIFF})`);
+  console.log(`Survival Rate (To Last Lane):  ${survivalRateLast}% (${survivedLastLane} / ${ROUNDS_PER_DIFF})`);
+  console.log(`Median Lanes Crossed:          ${medianLanes}`);
+  console.log(`Average Lanes Crossed:         ${avgLanes}`);
+  console.log(`Measured RTP (Push to End):    ${rtpAllOut}%`);
+  console.log(`Measured RTP (Cashout @ ${targetStep}):    ${rtpTarget}%`);
 }
 
 function run() {
