@@ -250,48 +250,272 @@ window.Games = (function () {
   }
 
   // =========================================================
-  // MINES (Diamond Hunt — Stake Reference / TechnoVisionDev)
+  // MINES (Diamond Hunt — Original SVG Art, Multi-Grid, Stake Polish)
   // =========================================================
   function mines(body, stage) {
     const { t, esc } = C;
-    const GRID = 25;
-    let gameActive = false, busy = false, revealed = new Array(GRID).fill(false);
-    let currentMult = 1, currentPotential = 0, currentBet = 1000;
+    let curGrid = 5;
+    let totalCells = 25;
+    let mineCount = 5;
+    let isCustomMines = false;
+    let gameActive = false, busy = false;
+    let revealed = [];
+    let currentMult = 1, currentPotential = 0;
+    let nextMults = [];
+    let lastWinAmount = 0;
+    let activeServerSeed = null, activeClientSeed = '', activeNonce = 1, activeSeedHash = '';
 
+    // Original SVG Artwork: Glossy Faceted Gem on Emerald Glow
+    const GEM_SVG = `
+      <svg class="tile-gem-svg tile-gem-sparkle" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="gemGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#00e800" stop-opacity="0.8"/>
+            <stop offset="60%" stop-color="#10b981" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="gemTop" x1="50%" y1="10%" x2="50%" y2="45%">
+            <stop offset="0%" stop-color="#a7f3d0"/>
+            <stop offset="100%" stop-color="#34d399"/>
+          </linearGradient>
+          <linearGradient id="gemBody" x1="20%" y1="35%" x2="80%" y2="90%">
+            <stop offset="0%" stop-color="#10b981"/>
+            <stop offset="50%" stop-color="#059669"/>
+            <stop offset="100%" stop-color="#064e3b"/>
+          </linearGradient>
+          <linearGradient id="gemFacetL" x1="10%" y1="40%" x2="50%" y2="85%">
+            <stop offset="0%" stop-color="#34d399"/>
+            <stop offset="100%" stop-color="#047857"/>
+          </linearGradient>
+          <linearGradient id="gemFacetR" x1="90%" y1="40%" x2="50%" y2="85%">
+            <stop offset="0%" stop-color="#059669"/>
+            <stop offset="100%" stop-color="#022c22"/>
+          </linearGradient>
+        </defs>
+        <!-- Emerald Aura Background -->
+        <circle cx="50" cy="50" r="48" fill="url(#gemGlow)"/>
+        <!-- Crown / Table facets -->
+        <polygon points="50,14 74,36 26,36" fill="url(#gemTop)"/>
+        <polygon points="26,36 12,38 28,18 50,14" fill="#6ee7b7" opacity="0.9"/>
+        <polygon points="74,36 88,38 72,18 50,14" fill="#34d399" opacity="0.8"/>
+        <!-- Center Pavilion -->
+        <polygon points="26,36 74,36 50,86" fill="url(#gemBody)"/>
+        <!-- Side Pavilion Facets -->
+        <polygon points="12,38 26,36 50,86" fill="url(#gemFacetL)"/>
+        <polygon points="88,38 74,36 50,86" fill="url(#gemFacetR)"/>
+        <!-- Shimmer highlights -->
+        <polygon points="46,18 54,18 51,32 47,32" fill="#ffffff" opacity="0.75"/>
+        <polygon points="48,40 52,40 50,72" fill="#ffffff" opacity="0.35"/>
+        <circle cx="32" cy="28" r="2.5" fill="#ffffff" opacity="0.9"/>
+      </svg>
+    `;
+
+    // Original SVG Artwork: Round Bomb with Lit Fuse on Red Burst
+    const BOMB_SVG = `
+      <svg class="tile-bomb-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="bombBurst" cx="50%" cy="55%" r="50%">
+            <stop offset="0%" stop-color="#ef4444" stop-opacity="0.9"/>
+            <stop offset="60%" stop-color="#b91c1c" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#7f1d1d" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="bombShere" cx="42%" cy="46%" r="50%">
+            <stop offset="0%" stop-color="#475569"/>
+            <stop offset="45%" stop-color="#1e293b"/>
+            <stop offset="100%" stop-color="#090d16"/>
+          </radialGradient>
+          <radialGradient id="sparkGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="35%" stop-color="#fef08a"/>
+            <stop offset="70%" stop-color="#f97316"/>
+            <stop offset="100%" stop-color="#dc2626" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- Explosion blast aura -->
+        <circle cx="50" cy="55" r="46" fill="url(#bombBurst)"/>
+        <!-- Curved Fuse -->
+        <path d="M50,34 C50,22 64,24 68,14" stroke="#d97706" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M50,34 C50,22 64,24 68,14" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="3,3" fill="none"/>
+        <!-- Fuse Collar / Cap -->
+        <rect x="42" y="32" width="16" height="7" rx="3.5" fill="#64748b" stroke="#334155" stroke-width="1.5"/>
+        <!-- Round Bomb Core -->
+        <circle cx="50" cy="58" r="30" fill="url(#bombShere)"/>
+        <!-- Shiny Specular Reflection Arc -->
+        <path d="M32,44 A20,20 0 0,1 48,38" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+        <!-- Lit Fuse Sparks -->
+        <circle cx="69" cy="13" r="10" fill="url(#sparkGlow)"/>
+        <line x1="69" y1="13" x2="78" y2="6" stroke="#facc15" stroke-width="2" stroke-linecap="round"/>
+        <line x1="69" y1="13" x2="76" y2="20" stroke="#f97316" stroke-width="1.8" stroke-linecap="round"/>
+        <line x1="69" y1="13" x2="61" y2="7" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `;
+
+    // Render Initial DOM Structure: Two-column Desktop Layout + Mobile Responsive Area
     body.innerHTML = `
-      <div id="mbet"></div>
-      <div style="display:flex;gap:12px;align-items:center;justify-content:center;margin:10px 0">
-        <label style="color:#aaa;font-size:13px;font-weight:600">${esc(t('mines_count'))}:</label>
-        <select id="mine-count" style="width:84px;background:#1a1a2a;color:#fff;border:1px solid #444;border-radius:8px;padding:6px 8px;font-size:14px;font-weight:700">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5" selected>5</option>
-          <option value="8">8</option>
-          <option value="10">10</option>
-          <option value="12">12</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-          <option value="24">24</option>
-        </select>
+      <div class="mines-arena">
+        <!-- LEFT CONTROLS PANEL -->
+        <div class="mines-sidebar">
+          <!-- Grid Size Selector -->
+          <div class="mines-sidebar-section">
+            <div class="mines-sidebar-label">
+              <span>${esc(t('grid_size'))}</span>
+              <span id="mgrid-lbl" style="color:#ffffff;font-weight:800">5×5</span>
+            </div>
+            <div class="mines-seg-control" id="mgrid-selector">
+              <button type="button" class="mines-seg-btn" data-grid="3">3×3</button>
+              <button type="button" class="mines-seg-btn active" data-grid="5">5×5</button>
+              <button type="button" class="mines-seg-btn" data-grid="7">7×7</button>
+              <button type="button" class="mines-seg-btn" data-grid="9">9×9</button>
+            </div>
+          </div>
+
+          <!-- Mine Count Presets & Custom -->
+          <div class="mines-sidebar-section">
+            <div class="mines-sidebar-label">
+              <span>${esc(t('mines_count'))}</span>
+              <span id="mcount-lbl" style="color:#facc15;font-weight:800">5</span>
+            </div>
+            <div class="mines-seg-control" id="mmines-presets">
+              <button type="button" class="mines-seg-btn" data-mines="1">1</button>
+              <button type="button" class="mines-seg-btn" data-mines="3">3</button>
+              <button type="button" class="mines-seg-btn active" data-mines="5">5</button>
+              <button type="button" class="mines-seg-btn" data-mines="7">7</button>
+              <button type="button" class="mines-seg-btn" data-mines="custom">${esc(t('custom_mines'))}</button>
+            </div>
+            <div class="mines-custom-box" id="mmines-custom-box" style="display:none;margin-top:6px">
+              <span style="font-size:12px;color:#94a3b8">1–<span id="mmax-mines">24</span>:</span>
+              <input type="number" id="mmines-custom-input" class="mines-custom-input" min="1" max="24" value="5" step="1">
+            </div>
+          </div>
+
+          <!-- Bet Bar (with Chips 1, 5, 10, 50, 100, 1/2 and 2x) -->
+          <div class="mines-sidebar-section">
+            <div class="mines-sidebar-label"><span>${esc(t('bet'))}</span></div>
+            <div id="mbet"></div>
+          </div>
+
+          <!-- Random Pick Button -->
+          <button type="button" class="btn-random-pick" id="mbtn-random" disabled>
+            <span>🎲</span> ${esc(t('random_pick'))}
+          </button>
+
+          <!-- Desktop Start & Cashout Action Buttons -->
+          <div class="mines-actions-row">
+            <button class="btn-mines-start" id="mstart">${esc(t('start'))}</button>
+            <button class="btn-mines-cashout" id="mcash" disabled style="display:none">${esc(t('cashout'))}</button>
+          </div>
+
+          <!-- Provably Fair Link / Rules Modal Trigger -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">
+            <button type="button" class="chip" id="mbtn-rules" style="font-size:11px">ℹ ${esc(t('how_to_play'))}</button>
+            <button type="button" class="chip" id="mbtn-fair" style="font-size:11px">🛡️ ${esc(t('provably_fair'))}</button>
+          </div>
+        </div>
+
+        <!-- RIGHT MAIN AREA -->
+        <div class="mines-main-area">
+          <!-- TOP STRIP: Live Stats & Next Multipliers -->
+          <div class="mines-top-strip">
+            <div class="mines-live-stats">
+              <div class="stat-item">
+                <span class="stat-title">${esc(t('mines_safe'))}</span>
+                <span class="stat-val green" id="msafe">20</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-title">${esc(t('mines_mult'))}</span>
+                <span class="stat-val gold" id="mmult">×1.00</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-title">${esc(t('potential_win'))}</span>
+                <span class="stat-val" id="mpotential">—</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-title">${esc(t('last_win'))}</span>
+                <span class="stat-val gold" id="mlastwin">0</span>
+              </div>
+            </div>
+
+            <!-- Multiplier Progression Strip -->
+            <div class="mines-mult-strip-wrap" id="mmult-strip"></div>
+          </div>
+
+          <!-- THE BOARD CONTAINER -->
+          <div class="mines-board-container" id="mboard-wrap">
+            <div class="mines-grid-view mines-grid-5" id="mgrid"></div>
+            <div id="mmodal-slot"></div>
+          </div>
+
+          <div class="msg" id="mmsg" style="text-align:center;min-height:22px"></div>
+
+          <!-- PROVABLY FAIR VERIFIER CARD (Toggleable) -->
+          <div class="mines-fair-card" id="mfair-card" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <h4 style="margin:0;color:#facc15;font-size:14px">🛡️ ${esc(t('mines_verify_title'))}</h4>
+              <button type="button" class="chip" id="mfair-close" style="font-size:11px">✕</button>
+            </div>
+            <p style="font-size:12px;color:#94a3b8;margin:0 0 10px">${esc(t('mines_verify_desc'))}</p>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+              <div>
+                <label style="color:#aaa">${esc(t('server_seed_hash'))}:</label>
+                <input id="mfair-hash" type="text" readonly style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#94a3b8;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
+              </div>
+              <div>
+                <label style="color:#aaa">${esc(t('server_seed'))}:</label>
+                <input id="mfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1">
+                  <label style="color:#aaa">${esc(t('client_seed'))}:</label>
+                  <input id="mfair-client-seed" type="text" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+                </div>
+                <div style="width:70px">
+                  <label style="color:#aaa">Nonce:</label>
+                  <input id="mfair-nonce" type="number" value="1" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-size:11px">
+                </div>
+              </div>
+              <button type="button" class="btn btn-gold" id="mfair-verify-btn" style="padding:6px;margin-top:4px;font-size:12px">${esc(t('verify_btn'))}</button>
+              <div id="mfair-result" style="font-size:12px;margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="mines-info">
-        <span>${esc(t('mines_safe'))}: <span class="val" id="msafe">20</span></span>
-        <span>${esc(t('mines_mult'))}: <span class="val" id="mmult">×1.00</span></span>
+
+      <!-- MOBILE STICKY BOTTOM BAR -->
+      <div class="mines-mobile-sticky-bar" id="mmobile-bar">
+        <button class="btn-mines-start" id="mmob-start">${esc(t('start'))}</button>
+        <button class="btn-mines-cashout" id="mmob-cash" disabled style="display:none">${esc(t('cashout'))}</button>
       </div>
-      <div class="mines-wrap">
-        <div class="mines-grid" id="mgrid"></div>
-        <div id="mmodal-slot"></div>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center;margin-top:14px">
-        <button class="bigbtn green" id="mstart" style="flex:1;max-width:180px">${esc(t('start'))}</button>
-        <button class="bigbtn" id="mcash" disabled style="flex:1;max-width:200px">${esc(t('cashout'))}</button>
-      </div>
-      <div class="msg" id="mmsg"></div>`;
+    `;
 
     const bet = betBar($('mbet'));
 
+    // Synchronize Desktop & Mobile Start/Cashout buttons
+    function updateActionButtons(active, canCashout, payoutText) {
+      const dStart = $('mstart'), dCash = $('mcash');
+      const mStart = $('mmob-start'), mCash = $('mmob-cash');
+
+      if (!active) {
+        if (dStart) { dStart.style.display = 'block'; dStart.disabled = false; }
+        if (dCash) { dCash.style.display = 'none'; dCash.disabled = true; }
+        if (mStart) { mStart.style.display = 'block'; mStart.disabled = false; }
+        if (mCash) { mCash.style.display = 'none'; mCash.disabled = true; }
+      } else {
+        if (dStart) { dStart.style.display = 'none'; }
+        if (dCash) {
+          dCash.style.display = 'block';
+          dCash.disabled = !canCashout;
+          dCash.textContent = canCashout ? `${esc(t('cashout'))} +${payoutText}` : esc(t('cashout'));
+        }
+        if (mStart) { mStart.style.display = 'none'; }
+        if (mCash) {
+          mCash.style.display = 'block';
+          mCash.disabled = !canCashout;
+          mCash.textContent = canCashout ? `${esc(t('cashout'))} +${payoutText}` : esc(t('cashout'));
+        }
+      }
+    }
+
+    // Modal Payout Pop
     function showCashoutModal(mult, payout) {
       const slot = $('mmodal-slot');
       if (!slot) return;
@@ -304,178 +528,458 @@ window.Games = (function () {
       setTimeout(() => { if (slot) slot.innerHTML = ''; }, 3200);
     }
 
+    // Update Top Multiplier Progression Strip
+    function updateMultiplierStrip(currMult, nextList) {
+      const strip = $('mmult-strip');
+      if (!strip) return;
+      let html = '';
+      if (currMult > 1) {
+        html += `<span class="mult-pill current">×${Number(currMult).toFixed(2)}</span>`;
+      }
+      if (Array.isArray(nextList)) {
+        nextList.forEach((m, idx) => {
+          const isNext = idx === 0;
+          html += `<span class="mult-pill ${isNext ? 'next-highlight' : ''}">×${Number(m).toFixed(2)}</span>`;
+        });
+      }
+      strip.innerHTML = html;
+    }
+
+    // Build Board Grid DOM
     function buildGrid(locked = false) {
       const grid = $('mgrid');
       if (!grid) return;
+      grid.className = `mines-grid-view mines-grid-${curGrid}`;
       grid.innerHTML = '';
-      for (let i = 0; i < GRID; i++) {
+      for (let i = 0; i < totalCells; i++) {
         const btn = document.createElement('button');
-        btn.className = 'mine-cell' + (revealed[i] ? ' revealed-safe' : '');
-        btn.textContent = revealed[i] ? '💎' : '';
+        btn.type = 'button';
+        btn.className = 'mine-tile' + (revealed[i] ? ' revealed-safe' : '');
+        if (revealed[i]) {
+          btn.innerHTML = GEM_SVG;
+        }
         btn.disabled = locked || !gameActive || revealed[i];
         btn.onclick = () => clickCell(i);
         grid.appendChild(btn);
       }
     }
 
-    function updateInfo(safeLeft, mult) {
-      const s = $('msafe'), m = $('mmult');
-      if (s) s.textContent = safeLeft !== null ? safeLeft : '—';
-      if (m) m.textContent = mult !== null ? '×' + Number(mult).toFixed(2) : '—';
+    // Update Live Stats
+    function updateStats(safeLeft, mult, potential) {
+      const s = $('msafe'), m = $('mmult'), p = $('mpotential');
+      if (s) s.textContent = (safeLeft !== null && safeLeft !== undefined) ? safeLeft : '—';
+      if (m) m.textContent = (mult !== null && mult !== undefined) ? '×' + Number(mult).toFixed(2) : '—';
+      if (p) p.textContent = (potential !== null && potential !== undefined && potential > 0) ? `+${C.fmt(potential)}` : '—';
     }
 
-    // Restore active game if exists
+    function lockSettings(locked) {
+      bet.lock(locked);
+      $('mgrid-selector').querySelectorAll('button').forEach((b) => (b.disabled = locked));
+      $('mmines-presets').querySelectorAll('button').forEach((b) => (b.disabled = locked));
+      const customInput = $('mmines-custom-input');
+      if (customInput) customInput.disabled = locked;
+      const rndBtn = $('mbtn-random');
+      if (rndBtn) rndBtn.disabled = !locked || !gameActive;
+    }
+
+    // Grid Size Switching Handler
+    function setGrid(g) {
+      if (gameActive || busy) return;
+      curGrid = Number(g);
+      totalCells = curGrid * curGrid;
+      revealed = new Array(totalCells).fill(false);
+      $('mgrid-lbl').textContent = `${curGrid}×${curGrid}`;
+      $('mmax-mines').textContent = String(totalCells - 1);
+      const customInput = $('mmines-custom-input');
+      if (customInput) customInput.max = totalCells - 1;
+
+      // Adjust mine count if current exceeds N - 1
+      if (mineCount >= totalCells) {
+        mineCount = Math.min(5, totalCells - 1);
+        $('mcount-lbl').textContent = String(mineCount);
+        if (customInput) customInput.value = String(mineCount);
+      }
+
+      $('mgrid-selector').querySelectorAll('.mines-seg-btn').forEach((b) => {
+        b.classList.toggle('active', Number(b.dataset.grid) === curGrid);
+      });
+
+      updateStats(totalCells - mineCount, 1, 0);
+      buildGrid(true);
+      calculateUpcomingMultipliers();
+    }
+
+    // Mine Count Presets Handler
+    function setMineCount(m, isCustom = false) {
+      if (gameActive || busy) return;
+      isCustomMines = isCustom;
+      mineCount = Math.max(1, Math.min(totalCells - 1, Number(m)));
+      $('mcount-lbl').textContent = String(mineCount);
+      const customBox = $('mmines-custom-box');
+      if (customBox) customBox.style.display = isCustom ? 'flex' : 'none';
+
+      $('mmines-presets').querySelectorAll('.mines-seg-btn').forEach((b) => {
+        if (isCustom) {
+          b.classList.toggle('active', b.dataset.mines === 'custom');
+        } else {
+          b.classList.toggle('active', Number(b.dataset.mines) === mineCount);
+        }
+      });
+
+      updateStats(totalCells - mineCount, 1, 0);
+      calculateUpcomingMultipliers();
+    }
+
+    // Preview Multipliers on Setting Changes
+    function calculateUpcomingMultipliers() {
+      const list = [];
+      let p = 1;
+      const N = totalCells, M = mineCount;
+      for (let k = 1; k <= Math.min(4, N - M); k++) {
+        p *= (N - (k - 1)) / (N - M - (k - 1));
+        const mult = Math.max(1.01, Math.floor(0.99 * p * 100) / 100);
+        list.push(mult);
+      }
+      nextMults = list;
+      updateMultiplierStrip(1, list);
+    }
+
+    // Wire Grid & Mine selector buttons
+    $('mgrid-selector').querySelectorAll('.mines-seg-btn').forEach((b) => {
+      b.onclick = () => { setGrid(b.dataset.grid); sfx.tick(); };
+    });
+
+    $('mmines-presets').querySelectorAll('.mines-seg-btn').forEach((b) => {
+      b.onclick = () => {
+        if (b.dataset.mines === 'custom') {
+          setMineCount($('mmines-custom-input').value || 5, true);
+        } else {
+          setMineCount(b.dataset.mines, false);
+        }
+        sfx.tick();
+      };
+    });
+
+    $('mmines-custom-input').oninput = (e) => {
+      let val = parseInt(e.target.value, 10);
+      if (isNaN(val) || val < 1) val = 1;
+      if (val > totalCells - 1) val = totalCells - 1;
+      setMineCount(val, true);
+    };
+
+    // Random Pick action
+    $('mbtn-random').onclick = () => {
+      if (!gameActive || busy) return;
+      const unrevealed = [];
+      for (let i = 0; i < totalCells; i++) {
+        if (!revealed[i]) unrevealed.push(i);
+      }
+      if (unrevealed.length === 0) return;
+      const pick = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+      clickCell(pick);
+    };
+
+    // Info / Rules Modal
+    $('mbtn-rules').onclick = () => {
+      alert(`${t('mines_rules_title')}\n\n${t('mines_rules_content')}`);
+    };
+
+    // Provably Fair Verifier Open/Close
+    $('mbtn-fair').onclick = () => {
+      const card = $('mfair-card');
+      card.style.display = card.style.display === 'none' ? 'block' : 'none';
+      if (card.style.display === 'block') {
+        $('mfair-hash').value = activeSeedHash || '';
+        $('mfair-client-seed').value = activeClientSeed || '';
+        if (activeServerSeed) $('mfair-server-seed').value = activeServerSeed;
+      }
+    };
+    $('mfair-close').onclick = () => { $('mfair-card').style.display = 'none'; };
+
+    // Provably Fair Verification Trigger
+    $('mfair-verify-btn').onclick = async () => {
+      const sSeed = $('mfair-server-seed').value.trim();
+      const cSeed = $('mfair-client-seed').value.trim();
+      const nonce = Number($('mfair-nonce').value) || 1;
+      if (!sSeed || !cSeed) {
+        $('mfair-result').innerHTML = `<span style="color:#ef4444">Enter Server Seed and Client Seed</span>`;
+        return;
+      }
+      try {
+        const res = await C.api('/games/mines/verify', {
+          server_seed: sSeed,
+          client_seed: cSeed,
+          nonce,
+          grid: curGrid,
+          mines: mineCount
+        });
+        const matchHash = res.server_seed_hash === activeSeedHash;
+        $('mfair-result').innerHTML = `
+          <div style="background:#071824;padding:8px;border-radius:6px;border:1px solid #10b981;color:#10b981">
+            <b>✓ Verification Reproducible!</b><br>
+            <span style="color:#cbd5e1;font-size:11px">Mine Positions (${res.mines.length}): [${res.mines.join(', ')}]</span><br>
+            <span style="font-size:10px;color:#94a3b8">SHA-256: ${res.server_seed_hash.slice(0, 24)}... ${matchHash ? '✓ Matches Round Hash' : ''}</span>
+          </div>`;
+      } catch (e) {
+        $('mfair-result').innerHTML = `<span style="color:#ef4444">${esc(e.message || 'Verification failed')}</span>`;
+      }
+    };
+
+    // Tile Click Handler
+    async function clickCell(idx) {
+      if (!gameActive || revealed[idx] || busy) return;
+      busy = true;
+      const tiles = $('mgrid').querySelectorAll('.mine-tile');
+      tiles[idx].textContent = '⌛';
+      tiles[idx].disabled = true;
+      sfx.click();
+
+      try {
+        const r = await C.api('/games/mines/step', { cell: idx });
+        C.setBalance(r.balance);
+
+        if (r.mine || r.result === 'mine') {
+          // BOMB HIT!
+          tiles[idx].textContent = '';
+          tiles[idx].innerHTML = BOMB_SVG;
+          tiles[idx].className = 'mine-tile revealed-mine revealed-hit';
+
+          // Shake Board
+          const board = $('mboard-wrap');
+          if (board) {
+            board.classList.add('mines-board-shake');
+            setTimeout(() => board.classList.remove('mines-board-shake'), 400);
+          }
+          sfx.boom();
+          sfx.lose();
+          say($('mmsg'), `💥 ${esc(t('crashed'))}`, 'lose');
+
+          // Reveal all other mines and unpicked gems dimmed
+          if (r.mines) {
+            r.mines.forEach((mi) => {
+              if (mi !== idx && tiles[mi]) {
+                tiles[mi].innerHTML = BOMB_SVG;
+                tiles[mi].className = 'mine-tile revealed-mine revealed-dim';
+              }
+            });
+          }
+          for (let i = 0; i < totalCells; i++) {
+            if (!revealed[i] && !(r.mines || []).includes(i) && tiles[i]) {
+              tiles[i].innerHTML = GEM_SVG;
+              tiles[i].className = 'mine-tile revealed-safe revealed-dim';
+            }
+          }
+
+          // Save seeds for fairness
+          if (r.server_seed) {
+            activeServerSeed = r.server_seed;
+            $('mfair-server-seed').value = r.server_seed;
+          }
+
+          gameActive = false;
+          lockSettings(false);
+          updateActionButtons(false, false, '0');
+          updateStats(0, 0, 0);
+          updateMultiplierStrip(0, []);
+        } else {
+          // SAFE GEM UNCOVERED!
+          tiles[idx].textContent = '';
+          tiles[idx].innerHTML = GEM_SVG;
+          tiles[idx].className = 'mine-tile revealed-safe';
+          revealed[idx] = true;
+          sfx.reveal();
+
+          currentMult = r.multiplier || r.mult;
+          currentPotential = r.potential;
+          nextMults = r.next_multipliers || [];
+          updateStats(r.safe_left, currentMult, currentPotential);
+          updateMultiplierStrip(currentMult, nextMults);
+          updateActionButtons(true, true, C.fmt(currentPotential));
+
+          if (r.safe_left === 0 || r.finished) {
+            // JACKPOT: All safe tiles revealed! Auto Cashout
+            say($('mmsg'), `🏆 ${esc(t('big_win'))} +${C.fmt(r.payout || currentPotential)}!`, 'win');
+            sfx.win();
+            coinRain(stage);
+            showCashoutModal(currentMult, r.payout || currentPotential);
+            lastWinAmount = r.payout || currentPotential;
+            $('mlastwin').textContent = `+${C.fmt(lastWinAmount)}`;
+
+            // Reveal mine positions dimmed
+            if (r.mines) {
+              r.mines.forEach((mi) => {
+                if (tiles[mi]) {
+                  tiles[mi].innerHTML = BOMB_SVG;
+                  tiles[mi].className = 'mine-tile revealed-mine revealed-dim';
+                }
+              });
+            }
+
+            if (r.server_seed) {
+              activeServerSeed = r.server_seed;
+              $('mfair-server-seed').value = r.server_seed;
+            }
+
+            gameActive = false;
+            lockSettings(false);
+            updateActionButtons(false, false, '0');
+          } else {
+            say($('mmsg'), `💎 ×${Number(currentMult).toFixed(2)}`, 'win');
+          }
+        }
+      } catch (e) {
+        C.fail(e);
+        tiles[idx].disabled = false;
+        tiles[idx].textContent = '';
+      }
+      busy = false;
+    }
+
+    // Start Game Function (invoked by Desktop or Mobile button)
+    async function doStart() {
+      if (busy) return;
+      busy = true;
+      const modalSlot = $('mmodal-slot');
+      if (modalSlot) modalSlot.innerHTML = '';
+      say($('mmsg'), '');
+
+      const customSeed = 'c_' + Math.random().toString(36).slice(2, 10);
+      try {
+        const r = await C.api('/games/mines/start', {
+          bet: bet.get(),
+          mines: mineCount,
+          grid: curGrid,
+          client_seed: customSeed
+        });
+
+        C.setBalance(r.balance);
+        gameActive = true;
+        revealed = new Array(totalCells).fill(false);
+        activeSeedHash = r.server_seed_hash || '';
+        activeClientSeed = r.client_seed || customSeed;
+        activeServerSeed = null;
+
+        $('mfair-hash').value = activeSeedHash;
+        $('mfair-client-seed').value = activeClientSeed;
+        $('mfair-server-seed').value = '';
+
+        currentMult = 1;
+        currentPotential = bet.get();
+        nextMults = r.next_multipliers || [];
+
+        updateStats(r.safe_left, 1, currentPotential);
+        updateMultiplierStrip(1, nextMults);
+        updateActionButtons(true, false, '0');
+        lockSettings(true);
+        say($('mmsg'), `💎 ${esc(t('mines_hint'))}`, '');
+        buildGrid(false);
+      } catch (e) {
+        C.fail(e);
+        updateActionButtons(false, false, '0');
+      }
+      busy = false;
+    }
+
+    // Cashout Function (invoked by Desktop or Mobile button)
+    async function doCashout() {
+      if (!gameActive || busy) return;
+      busy = true;
+      try {
+        const r = await C.api('/games/mines/cashout', {});
+        C.setBalance(r.balance);
+        lastWinAmount = r.payout;
+        $('mlastwin').textContent = `+${C.fmt(lastWinAmount)}`;
+        say($('mmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} 🎉`, 'win');
+        sfx.win();
+        showCashoutModal(r.multiplier || r.mult, r.payout);
+        if (r.multiplier >= 2 || r.mult >= 2) coinRain(stage);
+
+        // Reveal mines dimmed
+        const tiles = $('mgrid').querySelectorAll('.mine-tile');
+        if (r.mines) {
+          r.mines.forEach((mi) => {
+            if (tiles[mi] && !tiles[mi].classList.contains('revealed-safe')) {
+              tiles[mi].innerHTML = BOMB_SVG;
+              tiles[mi].className = 'mine-tile revealed-mine revealed-dim';
+            }
+          });
+        }
+        for (let i = 0; i < totalCells; i++) {
+          if (!revealed[i] && !(r.mines || []).includes(i) && tiles[i]) {
+            tiles[i].innerHTML = GEM_SVG;
+            tiles[i].className = 'mine-tile revealed-safe revealed-dim';
+          }
+        }
+
+        if (r.server_seed) {
+          activeServerSeed = r.server_seed;
+          $('mfair-server-seed').value = r.server_seed;
+        }
+
+        gameActive = false;
+        lockSettings(false);
+        updateActionButtons(false, false, '0');
+        updateStats(null, null, null);
+        updateMultiplierStrip(0, []);
+      } catch (e) {
+        C.fail(e);
+      }
+      busy = false;
+    }
+
+    // Connect button click triggers
+    $('mstart').onclick = doStart;
+    $('mmob-start').onclick = doStart;
+    $('mcash').onclick = doCashout;
+    $('mmob-cash').onclick = doCashout;
+
+    // Restore state if active round exists
     async function initMinesState() {
       try {
         const st = C.minesState && C.minesState.active !== undefined
           ? C.minesState
           : await C.api('/games/mines');
+
         if (st && st.active) {
           gameActive = true;
-          currentBet = st.bet;
+          curGrid = st.grid || 5;
+          totalCells = curGrid * curGrid;
+          mineCount = st.mines || 5;
           currentMult = st.mult || 1;
           currentPotential = st.potential || st.bet;
-          revealed.fill(false);
+          nextMults = st.next_multipliers || [];
+          revealed = new Array(totalCells).fill(false);
           (st.revealed || []).forEach((idx) => { revealed[idx] = true; });
-          $('mine-count').value = String(st.mines || 5);
-          $('mine-count').disabled = true;
-          updateInfo(st.safe_left, st.mult);
+
+          activeSeedHash = st.server_seed_hash || '';
+          activeClientSeed = st.client_seed || '';
+          $('mfair-hash').value = activeSeedHash;
+          $('mfair-client-seed').value = activeClientSeed;
+
+          $('mgrid-lbl').textContent = `${curGrid}×${curGrid}`;
+          $('mgrid-selector').querySelectorAll('.mines-seg-btn').forEach((b) => {
+            b.classList.toggle('active', Number(b.dataset.grid) === curGrid);
+          });
+          $('mcount-lbl').textContent = String(mineCount);
+
+          updateStats(st.safe_left, st.mult, currentPotential);
+          updateMultiplierStrip(currentMult, nextMults);
           buildGrid(false);
-          bet.lock(true);
-          $('mstart').disabled = true;
-          if ((st.revealed || []).length > 0) {
-            $('mcash').textContent = `${esc(t('cashout'))} +${C.fmt(st.potential)}`;
-            $('mcash').disabled = false;
-          }
+          lockSettings(true);
+          const canCash = (st.revealed || []).length > 0;
+          updateActionButtons(true, canCash, C.fmt(currentPotential));
           say($('mmsg'), `💎 ×${Number(st.mult).toFixed(2)}`, 'win');
         } else {
+          setGrid(5);
+          setMineCount(5);
           buildGrid(true);
         }
       } catch (e) {
+        setGrid(5);
+        setMineCount(5);
         buildGrid(true);
       }
     }
-
-    async function clickCell(idx) {
-      if (!gameActive || revealed[idx] || busy) return;
-      busy = true;
-      const cells = $('mgrid').querySelectorAll('.mine-cell');
-      cells[idx].textContent = '⌛';
-      cells[idx].disabled = true;
-      try {
-        const r = await C.api('/games/mines/step', { cell: idx });
-        C.setBalance(r.balance);
-        if (r.mine) {
-          cells[idx].textContent = '💣';
-          cells[idx].className = 'mine-cell revealed-mine';
-          sfx.boom();
-          say($('mmsg'), `💥 ${esc(t('crashed'))}`, 'lose');
-          if (r.mines) r.mines.forEach((mi) => {
-            if (mi !== idx) {
-              cells[mi].textContent = '💣';
-              cells[mi].className = 'mine-cell revealed-mine revealed-dim';
-            }
-          });
-          for (let i = 0; i < GRID; i++) {
-            if (!revealed[i] && !(r.mines || []).includes(i)) {
-              cells[i].textContent = '💎';
-              cells[i].className = 'mine-cell revealed-safe revealed-dim';
-            }
-          }
-          sfx.lose();
-          gameActive = false;
-          bet.lock(false);
-          $('mstart').disabled = false;
-          $('mcash').disabled = true;
-          $('mine-count').disabled = false;
-        } else {
-          cells[idx].textContent = '💎';
-          cells[idx].className = 'mine-cell revealed-safe';
-          revealed[idx] = true;
-          sfx.reveal();
-          currentMult = r.mult;
-          currentPotential = r.potential;
-          updateInfo(r.safe_left, r.mult);
-          $('mcash').textContent = `${esc(t('cashout'))} +${C.fmt(r.potential)}`;
-          $('mcash').disabled = false;
-          if (r.safe_left === 0) {
-            say($('mmsg'), `🏆 ${esc(t('big_win'))} +${C.fmt(r.payout || r.potential)}`, 'win');
-            sfx.win(); coinRain(stage);
-            showCashoutModal(r.mult, r.payout || r.potential);
-            gameActive = false;
-            bet.lock(false);
-            $('mstart').disabled = false;
-            $('mcash').disabled = true;
-            $('mine-count').disabled = false;
-          } else {
-            say($('mmsg'), `💎 ×${r.mult ? r.mult.toFixed(2) : '?'}`, 'win');
-            buildGrid(false);
-          }
-        }
-      } catch (e) {
-        C.fail(e);
-        cells[idx].disabled = false;
-        cells[idx].textContent = '';
-      }
-      busy = false;
-    }
-
-    $('mstart').onclick = async () => {
-      if (busy) return; busy = true;
-      const mineCount = Number($('mine-count').value);
-      $('mstart').disabled = true;
-      const modalSlot = $('mmodal-slot');
-      if (modalSlot) modalSlot.innerHTML = '';
-      try {
-        const r = await C.api('/games/mines/start', { bet: bet.get(), mines: mineCount });
-        C.setBalance(r.balance);
-        gameActive = true;
-        revealed.fill(false);
-        updateInfo(GRID - mineCount, 1);
-        $('mcash').textContent = esc(t('cashout'));
-        $('mcash').disabled = true;
-        $('mine-count').disabled = true;
-        say($('mmsg'), `💎 ${esc(t('mines_hint'))}`, '');
-        buildGrid(false);
-        bet.lock(true);
-      } catch (e) {
-        C.fail(e);
-        $('mstart').disabled = false;
-      }
-      busy = false;
-    };
-
-    $('mcash').onclick = async () => {
-      if (!gameActive || busy) return; busy = true; $('mcash').disabled = true;
-      try {
-        const r = await C.api('/games/mines/cashout', {});
-        C.setBalance(r.balance);
-        say($('mmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} 🎉`, 'win');
-        sfx.win();
-        showCashoutModal(r.mult, r.payout);
-        if (r.mult >= 2) coinRain(stage);
-        if (r.mines) r.mines.forEach((mi) => {
-          const cells = $('mgrid').querySelectorAll('.mine-cell');
-          if (!cells[mi].classList.contains('revealed-safe')) {
-            cells[mi].textContent = '💣';
-            cells[mi].className = 'mine-cell revealed-mine revealed-dim';
-          }
-        });
-        for (let i = 0; i < GRID; i++) {
-          const cells = $('mgrid').querySelectorAll('.mine-cell');
-          if (!revealed[i] && !(r.mines || []).includes(i)) {
-            cells[i].textContent = '💎';
-            cells[i].className = 'mine-cell revealed-safe revealed-dim';
-          }
-        }
-        gameActive = false;
-        bet.lock(false);
-        $('mstart').disabled = false;
-        $('mine-count').disabled = false;
-        updateInfo(null, null);
-      } catch (e) { C.fail(e); $('mcash').disabled = false; }
-      busy = false;
-    };
 
     initMinesState();
   }

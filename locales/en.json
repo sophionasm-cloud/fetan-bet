@@ -231,5 +231,15 @@
   "fullscreen": "Fullscreen",
   "go": "GO",
   "target_lane": "Target Lane",
-  "menu": "Menu"
+  "menu": "Menu",
+  "grid_size": "Grid Size",
+  "custom_mines": "Custom",
+  "random_pick": "Random Pick",
+  "potential_win": "Potential Win",
+  "last_win": "Win",
+  "mines_rules_title": "Mines Rules & Fair Play",
+  "mines_rules_content": "Select your grid size (3x3 up to 9x9) and choose how many mines to hide. Click tiles on the board to uncover gems. Each gem increases your payout multiplier! Cash out at any time to claim your winnings, or uncover all safe gems for an automatic jackpot. If you uncover a mine, your bet is lost.",
+  "mines_verify_title": "Mines Provably Fair Verification",
+  "mines_verify_desc": "All mine placements are generated using a cryptographically secure Fisher-Yates shuffle seeded by SHA-256(server_seed:client_seed:nonce). Enter the seeds revealed at round completion to verify the exact board layout.",
+  "preset_mines": "Mines"
 }

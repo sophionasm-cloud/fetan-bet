@@ -361,7 +361,51 @@ function roadVerify({ server_seed, client_seed, lane, difficulty = 'easy' }) {
   };
 }
 
-// ---------- Mines (5x5 grid diamond hunt) ----------
+// ---------- Mines (Configurable Grid: 3x3, 5x5, 7x7, 9x9 with Provably Fair RNG) ----------
+const MINES_GRIDS = [3, 5, 7, 9];
+const MINES_DEFAULT_GRID = 5;
+const MINES_HOUSE_EDGE = 0.01; // 1% house edge => 0.99 RTP factor
+const MINES_MAX_WIN = 100000000; // Cap potential win at 1,000,000 credits (100,000,000 cents)
+
+function getMinesMultiplier(N, M, k, houseEdge = MINES_HOUSE_EDGE) {
+  if (k <= 0) return 1;
+  if (k > N - M) return 0;
+  let prod = 1;
+  for (let i = 0; i < k; i++) {
+    prod *= (N - i) / (N - M - i);
+  }
+  const mult = Math.floor((1 - houseEdge) * prod * 100) / 100;
+  return Math.max(1.01, mult);
+}
+
+function getMinesNextMultipliers(N, M, k, count = 4, houseEdge = MINES_HOUSE_EDGE) {
+  const list = [];
+  const maxSafe = N - M;
+  for (let step = k + 1; step <= Math.min(maxSafe, k + count); step++) {
+    list.push(getMinesMultiplier(N, M, step, houseEdge));
+  }
+  return list;
+}
+
+function generateMinesLayout(serverSeed, clientSeed, nonce, totalCells, minesCount) {
+  const arr = Array.from({ length: totalCells }, (_, i) => i);
+  let hash = crypto.createHash('sha256').update(`${serverSeed}:${clientSeed}:${nonce}`).digest('hex');
+  let byteOffset = 0;
+  for (let i = arr.length - 1; i > 0; i--) {
+    if (byteOffset + 8 > hash.length) {
+      hash = crypto.createHash('sha256').update(hash).digest('hex');
+      byteOffset = 0;
+    }
+    const randVal = parseInt(hash.slice(byteOffset, byteOffset + 8), 16);
+    byteOffset += 8;
+    const j = randVal % (i + 1);
+    const temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+  }
+  return arr.slice(0, minesCount).sort((a, b) => a - b);
+}
+
 function activeMinesRound(userId) {
   return db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='mines' AND status='active'").get(userId);
 }
@@ -369,31 +413,43 @@ function activeMinesRound(userId) {
 function minesState(userId) {
   const r = activeMinesRound(userId);
   const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
-  if (!r) return { active: false, balance, mines: 5 };
+  if (!r) return { active: false, balance, grid: MINES_DEFAULT_GRID, mines: 5 };
   const detail = JSON.parse(r.detail);
-  const k = detail.revealed.length;
+  const g = detail.grid || MINES_DEFAULT_GRID;
+  const N = g * g;
   const m = detail.minesCount;
-  const fair = k > 0 ? comb(25, k) / comb(25 - m, k) : 1;
-  const mult = k > 0 ? Math.max(1.05, Math.floor(0.96 * fair * 100) / 100) : 1;
-  const safeLeft = 25 - m - k;
-  const potential = Math.floor(r.bet * mult);
+  const k = detail.revealed.length;
+  const mult = k > 0 ? getMinesMultiplier(N, m, k) : 1;
+  const safeLeft = N - m - k;
+  const potential = Math.min(MINES_MAX_WIN, Math.floor(r.bet * mult));
+  const nextList = getMinesNextMultipliers(N, m, k, 4);
+
   return {
     active: true,
     balance,
     bet: r.bet,
     step: r.step,
+    grid: g,
+    total_cells: N,
     mines: m,
     revealed: detail.revealed,
     safe_left: safeLeft,
     mult,
-    potential
+    potential,
+    next_multipliers: nextList,
+    server_seed_hash: r.server_seed_hash,
+    client_seed: r.client_seed
   };
 }
 
-function minesStart(userId, bet, minesCount = 5) {
+function minesStart(userId, bet, minesCount = 5, gridSize = 5, clientSeed = '') {
   checkBet(bet);
+  const g = Number(gridSize) || MINES_DEFAULT_GRID;
+  if (!MINES_GRIDS.includes(g)) throw new Error('INVALID');
+  const N = g * g;
   const m = Number(minesCount);
-  if (!Number.isInteger(m) || m < 1 || m > 24) throw new Error('INVALID');
+  if (!Number.isInteger(m) || m < 1 || m > N - 1) throw new Error('INVALID');
+
   return db.transaction(() => {
     const existing = activeMinesRound(userId);
     if (existing) {
@@ -406,52 +462,118 @@ function minesStart(userId, bet, minesCount = 5) {
         throw new Error('ACTIVE_ROUND');
       }
     }
-    const all = Array.from({ length: 25 }, (_, i) => i);
-    for (let i = all.length - 1; i > 0; i--) {
-      const j = rnd(i + 1);
-      [all[i], all[j]] = [all[j], all[i]];
-    }
-    const mines = all.slice(0, m);
-    const detail = { mines, revealed: [], minesCount: m };
-    const id = saveRound(userId, 'mines', bet, 0, detail, 'active', 0);
+
+    const sSeed = crypto.randomBytes(32).toString('hex');
+    const sHash = crypto.createHash('sha256').update(sSeed).digest('hex');
+    const cSeed = String(clientSeed || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || crypto.randomBytes(16).toString('hex');
+    const nonce = 1;
+
+    const mines = generateMinesLayout(sSeed, cSeed, nonce, N, m);
+    const detail = { grid: g, totalCells: N, mines, revealed: [], minesCount: m, nonce };
+    const id = saveRound(userId, 'mines', bet, 0, detail, 'active', 0, sSeed, cSeed, sHash);
     postLedger({ userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
     const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
-    return { active: true, balance, mines: m, safe_left: 25 - m, bet, revealed: [], mult: 1, potential: bet };
+    const nextList = getMinesNextMultipliers(N, m, 0, 4);
+
+    return {
+      active: true,
+      balance,
+      grid: g,
+      total_cells: N,
+      mines: m,
+      safe_left: N - m,
+      bet,
+      revealed: [],
+      mult: 1,
+      potential: bet,
+      next_multipliers: nextList,
+      server_seed_hash: sHash,
+      client_seed: cSeed
+    };
   })();
 }
 
 function minesStep(userId, cell) {
   const c = Number(cell);
-  if (!Number.isInteger(c) || c < 0 || c > 24) throw new Error('INVALID');
   return db.transaction(() => {
     const r = activeMinesRound(userId);
     if (!r) throw new Error('NOT_FOUND');
     const detail = JSON.parse(r.detail);
+    const g = detail.grid || MINES_DEFAULT_GRID;
+    const N = g * g;
+    if (!Number.isInteger(c) || c < 0 || c >= N) throw new Error('INVALID');
     if (detail.revealed.includes(c)) throw new Error('INVALID');
     const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
 
     if (detail.mines.includes(c)) {
-      db.prepare("UPDATE game_rounds SET status='done', payout=0 WHERE id=?").run(r.id);
-      return { mine: true, mines: detail.mines, balance };
+      const info = db.prepare("UPDATE game_rounds SET status='done', payout=0 WHERE id=? AND status='active'").run(r.id);
+      if (info.changes === 0) throw new Error('INVALID');
+      return {
+        result: 'mine',
+        mine: true,
+        tile: c,
+        finished: true,
+        hit_mine: c,
+        mines: detail.mines,
+        multiplier: 0,
+        mult: 0,
+        payout: 0,
+        balance,
+        server_seed: r.server_seed,
+        server_seed_hash: r.server_seed_hash,
+        client_seed: r.client_seed,
+        nonce: detail.nonce || 1
+      };
     }
 
     detail.revealed.push(c);
     const k = detail.revealed.length;
     const m = detail.minesCount;
-    const fair = comb(25, k) / comb(25 - m, k);
-    const mult = Math.max(1.05, Math.floor(0.96 * fair * 100) / 100);
-    const safeLeft = 25 - m - k;
-    const potential = Math.floor(r.bet * mult);
+    const mult = getMinesMultiplier(N, m, k);
+    const safeLeft = N - m - k;
+    const potential = Math.min(MINES_MAX_WIN, Math.floor(r.bet * mult));
+    const nextList = getMinesNextMultipliers(N, m, k, 4);
 
     if (safeLeft === 0) {
+      // Auto cash-out when all safe tiles are revealed!
+      const info = db.prepare("UPDATE game_rounds SET status='done', payout=?, step=?, detail=? WHERE id=? AND status='active'").run(potential, k, JSON.stringify(detail), r.id);
+      if (info.changes === 0) throw new Error('INVALID');
       postLedger({ userId, delta: potential, type: 'win', refType: 'round', refId: r.id });
-      db.prepare("UPDATE game_rounds SET status='done', payout=?, step=?, detail=? WHERE id=?").run(potential, k, JSON.stringify(detail), r.id);
       const newBal = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
-      return { mine: false, safe_left: 0, mult, payout: potential, potential, balance: newBal, mines: detail.mines };
+      return {
+        result: 'safe',
+        mine: false,
+        tile: c,
+        finished: true,
+        safe_left: 0,
+        multiplier: mult,
+        mult,
+        payout: potential,
+        potential,
+        balance: newBal,
+        mines: detail.mines,
+        next_multipliers: [],
+        server_seed: r.server_seed,
+        server_seed_hash: r.server_seed_hash,
+        client_seed: r.client_seed,
+        nonce: detail.nonce || 1
+      };
     }
 
-    db.prepare("UPDATE game_rounds SET step=?, detail=? WHERE id=?").run(k, JSON.stringify(detail), r.id);
-    return { mine: false, safe_left: safeLeft, mult, potential, balance };
+    const info = db.prepare("UPDATE game_rounds SET step=?, detail=? WHERE id=? AND status='active'").run(k, JSON.stringify(detail), r.id);
+    if (info.changes === 0) throw new Error('INVALID');
+    return {
+      result: 'safe',
+      mine: false,
+      tile: c,
+      finished: false,
+      safe_left: safeLeft,
+      multiplier: mult,
+      mult,
+      potential,
+      balance,
+      next_multipliers: nextList
+    };
   })();
 }
 
@@ -460,16 +582,50 @@ function minesCashout(userId) {
     const r = activeMinesRound(userId);
     if (!r || r.step < 1) throw new Error('INVALID');
     const detail = JSON.parse(r.detail);
+    const g = detail.grid || MINES_DEFAULT_GRID;
+    const N = g * g;
     const k = detail.revealed.length;
+    if (k < 1) throw new Error('INVALID');
     const m = detail.minesCount;
-    const fair = comb(25, k) / comb(25 - m, k);
-    const mult = Math.max(1.05, Math.floor(0.96 * fair * 100) / 100);
-    const payout = Math.floor(r.bet * mult);
+    const mult = getMinesMultiplier(N, m, k);
+    const payout = Math.min(MINES_MAX_WIN, Math.floor(r.bet * mult));
+
+    const info = db.prepare("UPDATE game_rounds SET status='done', payout=? WHERE id=? AND status='active'").run(payout, r.id);
+    if (info.changes === 0) throw new Error('INVALID');
     postLedger({ userId, delta: payout, type: 'win', refType: 'round', refId: r.id });
-    db.prepare("UPDATE game_rounds SET status='done', payout=? WHERE id=?").run(payout, r.id);
     const balance = db.prepare('SELECT balance FROM wallets WHERE user_id=?').get(userId).balance;
-    return { payout, mult, balance, mines: detail.mines };
+    return {
+      finished: true,
+      payout,
+      multiplier: mult,
+      mult,
+      balance,
+      mines: detail.mines,
+      server_seed: r.server_seed,
+      server_seed_hash: r.server_seed_hash,
+      client_seed: r.client_seed,
+      nonce: detail.nonce || 1
+    };
   })();
+}
+
+function minesVerify({ server_seed, client_seed, nonce = 1, grid = 5, mines = 5 }) {
+  if (!server_seed || !client_seed) throw new Error('INVALID');
+  const g = Number(grid) || 5;
+  const N = g * g;
+  const m = Number(mines) || 5;
+  const layout = generateMinesLayout(server_seed, client_seed, nonce, N, m);
+  const serverSeedHash = crypto.createHash('sha256').update(server_seed).digest('hex');
+  return {
+    server_seed,
+    server_seed_hash: serverSeedHash,
+    client_seed,
+    nonce: Number(nonce),
+    grid: g,
+    total_cells: N,
+    mines_count: m,
+    mines: layout
+  };
 }
 
 // ---------- Plinko (Stake reference: 8-16 rows, Low/Medium/High risk) ----------
@@ -741,6 +897,11 @@ module.exports = {
   minesStart,
   minesStep,
   minesCashout,
+  minesVerify,
+  MINES_GRIDS,
+  getMinesMultiplier,
+  getMinesNextMultipliers,
+  generateMinesLayout,
   plinko,
   keno,
   bingoStart,

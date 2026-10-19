@@ -1,7 +1,9 @@
 // Run with: npm test  (uses a temporary database, your real data.db is untouched)
 process.env.DB_PATH = ':memory:';
 const assert = require('assert');
+const crypto = require('crypto');
 const app = require('./server');
+const games = require('./games');
 const { db } = require('./db');
 
 const server = app.listen(0, async () => {
@@ -168,17 +170,85 @@ const server = app.listen(0, async () => {
     ok('road history returns list of rounds', rHist.status === 200 && Array.isArray(rHist.data.rounds) && rHist.data.rounds.length > 0);
 
 
-    // Mines
+    // Mines: comprehensive testing
     const mstate0 = await user('/games/mines');
-    ok('mines state retrieves', mstate0.status === 200);
-    const mstart = await user('/games/mines/start', { bet: 1000, mines: 5 });
-    ok('mines start plays', mstart.status === 200 && mstart.data.active === true);
-    const mstep = await user('/games/mines/step', { cell: 0 });
-    ok('mines step plays', mstep.status === 200 && (mstep.data.mine === true || mstep.data.mine === false));
-    if (!mstep.data.mine) {
-      const mco = await user('/games/mines/cashout', {});
-      ok('mines cashout works', mco.status === 200 && mco.data.payout > 0);
-    }
+    ok('mines state retrieves', mstate0.status === 200 && typeof mstate0.data.active === 'boolean');
+
+    // 1. Multiplier values for each grid size (3x3, 5x5, 7x7, 9x9)
+    const mult3 = games.getMinesMultiplier(9, 3, 1); // 9 / (9 - 3) * 0.99 = 1.5 * 0.99 = 1.48
+    ok('multiplier 3x3 k=1 is correct', mult3 === 1.48);
+    const mult5 = games.getMinesMultiplier(25, 5, 1); // 25 / 20 * 0.99 = 1.23
+    ok('multiplier 5x5 k=1 is correct', mult5 === 1.23);
+    const mult7 = games.getMinesMultiplier(49, 7, 1); // 49 / 42 * 0.99 = 1.15
+    ok('multiplier 7x7 k=1 is correct', mult7 === 1.15);
+    const mult9 = games.getMinesMultiplier(81, 9, 1); // 81 / 72 * 0.99 = 1.11
+    ok('multiplier 9x9 k=1 is correct', mult9 === 1.11);
+
+    // 2. Mine range validation: 0 is rejected, N is rejected, invalid grid rejected
+    const badMines0 = await user('/games/mines/start', { bet: 1000, mines: 0, grid: 5 });
+    ok('mine count 0 rejected', badMines0.status === 400 || badMines0.data.error === 'INVALID');
+    const badMines25 = await user('/games/mines/start', { bet: 1000, mines: 25, grid: 5 });
+    ok('mine count >= N rejected', badMines25.status === 400 || badMines25.data.error === 'INVALID');
+    const badGrid = await user('/games/mines/start', { bet: 1000, mines: 3, grid: 4 });
+    ok('invalid grid size rejected', badGrid.status === 400 || badGrid.data.error === 'INVALID');
+
+    // 3. Start a round with fixed seeds to deterministically test safe tile and mine hit
+    const fixedClientSeed = 'test_client_seed_123';
+    const mstart = await user('/games/mines/start', { bet: 1000, mines: 3, grid: 3, client_seed: fixedClientSeed });
+    ok('mines start plays with grid 3x3', mstart.status === 200 && mstart.data.active === true && mstart.data.grid === 3);
+    ok('mines start hides mines layout', !Array.isArray(mstart.data.mines));
+    ok('mines start returns server_seed_hash', typeof mstart.data.server_seed_hash === 'string' && mstart.data.server_seed_hash.length === 64);
+
+    // Cannot cash out at 0 reveals
+    const badCashout0 = await user('/games/mines/cashout', {});
+    ok('no cash-out at 0 reveals', badCashout0.status === 400 || badCashout0.data.error === 'INVALID');
+
+    // Fetch active round from DB to know exactly where the mines are for this deterministic test
+    const myMe = (await user('/me')).data;
+    const testUserId = myMe.user.id;
+    const activeDbRound = db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='mines' AND status='active'").get(testUserId);
+    const dbDetail = JSON.parse(activeDbRound.detail);
+    const testMines = dbDetail.mines; // e.g. 3 indices in 0..8
+    const safeIndices = [0,1,2,3,4,5,6,7,8].filter((i) => !testMines.includes(i));
+    const mineIndex = testMines[0];
+
+    // 4. Reveal of a safe tile
+    const safeStepRes = await user('/games/mines/step', { cell: safeIndices[0] });
+    ok('reveal safe tile succeeds', safeStepRes.status === 200 && safeStepRes.data.result === 'safe' && safeStepRes.data.finished === false && safeStepRes.data.multiplier > 1);
+
+    // 5. Duplicate tile reveal rejected
+    const dupStepRes = await user('/games/mines/step', { cell: safeIndices[0] });
+    ok('duplicate tile reveal rejected', dupStepRes.status === 400 || dupStepRes.data.error === 'INVALID');
+
+    // 6. Cash out pays correctly through ledger
+    const preBalance = (await user('/games/mines')).data.balance;
+    const coRes = await user('/games/mines/cashout', {});
+    ok('cash-out pays correctly through ledger', coRes.status === 200 && coRes.data.payout > 1000 && coRes.data.balance === preBalance + coRes.data.payout);
+    ok('cash-out reveals server_seed and mines', typeof coRes.data.server_seed === 'string' && Array.isArray(coRes.data.mines));
+
+    // 7. No reveal or cashout after round ended
+    const postEndStep = await user('/games/mines/step', { cell: safeIndices[1] });
+    ok('no reveal after round ended', postEndStep.status === 400 || postEndStep.data.error === 'NOT_FOUND');
+    const postEndCo = await user('/games/mines/cashout', {});
+    ok('no cash-out after round ended', postEndCo.status === 400 || postEndCo.data.error === 'INVALID');
+
+    // 8. Reveal of a mine ends the round
+    const mstart2 = await user('/games/mines/start', { bet: 1000, mines: 3, grid: 3 });
+    const activeDbRound2 = db.prepare("SELECT * FROM game_rounds WHERE user_id=? AND game='mines' AND status='active'").get(testUserId);
+    const mineHitIdx = JSON.parse(activeDbRound2.detail).mines[0];
+    const hitStepRes = await user('/games/mines/step', { cell: mineHitIdx });
+    ok('reveal of a mine ends the round', hitStepRes.status === 200 && hitStepRes.data.result === 'mine' && hitStepRes.data.finished === true && hitStepRes.data.payout === 0);
+    ok('mine hit reveals server_seed matching hash', crypto.createHash('sha256').update(hitStepRes.data.server_seed).digest('hex') === hitStepRes.data.server_seed_hash);
+
+    // 9. Fairness verification reproduces the layout
+    const verifyRes = await user('/games/mines/verify', {
+      server_seed: hitStepRes.data.server_seed,
+      client_seed: hitStepRes.data.client_seed,
+      nonce: 1,
+      grid: 3,
+      mines: 3
+    });
+    ok('fairness verification reproduces the layout', verifyRes.status === 200 && JSON.stringify(verifyRes.data.mines) === JSON.stringify(hitStepRes.data.mines));
 
     // Plinko
     const pk = await user('/games/plinko', { bet: 1000 });
