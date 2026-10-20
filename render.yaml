@@ -1,7 +1,10 @@
+# Render Blueprint configuration for Fetan Bet
+# Recommended Region: Ohio (us-east) to match Neon AWS us-east-2
 services:
   - type: web
     name: fetan-bet
     env: node
+    region: ohio
     plan: free
     buildCommand: npm install
     startCommand: npm start
@@ -10,3 +13,5 @@ services:
         value: 22
       - key: JWT_SECRET
         generateValue: true
+      - key: DATABASE_URL
+        sync: false
