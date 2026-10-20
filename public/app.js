@@ -18,7 +18,12 @@ async function api(path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   };
-  const r = await fetch('/api' + path, opt);
+  let r;
+  try {
+    r = await fetch('/api' + path, opt);
+  } catch {
+    throw new Error('NETWORK');
+  }
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
     if (data.error === 'LOGIN' && me) { me = null; render(); }
@@ -27,7 +32,13 @@ async function api(path, body) {
   return data;
 }
 
-// ---------- Toast ----------
+// ---------- Toast & Errors ----------
+function getErrMsg(e) {
+  const code = e?.message || 'GENERIC';
+  const key = 'err_' + code;
+  return t(key) !== key ? t(key) : t('err_GENERIC');
+}
+
 function toast(msg, type = '') {
   const el = $('toast');
   el.textContent = msg;
@@ -37,11 +48,15 @@ function toast(msg, type = '') {
   toast._t = setTimeout(() => (el.hidden = true), 3500);
 }
 const fail = (e) => {
-  const key = 'err_' + e.message;
-  toast(t(key) !== key ? t(key) : t('err_GENERIC'), 'err');
+  toast(getErrMsg(e), 'err');
 };
 const success = (msg) => toast(msg, 'ok');
 const statusTag = (s) => `<span class="tag ${s}">${esc(t('status_' + s))}</span>`;
+
+function validPhone(p) {
+  const s = String(p || '').replace(/[\s\-()]+/g, '');
+  return /^(\+251|251|0)?[79]\d{8}$/.test(s);
+}
 
 function emptyState(icon, msg) {
   return `<div class="empty-state"><span class="es-icon">${icon}</span><p>${esc(msg)}</p></div>`;
@@ -82,6 +97,7 @@ async function refreshMe() {
       $('quickDepositBtn').hidden = true;
     }
   }
+  return isLogged;
 }
 
 function setBalance(b) {
@@ -228,11 +244,13 @@ function authView(app, initialMode = 'login') {
             <button class="auth-tab-btn ${initialMode === 'register' ? 'active' : ''}" id="atb-register">${esc(t('register'))}</button>
           </div>
 
+          <div id="auth-error-box" class="auth-error-box" hidden></div>
+
           <!-- LOGIN FORM -->
           <div id="auth-login" ${initialMode === 'login' ? '' : 'hidden'}>
             <form id="lf" autocomplete="on">
-              <label for="l-phone">${esc(t('phone'))}</label>
-              <input id="l-phone" name="phone" type="tel" inputmode="numeric" placeholder="${esc(t('phone_hint'))}" autocomplete="tel" required>
+              <label for="l-phone">${esc(t('phone_or_username'))}</label>
+              <input id="l-phone" name="phone" type="text" placeholder="${esc(t('phone_or_username_hint'))}" autocomplete="username tel" required>
               
               <label for="l-pass" style="margin-top:14px">${esc(t('password'))}</label>
               <div class="input-wrap-pass">
@@ -254,7 +272,7 @@ function authView(app, initialMode = 'login') {
               <input id="r-name" name="name" autocomplete="name" minlength="2" maxlength="60" required>
               
               <label for="r-phone" style="margin-top:10px">${esc(t('phone'))}</label>
-              <input id="r-phone" name="phone" inputmode="tel" placeholder="${esc(t('phone_hint'))}" autocomplete="tel" required>
+              <input id="r-phone" name="phone" type="tel" inputmode="tel" placeholder="${esc(t('phone_hint'))}" autocomplete="tel" required>
               
               <label for="r-pass" style="margin-top:10px">${esc(t('password'))}</label>
               <div class="input-wrap-pass">
@@ -303,14 +321,30 @@ function authView(app, initialMode = 'login') {
     inp.type = inp.type === 'password' ? 'text' : 'password';
     $('r-pass-toggle').setAttribute('aria-label', inp.type === 'password' ? 'Show password' : 'Hide password');
   };
+  function clearAuthError() {
+    const b = $('auth-error-box');
+    if (b) { b.hidden = true; b.textContent = ''; }
+  }
+  function showAuthError(err) {
+    const msg = getErrMsg(err);
+    const b = $('auth-error-box');
+    if (b) { b.textContent = msg; b.hidden = false; }
+    toast(msg, 'err');
+  }
+
+  // Clear errors when user types
+  modal.querySelectorAll('input').forEach((inp) => inp.addEventListener('input', clearAuthError));
+
   // Tab switching
   function showLogin() {
+    clearAuthError();
     $('auth-login').hidden = false; $('auth-register').hidden = true;
     $('atb-login').classList.add('active'); $('atb-register').classList.remove('active');
     $('auth-modal-title').textContent = t('login');
     $('l-phone').focus();
   }
   function showRegister() {
+    clearAuthError();
     $('auth-login').hidden = true; $('auth-register').hidden = false;
     $('atb-login').classList.remove('active'); $('atb-register').classList.add('active');
     $('auth-modal-title').textContent = t('register');
@@ -324,26 +358,74 @@ function authView(app, initialMode = 'login') {
   // Form submissions
   $('lf').onsubmit = async (ev) => {
     ev.preventDefault();
+    clearAuthError();
+    const data = Object.fromEntries(new FormData(ev.target));
+    const phone = String(data.phone || '').trim();
+    const password = String(data.password || '');
+
+    if (!phone) {
+      showAuthError(new Error('INVALID_PHONE'));
+      $('l-phone').focus();
+      return;
+    }
+    if (!password) {
+      showAuthError(new Error('INVALID_PASSWORD'));
+      $('l-pass').focus();
+      return;
+    }
+
     const btn = ev.target.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = '...';
     try {
-      await api('/login', Object.fromEntries(new FormData(ev.target)));
-      await refreshMe();
+      await api('/login', { phone, password });
+      if (!await refreshMe()) throw new Error('SESSION');
       tab = (me && me.role !== 'user') ? me.role : 'games';
       closeModal();
-      render();
-    } catch (e) { fail(e); btn.disabled = false; btn.textContent = t('login'); }
+      await render();
+    } catch (e) {
+      showAuthError(e);
+      btn.disabled = false;
+      btn.textContent = t('login');
+    }
   };
+
   $('rf').onsubmit = async (ev) => {
     ev.preventDefault();
+    clearAuthError();
+    const data = Object.fromEntries(new FormData(ev.target));
+    const name = String(data.name || '').trim();
+    const phone = String(data.phone || '').trim();
+    const password = String(data.password || '');
+
+    if (name.length < 2) {
+      showAuthError(new Error('INVALID_NAME'));
+      $('r-name').focus();
+      return;
+    }
+    if (!validPhone(phone)) {
+      showAuthError(new Error('INVALID_PHONE'));
+      $('r-phone').focus();
+      return;
+    }
+    if (password.length < 6) {
+      showAuthError(new Error('INVALID_PASSWORD'));
+      $('r-pass').focus();
+      return;
+    }
+
     const btn = ev.target.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = '...';
     try {
-      await api('/register', { ...Object.fromEntries(new FormData(ev.target)), lang });
+      await api('/register', { name, phone, password, lang });
+      if (!await refreshMe()) throw new Error('REGISTERED_SESSION');
       tab = 'games'; // Customer sees games immediately upon register!
       closeModal();
-      render();
-    } catch (e) { fail(e); btn.disabled = false; btn.textContent = t('register'); }
+      await render();
+    } catch (e) {
+      showAuthError(e);
+      btn.disabled = false;
+      btn.textContent = t('register');
+    }
   };
   (initialMode === 'register' ? $('r-name') : $('l-phone')).focus();
 }

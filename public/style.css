@@ -1071,6 +1071,18 @@ tr:hover td {
   cursor: pointer;
 }
 .auth-modal-title { margin: 0 48px 18px 0; font-size: 21px; }
+.auth-error-box {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #ff9999;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+.auth-error-box[hidden] { display: none !important; }
 .guest-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .guest-hero-actions .btn { width: auto; margin: 0; min-width: 128px; }
 :where(button, input, a, select, textarea):focus-visible {

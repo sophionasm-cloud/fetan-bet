@@ -30,7 +30,7 @@ const wrap = (fn) => async (req, res) => {
     const result = await fn(req, res);
     res.json(result ?? { ok: true });
   } catch (e) {
-    const known = ['INSUFFICIENT', 'INVALID', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED'];
+    const known = ['INSUFFICIENT', 'INVALID', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE'];
     if (known.includes(e.message)) return res.status(400).json({ error: e.message });
     console.error('[error]', e);
     res.status(500).json({ error: 'GENERIC' });
@@ -69,8 +69,15 @@ const money = (v) => { // "12.5" -> 1250 minor units
   return Math.round(n * 100);
 };
 
-const cleanPhone = (p) => String(p || '').replace(/\s+/g, '');
-const validPhone = (p) => /^(\+251|0)?[79]\d{8}$/.test(p);
+function normPhone(p) {
+  let s = String(p || '').replace(/[\s\-()]+/g, '');
+  if (s.startsWith('+251')) s = '0' + s.slice(4);
+  else if (s.startsWith('251')) s = '0' + s.slice(3);
+  else if (/^[79]\d{8}$/.test(s)) s = '0' + s;
+  return s;
+}
+const validPhone = (p) => /^0[79]\d{8}$/.test(normPhone(p));
+const cleanPhone = normPhone;
 
 function setToken(res, uid) {
   res.cookie('token', jwt.sign({ uid }, SECRET, { expiresIn: '7d' }), {
@@ -106,7 +113,7 @@ app.get('/api/i18n/:lang', (req, res) => {
 // ---------- auth ----------
 app.post('/api/register', authLimiter, wrap(async (req, res) => {
   const name = String(req.body.name || '').trim();
-  const phone = cleanPhone(req.body.phone);
+  const phone = normPhone(req.body.phone);
   const password = String(req.body.password || '');
   const lang = req.body.lang === 'en' ? 'en' : 'am';
   if (name.length < 2 || name.length > 60 || !validPhone(phone) || password.length < 6) throw new Error('INVALID');
@@ -121,12 +128,20 @@ app.post('/api/register', authLimiter, wrap(async (req, res) => {
 }));
 
 app.post('/api/login', authLimiter, wrap(async (req, res) => {
-  const rawId = cleanPhone(req.body.phone);
+  const rawInput = String(req.body.phone || req.body.username || '').trim();
+  const phone = normPhone(rawInput);
   const pass = String(req.body.password || '');
-  let uRes = await query('SELECT * FROM users WHERE phone=$1 OR LOWER(name)=$2', [rawId, rawId.toLowerCase()]);
+  if (!rawInput || !pass) throw new Error('LOGIN');
+
+  const lower = rawInput.toLowerCase();
+  const stripped = lower.replace(/\s+/g, '');
+  let uRes = await query(
+    'SELECT * FROM users WHERE phone=$1 OR LOWER(name)=$2 OR LOWER(REPLACE(name, \' \', \'\'))=$3',
+    [phone, lower, stripped]
+  );
   let u = uRes.rows[0];
 
-  if (!u && (rawId.toLowerCase() === 'admin' || rawId.toLowerCase() === 'superadmin')) {
+  if (!u && (lower === 'admin' || lower === 'superadmin')) {
     const adminRes = await query("SELECT * FROM users WHERE role='admin' LIMIT 1");
     u = adminRes.rows[0];
   }
