@@ -2988,3 +2988,21 @@
   .mines-grid { gap: 4px; max-width: 290px; }
   .mine-cell { font-size: 20px; border-bottom-width: 3px; }
 }
+
+/* Keep game surfaces usable in narrow viewports without clipping controls. */
+main, .stage, #gbody, .game-board, .game-controls { min-width: 0; }
+.stage { width: 100%; max-width: 100%; }
+.stage-head { gap: 8px; flex-wrap: wrap; }
+.betbar, .betrow, .chips, .bingo-controls, .road-actions { max-width: 100%; flex-wrap: wrap; }
+.betrow input { min-width: 76px; max-width: 140px; }
+img, svg, canvas { max-width: 100%; }
+@media (max-width: 600px) {
+  .stage { padding: 12px; }
+  .stage-head { justify-content: space-between; }
+  .stage-head .chip { min-height: 40px; }
+  .betbar { gap: 8px; }
+  .betrow { gap: 7px; }
+  .bigbtn { min-height: 44px; }
+  .rtable { overflow-x: auto; }
+  .roulette-layout, .game-layout { grid-template-columns: minmax(0, 1fr) !important; }
+}

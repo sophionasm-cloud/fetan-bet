@@ -1038,6 +1038,57 @@ tr:hover td {
   font-weight: 700;
 }
 
+/* Guest landing and accessible authentication dialog */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+  background: rgba(0, 0, 0, .78);
+  backdrop-filter: blur(8px);
+}
+.auth-overlay .auth-wrapper {
+  width: min(960px, 100%);
+  min-height: 0;
+  margin: auto;
+}
+.auth-overlay .auth-split-card { width: 100%; }
+.auth-form-side { position: relative; }
+.auth-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  font-size: 25px;
+  cursor: pointer;
+}
+.auth-modal-title { margin: 0 48px 18px 0; font-size: 21px; }
+.guest-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.guest-hero-actions .btn { width: auto; margin: 0; min-width: 128px; }
+:where(button, input, a, select, textarea):focus-visible {
+  outline: 3px solid var(--gold-bright);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .auth-overlay { padding: 10px; align-items: start; }
+  .auth-overlay .auth-wrapper { margin: auto; }
+  .auth-overlay .auth-split-card { border-radius: 16px; }
+  .auth-overlay .auth-showcase { padding: 20px; }
+  .auth-overlay .auth-features { display: none; }
+  .auth-overlay .auth-brand-giant { font-size: 34px; }
+  .auth-overlay .auth-form-side { padding: 24px 20px; }
+  .guest-hero-actions .btn { flex: 1; }
+}
+
 .admin-stat .accent { color: var(--gold-bright); }
 
 /* ---- DIVIDER ---- */

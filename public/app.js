@@ -134,7 +134,9 @@ async function render(subMode = '') {
   const app = $('app');
   if (!me) {
     $('nav').hidden = true;
-    return authView(app, subMode || 'login');
+    guestView(app);
+    if (subMode) authView(app, subMode);
+    return;
   }
 
   // Enforce administrative role restriction (Requirement 6)
@@ -167,7 +169,15 @@ async function render(subMode = '') {
 // Reference: Dark green-black & antique-gold split card
 // =====================================================
 function authView(app, initialMode = 'login') {
-  app.innerHTML = `
+  const existing = $('auth-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'auth-modal';
+  modal.className = 'auth-overlay';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'auth-modal-title');
+  modal.innerHTML = `
     <div class="auth-wrapper">
       <div class="auth-split-card">
         <!-- Left Brand Showcase Side -->
@@ -211,6 +221,8 @@ function authView(app, initialMode = 'login') {
 
         <!-- Right Form Side -->
         <div class="auth-form-side">
+          <button type="button" class="auth-close" id="auth-close" aria-label="Close dialog">×</button>
+          <h2 id="auth-modal-title" class="auth-modal-title">${initialMode === 'login' ? esc(t('login')) : esc(t('register'))}</h2>
           <div class="auth-tabs">
             <button class="auth-tab-btn ${initialMode === 'login' ? 'active' : ''}" id="atb-login">${esc(t('login'))}</button>
             <button class="auth-tab-btn ${initialMode === 'register' ? 'active' : ''}" id="atb-register">${esc(t('register'))}</button>
@@ -226,14 +238,6 @@ function authView(app, initialMode = 'login') {
               <div class="input-wrap-pass">
                 <input id="l-pass" name="password" type="password" autocomplete="current-password" required>
                 <button type="button" class="pass-toggle-btn" id="l-pass-toggle" title="Show/Hide Password">👁</button>
-              </div>
-
-              <div class="auth-helper-row">
-                <label class="auth-checkbox-label">
-                  <input type="checkbox" id="remember-me" checked>
-                  <span>Remember me</span>
-                </label>
-                <a href="#" class="auth-forgot-link" id="forgot-pass-link">Forgot Password?</a>
               </div>
 
               <button type="submit" class="btn btn-gold" style="margin-top:16px">${esc(t('login'))}</button>
@@ -267,29 +271,50 @@ function authView(app, initialMode = 'login') {
         </div>
       </div>
     </div>`;
+  document.body.appendChild(modal);
+
+  const opener = document.activeElement;
+  const closeModal = () => {
+    modal.remove();
+    if (opener?.isConnected) opener.focus();
+  };
+  $('auth-close').onclick = closeModal;
+  modal.addEventListener('click', (ev) => { if (ev.target === modal) closeModal(); });
+  modal.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') { ev.preventDefault(); closeModal(); return; }
+    if (ev.key === 'Tab') {
+      const focusable = [...modal.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href]')]
+        .filter((el) => !el.closest('[hidden]'));
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last?.focus(); }
+      else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first?.focus(); }
+    }
+  });
 
   // Password visibility toggles
+  $('l-pass-toggle').setAttribute('aria-label', 'Show password');
   $('l-pass-toggle').onclick = () => {
     const inp = $('l-pass');
     inp.type = inp.type === 'password' ? 'text' : 'password';
+    $('l-pass-toggle').setAttribute('aria-label', inp.type === 'password' ? 'Show password' : 'Hide password');
   };
   $('r-pass-toggle').onclick = () => {
     const inp = $('r-pass');
     inp.type = inp.type === 'password' ? 'text' : 'password';
+    $('r-pass-toggle').setAttribute('aria-label', inp.type === 'password' ? 'Show password' : 'Hide password');
   };
-  $('forgot-pass-link').onclick = (e) => {
-    e.preventDefault();
-    toast(t('forgot_password_info'), 'ok');
-  };
-
   // Tab switching
   function showLogin() {
     $('auth-login').hidden = false; $('auth-register').hidden = true;
     $('atb-login').classList.add('active'); $('atb-register').classList.remove('active');
+    $('auth-modal-title').textContent = t('login');
+    $('l-phone').focus();
   }
   function showRegister() {
     $('auth-login').hidden = true; $('auth-register').hidden = false;
     $('atb-login').classList.remove('active'); $('atb-register').classList.add('active');
+    $('auth-modal-title').textContent = t('register');
+    $('r-name').focus();
   }
   $('atb-login').onclick = showLogin;
   $('atb-register').onclick = showRegister;
@@ -305,6 +330,7 @@ function authView(app, initialMode = 'login') {
       await api('/login', Object.fromEntries(new FormData(ev.target)));
       await refreshMe();
       tab = (me && me.role !== 'user') ? me.role : 'games';
+      closeModal();
       render();
     } catch (e) { fail(e); btn.disabled = false; btn.textContent = t('login'); }
   };
@@ -315,9 +341,28 @@ function authView(app, initialMode = 'login') {
     try {
       await api('/register', { ...Object.fromEntries(new FormData(ev.target)), lang });
       tab = 'games'; // Customer sees games immediately upon register!
+      closeModal();
       render();
     } catch (e) { fail(e); btn.disabled = false; btn.textContent = t('register'); }
   };
+  (initialMode === 'register' ? $('r-name') : $('l-phone')).focus();
+}
+
+function guestView(app) {
+  Games.mount(app, {
+    t, esc, fmt, limits, roadState: { active: false, ladder: [], maxSteps: 10 },
+    minesState: { active: false, mines: 5 }, guest: true,
+    onLogin: () => authView(app, 'login'),
+  });
+  const hero = app.querySelector('.lobby-hero-content');
+  if (hero) {
+    const actions = document.createElement('div');
+    actions.className = 'guest-hero-actions';
+    actions.innerHTML = `<button type="button" class="btn btn-gold" id="guest-register">${esc(t('register'))}</button><button type="button" class="btn btn-outline" id="guest-login">${esc(t('login'))}</button>`;
+    hero.appendChild(actions);
+    $('guest-register').onclick = () => authView(app, 'register');
+    $('guest-login').onclick = () => authView(app, 'login');
+  }
 }
 
 // =====================================================
@@ -927,8 +972,9 @@ async function agentView(app) {
         <h3>${esc(t('pending_requests'))}</h3>
         ${dp.deposits.length ? `
           <div class="scroll"><table>
-            <tr><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th></th></tr>
+            <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th></th></tr>
             ${dp.deposits.map((d) => `<tr>
+              <td class="muted" style="white-space:nowrap">${esc(d.created_at)}</td>
               <td><div style="font-weight:600">${esc(d.user_name)}</div><div class="muted">${esc(d.phone)}</div></td>
               <td><b>${esc(d.provider)}</b></td>
               <td style="font-weight:800;color:var(--gold-bright);font-size:16px">${fmt(d.amount)} ${esc(t('currency_etb'))}</td>
@@ -945,8 +991,9 @@ async function agentView(app) {
         <h3>${esc(t('decided_requests'))}</h3>
         ${[...da.deposits, ...dr.deposits].length ? `
           <div class="scroll"><table>
-            <tr><th>${esc(t('name'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>${esc(t('status'))}</th></tr>
+            <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>${esc(t('status'))}</th></tr>
             ${[...da.deposits, ...dr.deposits].sort((x, y) => y.id - x.id).slice(0, 30).map((d) => `<tr>
+              <td class="muted" style="white-space:nowrap">${esc(d.created_at)}</td>
               <td><div style="font-weight:600">${esc(d.user_name)}</div><div class="muted">${esc(d.provider)}</div></td>
               <td style="font-weight:700">${fmt(d.amount)}</td>
               <td><span style="font-size:12px;font-family:monospace">${esc(d.tx_ref)}</span></td>

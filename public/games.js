@@ -221,7 +221,16 @@ window.Games = (function () {
       };
     });
 
-    cards.forEach((c) => (c.onclick = () => open(app, c.dataset.g)));
+    cards.forEach((c) => {
+      const activate = () => {
+        if (C.guest) { C.onLogin?.(); return; }
+        open(app, c.dataset.g);
+      };
+      c.removeAttribute('tabindex');
+      c.removeAttribute('role');
+      c.removeAttribute('aria-label');
+      c.onclick = activate;
+    });
   }
 
   let stopFns = [];
