@@ -1788,6 +1788,8 @@ body.mobile-app:not(.game-open) .gcard-badge { top: 5px; right: 7px; padding: 2p
 .profile-page .eyebrow { color: var(--gold-bright); font-size: 11px; font-weight: 800; letter-spacing: 1px; }
 .profile-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 22px; }
 .profile-details div { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-panel); }
+.a2hs-hint { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-panel); color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+.a2hs-hint button { flex: 0 0 44px; min-height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font-size: 22px; }
 .profile-details dt { color: var(--text-muted); font-size: 12px; }
 .profile-details dd { margin-top: 5px; color: var(--gold-bright); font-weight: 700; overflow-wrap: anywhere; }
 .profile-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 18px; }

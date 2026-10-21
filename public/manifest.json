@@ -1,0 +1,12 @@
+{
+  "name": "Fetan Bet",
+  "short_name": "Fetan Bet",
+  "description": "Fetan Bet games and wallet",
+  "start_url": "/#/lobby",
+  "display": "standalone",
+  "background_color": "#090b09",
+  "theme_color": "#090b09",
+  "icons": [
+    { "src": "fetan-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

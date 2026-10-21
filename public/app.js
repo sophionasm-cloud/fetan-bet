@@ -218,6 +218,7 @@ async function render(subMode = '') {
 
   nav();
   $('nav').hidden = Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches);
+  syncTelegramShell(Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches));
   const views = {
     games: (root) => gamesView(root, gameRoute),
     wallet: walletView,
@@ -232,7 +233,58 @@ async function render(subMode = '') {
   try {
     const fn = views[tab] || (me.role === 'admin' ? adminView : me.role === 'agent' ? agentView : gamesView);
     await fn(app);
+    renderA2hsHint(app, Boolean(gameRoute));
   } catch (e) { fail(e); }
+}
+
+function renderA2hsHint(app, gameRoute) {
+  app.querySelector('#a2hs-hint')?.remove();
+  const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const installed = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if (!ios || installed || gameRoute || tab !== 'games' || sessionStorage.getItem('a2hs-dismissed')) return;
+  const hint = document.createElement('aside');
+  hint.id = 'a2hs-hint';
+  hint.className = 'a2hs-hint';
+  hint.innerHTML = '<span>Add Fetan Bet to your Home Screen for an app-style full-screen experience.</span><button type="button" aria-label="Dismiss home screen hint">×</button>';
+  hint.querySelector('button').onclick = () => { sessionStorage.setItem('a2hs-dismissed', '1'); hint.remove(); };
+  app.prepend(hint);
+}
+
+const telegramApp = window.Telegram?.WebApp || null;
+if (telegramApp) {
+  try {
+    telegramApp.ready();
+    telegramApp.expand();
+    telegramApp.setHeaderColor?.('#090b09');
+    telegramApp.setBackgroundColor?.('#090b09');
+    telegramApp.onEvent?.('viewportChanged', () => setAppViewportHeight());
+    telegramApp.onEvent?.('fullscreenChanged', () => setAppViewportHeight());
+  } catch (_) { /* Telegram APIs vary by client version. */ }
+}
+let telegramBackBound = false;
+let telegramGameState = null;
+function syncTelegramShell(gameOpen) {
+  if (!telegramApp) return;
+  const back = telegramApp.BackButton;
+  if (!back) return;
+  if (telegramGameState === gameOpen) return;
+  telegramGameState = gameOpen;
+  try {
+    if (!telegramBackBound) {
+      back.onClick(() => {
+        if (document.body.classList.contains('game-open')) history.back();
+      });
+      telegramBackBound = true;
+    }
+    if (gameOpen) {
+      back.show();
+      telegramApp.disableVerticalSwipes?.();
+      telegramApp.requestFullscreen?.();
+    } else {
+      back.hide();
+      telegramApp.enableVerticalSwipes?.();
+    }
+  } catch (_) { /* Keep the browser game usable if an optional API is unavailable. */ }
 }
 
 function setAppViewportHeight() {
@@ -242,6 +294,7 @@ function setAppViewportHeight() {
   document.body.classList.toggle('game-landscape', window.innerWidth > height);
   const routeIsGame = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
   const shouldOpenShell = window.innerWidth <= 1024 && routeIsGame && me?.role === 'user';
+  syncTelegramShell(shouldOpenShell);
   if (document.body.classList.contains('game-open') !== shouldOpenShell) {
     if (!shouldOpenShell) Games.cleanupCurrent();
     render();
