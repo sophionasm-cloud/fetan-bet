@@ -22,27 +22,41 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 25000,
 });
 
 pool.on('error', (err) => {
-  console.error('[pg-pool] Unexpected idle client error:', err.message);
+  console.warn('[pg-pool] Background idle client error handled:', err.message);
+});
+
+// Prevent background socket drops (ECONNRESET) during Neon scale-to-zero from terminating the Node process
+process.on('uncaughtException', (err) => {
+  if (err?.code === 'ECONNRESET' || String(err?.message).includes('Connection terminated')) {
+    console.warn('[process] Handled background DB connection drop:', err.message);
+    return;
+  }
+  console.error('[process] Fatal uncaught exception:', err);
+  process.exit(1);
 });
 
 // Scale-to-zero retry helper for cold starts
-async function query(text, params = [], retries = 2) {
+async function query(text, params = [], retries = 3) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await pool.query(text, params);
     } catch (err) {
+      const msg = String(err?.message || '');
       const isTransient =
-        err.code === '57P01' || // admin_shutdown (Neon scale-to-zero wake)
-        err.code === 'ECONNRESET' ||
-        err.code === 'ETIMEDOUT' ||
-        String(err.message).includes('Connection terminated unexpectedly');
+        err?.code === '57P01' || // admin_shutdown (Neon scale-to-zero wake)
+        err?.code === 'ECONNRESET' ||
+        err?.code === 'ETIMEDOUT' ||
+        err?.code === 'EPIPE' ||
+        msg.includes('Connection terminated') ||
+        msg.includes('timeout') ||
+        msg.includes('connection timeout');
 
       if (isTransient && attempt < retries) {
-        const delay = (attempt + 1) * 600;
+        const delay = (attempt + 1) * 800;
         console.warn(`[db] Transient error (${err.message}). Retrying in ${delay}ms...`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
@@ -55,6 +69,10 @@ async function query(text, params = [], retries = 2) {
 // Transaction helper with BEGIN/COMMIT/ROLLBACK and guaranteed release
 async function withTx(fn) {
   const client = await pool.connect();
+  const onError = (err) => {
+    console.warn('[pg-client] Handled active client error:', err.message);
+  };
+  client.on('error', onError);
   try {
     await client.query('BEGIN');
     const result = await fn(client);
@@ -64,6 +82,7 @@ async function withTx(fn) {
     await client.query('ROLLBACK').catch(() => {});
     throw err;
   } finally {
+    client.removeListener('error', onError);
     client.release();
   }
 }
