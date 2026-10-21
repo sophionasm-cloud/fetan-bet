@@ -2989,20 +2989,209 @@
   .mine-cell { font-size: 20px; border-bottom-width: 3px; }
 }
 
-/* Keep game surfaces usable in narrow viewports without clipping controls. */
+/* Small-screen games use one app shell; the desktop page remains unchanged. */
 main, .stage, #gbody, .game-board, .game-controls { min-width: 0; }
-.stage { width: 100%; max-width: 100%; }
-.stage-head { gap: 8px; flex-wrap: wrap; }
-.betbar, .betrow, .chips, .bingo-controls, .road-actions { max-width: 100%; flex-wrap: wrap; }
-.betrow input { min-width: 76px; max-width: 140px; }
 img, svg, canvas { max-width: 100%; }
-@media (max-width: 600px) {
-  .stage { padding: 12px; }
-  .stage-head { justify-content: space-between; }
-  .stage-head .chip { min-height: 40px; }
-  .betbar { gap: 8px; }
-  .betrow { gap: 7px; }
-  .bigbtn { min-height: 44px; }
-  .rtable { overflow-x: auto; }
-  .roulette-layout, .game-layout { grid-template-columns: minmax(0, 1fr) !important; }
+.mobile-game-shell { display: contents; }
+.mobile-game-topbar { display: none; }
+body.game-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
 }
+body.game-open > .top,
+body.game-open > .stripe,
+body.game-open > #nav { display: none !important; }
+body.game-open #app {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: 100%;
+  height: var(--app-height, 100dvh);
+  max-width: none;
+  margin: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overflow: hidden;
+}
+body.game-open .mobile-game-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+}
+body.game-open .mobile-game-topbar {
+  position: relative;
+  z-index: 5;
+  flex: 0 0 52px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  background: #0e120f;
+}
+body.game-open .mobile-game-icon {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 20px;
+}
+body.game-open .mobile-game-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  color: var(--gold-bright);
+}
+body.game-open .mobile-game-balance {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 108px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 9px;
+  border: 1px solid var(--border-gold);
+  border-radius: 999px;
+  background: var(--surface-panel);
+  color: var(--gold-bright);
+  font: inherit;
+  font-weight: 800;
+  font-size: 13px;
+}
+body.game-open .mobile-game-balance span { max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+body.game-open .mobile-game-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 8px;
+  z-index: 10;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-md);
+}
+body.game-open .mobile-game-menu button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+}
+body.game-open .mobile-game-menu button:hover { background: var(--surface-hover); color: var(--gold-bright); }
+body.game-open .stage {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+body.game-open .stage-head,
+body.game-open .legacy-game-title,
+body.game-open .road-topbar { display: none !important; }
+body.game-open #gbody { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+body.game-open .road-container {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  min-height: 0;
+  margin: 0;
+  gap: 6px;
+}
+body.game-open .road-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  container-type: size;
+}
+body.game-open .road-track { height: 100%; min-height: 0; }
+body.game-open .road-sidewalk-start,
+body.game-open .road-lane,
+body.game-open .road-finish-curb { height: 100%; }
+body.game-open .road-sidewalk-start { width: min(30cqh, 20vw); }
+body.game-open .road-lane { width: min(30cqh, 26vw); }
+body.game-open .road-finish-curb { width: min(22cqh, 18vw); }
+body.game-open .road-panel {
+  flex: 0 0 auto;
+  max-height: 36%;
+  gap: 6px;
+  padding: 7px 8px calc(8px + env(safe-area-inset-bottom) + 12px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+body.game-open .road-stepper-row,
+body.game-open .road-diff-row { gap: 6px; }
+body.game-open .road-input-box { flex: 1 1 100%; min-width: 0; }
+body.game-open .road-step-btn { min-height: 44px; padding: 8px 10px; }
+body.game-open .road-bet-input { min-width: 0; font-size: 16px; }
+body.game-open .road-chips-group { width: 100%; justify-content: space-between; gap: 4px; }
+body.game-open .road-chip-btn,
+body.game-open .road-seg-btn { min-height: 44px; padding: 8px 9px; }
+body.game-open .road-diff-row { align-items: flex-start; }
+body.game-open .road-diff-block { gap: 4px; }
+body.game-open .road-diff-label,
+body.game-open .road-shot-down { font-size: 10px; }
+body.game-open .road-segmented { gap: 1px; }
+body.game-open .road-actions-row { margin-top: 0; gap: 8px; }
+body.game-open .road-actions-row > button { min-height: 48px; }
+body.game-open .road-demo-notice { display: none; }
+body.game-open .road-subtabs { display: none; }
+body.game-open .road-subtabs.mobile-overlay {
+  position: absolute;
+  inset: 58px 8px 8px;
+  z-index: 6;
+  display: block;
+  margin: 0;
+  overflow: auto;
+  background: var(--surface-panel);
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="road"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-rows: 52px minmax(0, 1fr);
+  gap: 0 8px;
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="road"] .mobile-game-topbar { grid-column: 1 / -1; }
+body.game-open.game-landscape .mobile-game-shell[data-game="road"] .stage,
+body.game-open.game-landscape .mobile-game-shell[data-game="road"] .road-container { display: contents; }
+body.game-open.game-landscape .mobile-game-shell[data-game="road"] .road-viewport { grid-column: 1; grid-row: 2; }
+body.game-open.game-landscape .mobile-game-shell[data-game="road"] .road-panel {
+  grid-column: 2;
+  grid-row: 2;
+  max-height: none;
+  overflow: auto;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom) + 12px);
+  border-radius: 0;
+}
+body.game-open.game-landscape .road-stepper-row,
+body.game-open.game-landscape .road-diff-row,
+body.game-open.game-landscape .road-diff-block { align-items: stretch; flex-direction: column; }
+body.game-open.game-landscape .road-chips-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.game-open.game-landscape .road-segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.game-open.game-landscape .road-chip-btn { width: 100%; }

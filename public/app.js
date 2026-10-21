@@ -146,14 +146,19 @@ function nav() {
 }
 
 async function render(subMode = '') {
+  const gameRoute = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
   await refreshMe();
   const app = $('app');
+  if (!gameRoute || !me || me.role !== 'user' || !matchMedia('(max-width: 1024px)').matches) document.body.classList.remove('game-open');
   if (!me) {
+    document.body.classList.remove('game-open');
     $('nav').hidden = true;
     guestView(app);
     if (subMode) authView(app, subMode);
     return;
   }
+
+  if (gameRoute && me.role === 'user') tab = 'games';
 
   // Enforce administrative role restriction (Requirement 6)
   if (me.role === 'admin' || me.role === 'agent') {
@@ -164,8 +169,9 @@ async function render(subMode = '') {
   }
 
   nav();
+  $('nav').hidden = Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches);
   const views = {
-    games: gamesView,
+    games: (root) => gamesView(root, gameRoute),
     wallet: walletView,
     deposit: depositView,
     withdraw: withdrawView,
@@ -179,6 +185,17 @@ async function render(subMode = '') {
     await fn(app);
   } catch (e) { fail(e); }
 }
+
+function setAppViewportHeight() {
+  const height = window.visualViewport?.height || window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`);
+  document.body.classList.toggle('game-landscape', window.innerWidth > height);
+}
+setAppViewportHeight();
+window.visualViewport?.addEventListener('resize', setAppViewportHeight);
+window.addEventListener('resize', setAppViewportHeight, { passive: true });
+window.addEventListener('orientationchange', setAppViewportHeight, { passive: true });
+window.addEventListener('popstate', () => { Games.cleanupCurrent(); render(); });
 
 // =====================================================
 // AUTH VIEW — Stake-style Login & Registration
@@ -450,7 +467,7 @@ function guestView(app) {
 // =====================================================
 // GAMES VIEW (Primary Landing Page)
 // =====================================================
-async function gamesView(app) {
+async function gamesView(app, gameRoute = null) {
   const [roadState, minesState] = await Promise.all([
     api('/games/road').catch(() => ({ active: false, ladder: [], maxSteps: 10 })),
     api('/games/mines').catch(() => ({ active: false, mines: 5 }))
@@ -461,6 +478,10 @@ async function gamesView(app) {
     roadState, minesState,
     reload: () => render()
   });
+  if (gameRoute) {
+    const requestedGame = gameRoute[1] === 'road-dash' ? 'road' : gameRoute[1];
+    Games.openRoute(app, requestedGame);
+  }
 }
 
 // =====================================================
@@ -1798,6 +1819,14 @@ async function adminView(app) {
     if (b.dataset.status) body.status = b.dataset.status;
     try { await api(`/admin/users/${b.dataset.u}`, body); render(); } catch (e) { fail(e); }
   }));
+}
+
+// A direct game link still gets an in-app lobby entry for Back navigation.
+const initialGameRoute = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
+if (initialGameRoute) {
+  const deepLink = location.hash;
+  history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);
+  history.pushState({ fetanPage: 'game' }, '', `${location.pathname}${location.search}${deepLink}`);
 }
 
 // Initial boot

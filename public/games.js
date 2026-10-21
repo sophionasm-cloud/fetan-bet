@@ -224,7 +224,7 @@ window.Games = (function () {
     cards.forEach((c) => {
       const activate = () => {
         if (C.guest) { C.onLogin?.(); return; }
-        open(app, c.dataset.g);
+        open(app, c.dataset.g, true);
       };
       c.removeAttribute('tabindex');
       c.removeAttribute('role');
@@ -234,7 +234,13 @@ window.Games = (function () {
   }
 
   let stopFns = [];
-  function open(app, game) {
+  function open(app, game, pushHistory = false) {
+    const mobileShell = window.matchMedia('(max-width: 1024px)').matches;
+    const routeSlug = game === 'road' ? 'road-dash' : game;
+    if (mobileShell && pushHistory && location.hash !== `#/game/${routeSlug}`) {
+      history.pushState({ fetanPage: 'game', game }, '', `#/game/${routeSlug}`);
+    }
+    document.body.classList.toggle('game-open', mobileShell);
     const titles = {
       road:     '🐔 ' + C.t('road_title'),
       mines:    '💎 ' + C.t('mines_title'),
@@ -245,17 +251,68 @@ window.Games = (function () {
       bingo:    '🇪🇹 ' + C.t('bingo_title'),
     };
     app.innerHTML = `
-      <div class="stage">
-        <div class="stage-head">
-          <button class="chip" id="gback">← ${C.esc(C.t('back'))}</button>
-          <span id="sbtn"></span>
+      <div class="mobile-game-shell" data-game="${game}">
+        <div class="mobile-game-topbar">
+          <button class="mobile-game-icon" id="mobile-game-back" type="button" aria-label="${C.esc(C.t('back'))}">←</button>
+          <strong class="mobile-game-title">${C.esc(titles[game])}</strong>
+          <button class="mobile-game-balance" id="mobile-game-balance" type="button" aria-label="${C.esc(C.t('balance'))}">🪙 <span id="mobile-game-balance-value">—</span></button>
+          <button class="mobile-game-icon" id="mobile-game-sound" type="button" aria-label="${C.esc(C.t('sound_toggle'))}">🔊</button>
+          <button class="mobile-game-icon" id="mobile-game-menu" type="button" aria-label="${C.esc(C.t('menu'))}">☰</button>
+          <div class="mobile-game-menu" id="mobile-game-menu-panel" hidden>
+            <button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button>
+            <button type="button" data-action="history">${C.esc(C.t('history'))}</button>
+            <button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>
+          </div>
         </div>
-        <h2 style="text-align:center;margin:0 0 8px;color:#fff">${C.esc(titles[game])}</h2>
-        <div id="gbody"></div>
+        <div class="stage">
+          <div class="stage-head">
+            <button class="chip" id="gback" type="button">← ${C.esc(C.t('back'))}</button>
+            <span id="sbtn"></span>
+          </div>
+          <h2 class="legacy-game-title" style="text-align:center;margin:0 0 8px;color:#fff">${C.esc(titles[game])}</h2>
+          <div id="gbody"></div>
+        </div>
       </div>`;
     soundBtn($('sbtn'));
-    $('gback').onclick = () => { stopFns.forEach((f) => f()); stopFns = []; C.reload(); };
+    const leaveGame = () => {
+      stopFns.forEach((f) => f()); stopFns = [];
+      if (mobileShell && location.hash === `#/game/${routeSlug}`) history.back();
+      else { document.body.classList.remove('game-open'); C.reload(); }
+    };
+    $('gback').onclick = leaveGame;
+    $('mobile-game-back').onclick = leaveGame;
     ({ road, roulette, star, mines, plinko, keno, bingo })[game]($('gbody'), app.querySelector('.stage'));
+    const topSound = $('mobile-game-sound');
+    const roadSound = $('road-sound-btn');
+    if (roadSound) topSound.onclick = () => { roadSound.click(); topSound.textContent = $('road-sound-icon')?.textContent || '🔊'; };
+    else topSound.onclick = () => $('sbtn').querySelector('button')?.click();
+    $('mobile-game-menu').onclick = () => { const menu = $('mobile-game-menu-panel'); menu.hidden = !menu.hidden; };
+    $('mobile-game-menu-panel').onclick = (event) => {
+      const action = event.target.closest('[data-action]')?.dataset.action;
+      if (action === 'how') $('road-how-btn')?.click();
+      if (action === 'history') {
+        $('tab-bets-btn')?.click();
+        document.querySelector('.road-subtabs')?.classList.toggle('mobile-overlay');
+      }
+      if (action === 'fullscreen' && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+      $('mobile-game-menu-panel').hidden = true;
+    };
+    $('mobile-game-balance').onclick = () => {
+      if (mobileShell) history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);
+      $('quickDepositBtn')?.click();
+    };
+    const paintBalance = () => {
+      const val = $('road-bal-val')?.textContent || document.querySelector('#balanceBox')?.textContent?.replace(/[^\d.,]/g, '').trim() || '—';
+      const target = $('mobile-game-balance-value');
+      if (target) target.textContent = val;
+    };
+    paintBalance();
+    if (mobileShell) {
+      const balanceObserver = new MutationObserver(paintBalance);
+      const watched = $('road-bal-val') || $('balanceBox');
+      if (watched) balanceObserver.observe(watched, { childList: true, characterData: true, subtree: true });
+      stopFns.push(() => balanceObserver.disconnect());
+    }
   }
 
   // =========================================================
@@ -3733,5 +3790,10 @@ window.Games = (function () {
     initBingoState();
   }
 
-  return { mount };
+  function cleanupCurrent() {
+    stopFns.forEach((stop) => stop());
+    stopFns = [];
+  }
+
+  return { mount, openRoute: (app, game) => open(app, game, false), cleanupCurrent };
 })();
