@@ -11,6 +11,29 @@ const fmt = (n) => (n / 100).toLocaleString('en-US', { minimumFractionDigits: 0,
 const rel = (cents) => (cents >= 0 ? '+' : '') + fmt(cents);
 const initials = (name) => String(name || '?').trim().charAt(0).toUpperCase();
 
+function renderMobileHeaderMenu() {
+  const panel = $('mobileMenuPanel');
+  if (!panel) return;
+  const links = me
+    ? [['support', '💬', t('support')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ'], ['logout', '↪', t('logout')]]
+    : [['login', '↪', t('login')], ['register', '＋', t('register')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ']];
+  panel.innerHTML = links.map(([action, icon, label]) =>
+    `<button type="button" data-mobile-action="${action}"><span aria-hidden="true">${icon}</span>${esc(label)}</button>`
+  ).join('');
+  panel.querySelectorAll('[data-mobile-action]').forEach((button) => {
+    button.onclick = () => {
+      const action = button.dataset.mobileAction;
+      panel.hidden = true;
+      $('mobileHeaderMenu').setAttribute('aria-expanded', 'false');
+      if (action === 'support') { tab = 'support'; render(); }
+      if (action === 'language') $('langBtn').click();
+      if (action === 'login') $('headerLoginBtn').click();
+      if (action === 'register') $('headerRegBtn').click();
+      if (action === 'logout') $('logoutBtn').click();
+    };
+  });
+}
+
 // ---------- API ----------
 async function api(path, body) {
   const opt = body === undefined ? {} : {
@@ -97,6 +120,7 @@ async function refreshMe() {
       $('quickDepositBtn').hidden = true;
     }
   }
+  renderMobileHeaderMenu();
   return isLogged;
 }
 
@@ -114,13 +138,27 @@ $('langBtn').onclick = async () => {
 };
 $('logoutBtn').onclick = async () => { await api('/logout', {}); me = null; tab = 'games'; render(); };
 $('quickDepositBtn').onclick = () => { tab = 'deposit'; render(); };
+$('balanceBox').onclick = () => { if (me?.role === 'user') { tab = 'deposit'; render(); } };
 $('brandBtn').onclick = () => { tab = (me && me.role !== 'user') ? me.role : 'games'; render(); };
 $('headerLoginBtn').onclick = () => { tab = 'auth'; render('login'); };
 $('headerRegBtn').onclick = () => { tab = 'auth'; render('register'); };
+$('mobileHeaderMenu').onclick = () => {
+  const panel = $('mobileMenuPanel');
+  panel.hidden = !panel.hidden;
+  $('mobileHeaderMenu').setAttribute('aria-expanded', String(!panel.hidden));
+};
+document.addEventListener('click', (event) => {
+  const menu = $('mobileMenuPanel');
+  if (menu && !event.target.closest('.mobile-header-menu') && !menu.hidden) {
+    menu.hidden = true;
+    $('mobileHeaderMenu').setAttribute('aria-expanded', 'false');
+  }
+});
 
 // ---------- NAV ----------
 function nav() {
   const tabs = [];
+  const mobileUserTabs = me.role === 'user' && window.matchMedia('(max-width: 1024px)').matches;
   if (me.role === 'admin') {
     tabs.push(['admin', '⚙', 'admin']);
     tabs.push(['agent', '🔑', 'agent']);
@@ -129,18 +167,27 @@ function nav() {
     tabs.push(['agent', '🔑', 'agent']);
     tabs.push(['history', '📋', 'history']);
   } else {
-    tabs.push(['games', '🎰', 'games']);
-    tabs.push(['wallet', '💳', 'wallet']);
-    tabs.push(['deposit', '⬇', 'deposit']);
-    tabs.push(['withdraw', '⬆', 'withdraw']);
-    tabs.push(['history', '📋', 'history']);
-    tabs.push(['support', '💬', 'support']);
+    if (mobileUserTabs) {
+      tabs.push(['games', '🎰', t('games')]);
+      tabs.push(['wallet', '💳', t('wallet')]);
+      tabs.push(['deposit', '⬇', t('deposit')]);
+      tabs.push(['profile', '👤', lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
+    } else {
+      tabs.push(['games', '🎰', 'games']);
+      tabs.push(['wallet', '💳', 'wallet']);
+      tabs.push(['deposit', '⬇', 'deposit']);
+      tabs.push(['withdraw', '⬆', 'withdraw']);
+      tabs.push(['history', '📋', 'history']);
+      tabs.push(['support', '💬', 'support']);
+    }
   }
 
   const n = $('nav');
   n.hidden = false;
+  n.className = mobileUserTabs ? 'tabs app-bottom-tabs' : 'tabs';
+  document.body.classList.toggle('has-app-nav', mobileUserTabs);
   n.innerHTML = tabs.map(([k, icon, label]) =>
-    `<button data-k="${k}" class="${tab === k ? 'on' : ''}">${icon} ${esc(t(label))}</button>`
+    `<button type="button" data-k="${k}" class="${tab === k ? 'on' : ''}"${tab === k ? ' aria-current="page"' : ''}><span class="nav-icon" aria-hidden="true">${icon}</span><span class="nav-label">${esc(mobileUserTabs ? label : t(label))}</span></button>`
   ).join('');
   n.querySelectorAll('button').forEach((b) => (b.onclick = () => { tab = b.dataset.k; render(); }));
 }
@@ -152,6 +199,7 @@ async function render(subMode = '') {
   if (!gameRoute || !me || me.role !== 'user' || !matchMedia('(max-width: 1024px)').matches) document.body.classList.remove('game-open');
   if (!me) {
     document.body.classList.remove('game-open');
+    document.body.classList.remove('has-app-nav');
     $('nav').hidden = true;
     guestView(app);
     if (subMode) authView(app, subMode);
@@ -177,6 +225,7 @@ async function render(subMode = '') {
     withdraw: withdrawView,
     history: historyView,
     support: supportView,
+    profile: profileView,
     agent: agentView,
     admin: adminView,
   };
@@ -189,7 +238,14 @@ async function render(subMode = '') {
 function setAppViewportHeight() {
   const height = window.visualViewport?.height || window.innerHeight;
   document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`);
+  document.body.classList.toggle('mobile-app', window.innerWidth <= 1024);
   document.body.classList.toggle('game-landscape', window.innerWidth > height);
+  const routeIsGame = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
+  const shouldOpenShell = window.innerWidth <= 1024 && routeIsGame && me?.role === 'user';
+  if (document.body.classList.contains('game-open') !== shouldOpenShell) {
+    if (!shouldOpenShell) Games.cleanupCurrent();
+    render();
+  }
 }
 setAppViewportHeight();
 window.visualViewport?.addEventListener('resize', setAppViewportHeight);
@@ -560,6 +616,30 @@ async function walletView(app) {
   $('go-with').onclick = () => { tab = 'withdraw'; render(); };
   const seeAll = $('see-all-tx');
   if (seeAll) seeAll.onclick = (e) => { e.preventDefault(); tab = 'history'; render(); };
+}
+
+function profileView(app) {
+  app.innerHTML = `
+    <section class="profile-page card" aria-labelledby="profile-title">
+      <div class="profile-page-heading">
+        <div class="avatar">${esc(initials(me?.name))}</div>
+        <div><div class="eyebrow">${lang === 'am' ? 'የእርስዎ መለያ' : 'YOUR ACCOUNT'}</div><h1 id="profile-title">${esc(me?.name || '')}</h1></div>
+      </div>
+      <dl class="profile-details">
+        <div><dt>${esc(t('phone'))}</dt><dd>${esc(me?.phone || '')}</dd></div>
+        <div><dt>${esc(t('balance'))}</dt><dd>🪙 ${fmt(balance)} ${esc(t('currency_etb'))}</dd></div>
+        <div><dt>${esc(t('role'))}</dt><dd>${esc(me?.role || 'user')}</dd></div>
+      </dl>
+      <div class="profile-actions">
+        <button class="btn btn-outline" type="button" data-profile-route="wallet">💳 ${esc(t('wallet'))}</button>
+        <button class="btn btn-outline" type="button" data-profile-route="withdraw">⬆ ${esc(t('withdraw'))}</button>
+        <button class="btn btn-outline" type="button" data-profile-route="history">📋 ${esc(t('history'))}</button>
+        <button class="btn btn-outline" type="button" data-profile-route="support">💬 ${esc(t('support'))}</button>
+      </div>
+    </section>`;
+  app.querySelectorAll('[data-profile-route]').forEach((button) => {
+    button.onclick = () => { tab = button.dataset.profileRoute; render(); };
+  });
 }
 
 // =====================================================

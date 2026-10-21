@@ -5,6 +5,15 @@ window.Games = (function () {
   let C; // context: { api, t, esc, fmt, setBalance, fail, limits, roadState, minesState, reload }
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const $ = (id) => document.getElementById(id);
+  const GAME_ART = {
+    road: '<svg viewBox="0 0 64 64" fill="none"><path d="M18 42c0-11 7-19 18-19 7 0 13 4 16 10l-6 11H18Z" fill="#F2D98B"/><path d="m22 45-5 8m24-8 4 8" stroke="#F2D98B" stroke-width="4" stroke-linecap="round"/><path d="m26 22 4-7 5 6 5-5 2 8" fill="#E66A45"/><circle cx="44" cy="29" r="2" fill="#0B0E0D"/><path d="m51 34 9 3-9 4" fill="#E9A23B"/></svg>',
+    mines: '<svg viewBox="0 0 64 64" fill="none"><path d="m32 7 23 17-9 29H18L9 24 32 7Z" fill="#28C895"/><path d="m32 7-4 17h27L32 7Z" fill="#9BF0CA"/><path d="m28 24-10 29 14-14 13 14-8-29H28Z" fill="#087B60"/><path d="M9 24h46" stroke="#D6BD72" stroke-width="2"/></svg>',
+    plinko: '<svg viewBox="0 0 64 64" fill="none"><path d="M13 12h38L45 52H19L13 12Z" stroke="#D6BD72" stroke-width="3"/><g fill="#F2D98B"><circle cx="25" cy="21" r="2.5"/><circle cx="38" cy="21" r="2.5"/><circle cx="19" cy="31" r="2.5"/><circle cx="32" cy="31" r="2.5"/><circle cx="45" cy="31" r="2.5"/><circle cx="25" cy="41" r="2.5"/><circle cx="38" cy="41" r="2.5"/></g><circle cx="32" cy="12" r="4" fill="#F27C3D"/></svg>',
+    keno: '<svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="24" fill="#252135" stroke="#B893F2" stroke-width="4"/><circle cx="32" cy="32" r="17" fill="#33294B"/><text x="32" y="39" fill="#F5EFFF" font-family="Arial,sans-serif" font-size="22" font-weight="800" text-anchor="middle">8</text><circle cx="19" cy="18" r="3" fill="#F2D98B"/></svg>',
+    bingo: '<svg viewBox="0 0 64 64" fill="none"><rect x="10" y="9" width="44" height="46" rx="6" fill="#241A36" stroke="#BB8CF0" stroke-width="3"/><path d="M10 23h44M10 34h44M10 45h44M24 23v32M39 23v32" stroke="#71558F" stroke-width="2"/><circle cx="32" cy="34" r="6" fill="#F2D98B"/><path d="M20 16h24" stroke="#F2D98B" stroke-width="3" stroke-linecap="round"/></svg>',
+    roulette: '<svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="25" fill="#15251D" stroke="#D6BD72" stroke-width="3"/><circle cx="32" cy="32" r="19" stroke="#F2D98B" stroke-width="2"/><circle cx="32" cy="32" r="7" fill="#D6BD72"/><path d="M32 13v12m19 7H39m-7 19V39m-19-7h12M18.5 18.5l8.5 8.5m22.5-8.5L41 27m4.5 18.5L37 37m-19 8.5 8.5-8.5" stroke="#F2D98B" stroke-width="2"/><circle cx="32" cy="12" r="3" fill="#E65B53"/></svg>',
+    star: '<svg viewBox="0 0 64 64" fill="none"><rect x="9" y="10" width="46" height="44" rx="8" fill="#27211A" stroke="#D6BD72" stroke-width="3"/><path d="M17 19h30v26H17z" fill="#101512"/><path d="m24 25 2.5 5.5 6 0.7-4.4 4.1 1.2 5.9-5.3-3-5.2 3 1-5.9-4.3-4.1 6-.7 2.5-5.5Z" fill="#F2D98B"/><text x="40" y="39" fill="#F2D98B" font-family="Arial,sans-serif" font-size="14" font-weight="800" text-anchor="middle">7</text></svg>'
+  };
 
   // ---------- WebAudio SFX ----------
   let actx = null, muted = localStorage.getItem('mute') === '1';
@@ -133,7 +142,7 @@ window.Games = (function () {
         <!-- 1. Road Dash -->
         <div class="gcard g1" data-g="road" data-cat="originals">
           <span class="gcard-badge hot">HOT</span>
-          <div class="gcard-icon-wrap"><span class="big">🐔</span></div>
+          <div class="gcard-icon-wrap"><span class="big game-art" aria-hidden="true">${GAME_ART.road}</span></div>
           <h3>${esc(t('road_title'))}</h3>
           <p>${esc(t('road_desc'))}</p>
           <div class="gcard-meta"><span>Up to ×1000</span></div>
@@ -143,7 +152,7 @@ window.Games = (function () {
         <!-- 2. Mines -->
         <div class="gcard g4" data-g="mines" data-cat="originals">
           <span class="gcard-badge original">ORIGINAL</span>
-          <div class="gcard-icon-wrap"><span class="big">💎</span></div>
+          <div class="gcard-icon-wrap"><span class="big game-art" aria-hidden="true">${GAME_ART.mines}</span></div>
           <h3>${esc(t('mines_title'))}</h3>
           <p>${esc(t('mines_desc'))}</p>
           <div class="gcard-meta"><span>1–24 Mines · Pick & Win</span></div>
@@ -153,7 +162,7 @@ window.Games = (function () {
         <!-- 3. Plinko -->
         <div class="gcard g5" data-g="plinko" data-cat="originals">
           <span class="gcard-badge original">ORIGINAL</span>
-          <div class="gcard-icon-wrap"><span class="big">⚡</span></div>
+          <div class="gcard-icon-wrap"><span class="big game-art" aria-hidden="true">${GAME_ART.plinko}</span></div>
           <h3>${esc(t('plinko_title'))}</h3>
           <p>${esc(t('plinko_desc'))}</p>
           <div class="gcard-meta"><span>8–16 Rows · 3 Risk Levels</span></div>
@@ -163,7 +172,7 @@ window.Games = (function () {
         <!-- 4. Keno -->
         <div class="gcard g-keno" data-g="keno" data-cat="lottery">
           <span class="gcard-badge popular">POPULAR</span>
-          <div class="gcard-icon-wrap"><span class="big">🎱</span></div>
+          <div class="gcard-icon-wrap"><span class="big game-art" aria-hidden="true">${GAME_ART.keno}</span></div>
           <h3>${esc(t('keno_title'))}</h3>
           <p>${esc(t('keno_desc'))}</p>
           <div class="gcard-meta"><span>Pick 1–10 of 80 · 20 Drawn</span></div>
@@ -173,7 +182,7 @@ window.Games = (function () {
         <!-- 5. Ethiopian Bingo -->
         <div class="gcard g-bingo" data-g="bingo" data-cat="lottery">
           <span class="gcard-badge ethiopia">🇪🇹 ቢንጎ</span>
-          <div class="gcard-icon-wrap"><span class="big">🇪🇹</span></div>
+          <div class="gcard-icon-wrap"><span class="big game-art" aria-hidden="true">${GAME_ART.bingo}</span></div>
           <h3>${esc(t('bingo_title'))}</h3>
           <p>${esc(t('bingo_desc'))}</p>
           <div class="gcard-meta"><span>Traditional 5×5 · Auto Call</span></div>
@@ -183,7 +192,7 @@ window.Games = (function () {
         <!-- 6. Roulette -->
         <div class="gcard g2" data-g="roulette" data-cat="table">
           <span class="gcard-badge classic">CLASSIC</span>
-          <div class="gcard-icon-wrap"><span class="big">🎡</span></div>
+          <div class="gcard-icon-wrap"><span class="big game-art" aria-hidden="true">${GAME_ART.roulette}</span></div>
           <h3>${esc(t('roulette_title'))}</h3>
           <p>${esc(t('roulette_desc'))}</p>
           <div class="gcard-meta"><span>European 37-Pocket Wheel</span></div>
@@ -193,7 +202,7 @@ window.Games = (function () {
         <!-- 7. Star Spin -->
         <div class="gcard g3" data-g="star" data-cat="table">
           <span class="gcard-badge classic">SLOT</span>
-          <div class="gcard-icon-wrap"><span class="big">🎰</span></div>
+          <div class="gcard-icon-wrap"><span class="big game-art" aria-hidden="true">${GAME_ART.star}</span></div>
           <h3>${esc(t('star_title'))}</h3>
           <p>${esc(t('star_desc'))}</p>
           <div class="gcard-meta"><span>3-Reel Slots · Wild Star</span></div>
