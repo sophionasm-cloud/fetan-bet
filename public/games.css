@@ -247,6 +247,8 @@
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
   line-height: 1;
 }
+.gcard .game-art { display: grid; width: 56px; height: 56px; place-items: center; font-size: 0; }
+.gcard .game-art svg { display: block; width: 100%; height: 100%; }
 
 .gcard h3 {
   font-family: var(--font-heading);
@@ -3199,3 +3201,129 @@ body.game-open.game-landscape .road-diff-block { align-items: stretch; flex-dire
 body.game-open.game-landscape .road-chips-group { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
 body.game-open.game-landscape .road-segmented { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 body.game-open.game-landscape .road-chip-btn { width: 100%; min-width: 0; padding: 5px 2px; font-size: 10px; }
+
+/* Other phone games share the full-screen shell; compress legacy page chrome. */
+body.game-open .mobile-game-shell:not([data-game="road"]) .stage { padding: 0; }
+body.game-open .mobile-game-shell:not([data-game="road"]) #gbody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+body.game-open .mobile-game-shell:not([data-game="road"]) .mines-mobile-sticky-bar,
+body.game-open .mobile-game-shell:not([data-game="road"]) .plinko-mobile-sticky-bar {
+  bottom: 0;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom) + 12px);
+}
+body.game-open .mobile-game-shell[data-game="mines"] .mines-arena {
+  display: flex;
+  min-height: 0;
+  gap: 8px;
+  padding: 4px 0 0;
+}
+body.game-open .mobile-game-shell[data-game="mines"] .mines-main-area {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+}
+body.game-open .mobile-game-shell[data-game="mines"] .mines-sidebar {
+  flex: 0 0 auto;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+}
+body.game-open .mobile-game-shell[data-game="mines"] .mines-sidebar-section { gap: 3px; }
+body.game-open .mobile-game-shell[data-game="mines"] .mines-sidebar-label { font-size: 10px; }
+body.game-open .mobile-game-shell[data-game="mines"] .mines-seg-btn { min-height: 40px; padding: 5px 3px; font-size: 11px; }
+body.game-open .mobile-game-shell[data-game="mines"] #mbet { margin: 0; }
+body.game-open .mobile-game-shell[data-game="mines"] .mines-board-container { min-height: 0 !important; padding: 8px; }
+body.game-open .mobile-game-shell[data-game="mines"] .mines-mult-strip-wrap { display: none; }
+body.game-open .mobile-game-shell[data-game="mines"] .mines-main-area { gap: 6px; }
+body.game-open .mobile-game-shell[data-game="mines"] .mines-grid-view { width: min(27dvh, 88vw); max-width: 100%; aspect-ratio: 1; margin-inline: auto; gap: 5px; }
+body.game-open .mobile-game-shell[data-game="mines"] #mbet .betbar { margin: 0; padding: 8px; }
+body.game-open .mobile-game-shell[data-game="mines"] #mbet .chips { gap: 4px; }
+body.game-open .mobile-game-shell[data-game="mines"] #mbet .betrow { gap: 6px; margin-top: 4px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-arena {
+  display: flex;
+  height: auto;
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  padding-bottom: 0;
+  gap: 6px;
+}
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-main-area { order: 0; flex: 0 0 45dvh; min-height: 0; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar {
+  order: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  flex: 1 1 52%;
+  min-width: 0;
+  gap: 6px;
+  padding: 8px;
+}
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-mode-tabs,
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar > .plinko-sidebar-section:nth-child(2) { grid-column: 1 / -1; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-desktop-drop { display: none !important; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar-section { min-width: 0; gap: 3px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar-section:nth-child(2) { padding: 6px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar .betbar { margin: 4px 0 0; padding: 6px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar .chips { gap: 4px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar .chipb { width: 44px; height: 44px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-sidebar .betrow { margin-top: 4px; gap: 6px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-bottom-bar,
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-recent-bar { display: none; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-board-container { height: 100%; min-height: 0; padding: 4px; }
+body.game-open .mobile-game-shell[data-game="plinko"] .plinko-mobile-sticky-bar { padding: 8px 12px calc(8px + env(safe-area-inset-bottom) + 12px); }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-layout { gap: 6px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-right { display: none; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-card-wrap { max-width: min(54dvh, 92vw); margin-inline: auto; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-controls { position: sticky; bottom: 0; z-index: 4; padding: 8px 8px calc(8px + env(safe-area-inset-bottom) + 12px); background: var(--surface-panel); }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-board { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-num { min-width: 0; min-height: 32px; padding: 2px; font-size: 12px; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet { position: sticky; bottom: 0; z-index: 3; padding: 6px; background: var(--surface-panel); }
+body.game-open .mobile-game-shell[data-game="keno"] #kdraw { position: sticky; bottom: 0; z-index: 4; width: 100%; min-height: 48px; }
+body.game-open .mobile-game-shell[data-game="roulette"] .rtable-wrap { overflow-x: auto; overscroll-behavior-inline: contain; }
+body.game-open .mobile-game-shell[data-game="star"] .star-arena,
+body.game-open .mobile-game-shell[data-game="roulette"] .roulette-arena { min-width: 0; max-width: 100%; }
+body.game-open .mobile-game-shell[data-game="roulette"] #wheel { width: min(25dvh, 68vw); height: min(25dvh, 68vw); }
+body.game-open .mobile-game-shell[data-game="roulette"] .history { min-height: 18px; margin: 4px 0; }
+body.game-open .mobile-game-shell[data-game="roulette"] .rtable { min-width: 440px; margin-top: 4px; grid-template-columns: 36px repeat(12, minmax(30px, 1fr)); }
+body.game-open .mobile-game-shell[data-game="roulette"] .rtable button { min-height: 44px; padding: 3px 0; }
+body.game-open .mobile-game-shell[data-game="roulette"] .outside { margin-top: 4px; gap: 4px; }
+body.game-open .mobile-game-shell[data-game="roulette"] .outside button { min-height: 44px; padding: 4px 0; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betbar { margin: 4px 0; padding: 8px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chips { gap: 4px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chipb { width: 44px; height: 44px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow { gap: 6px; margin-top: 4px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rgo { min-height: 48px; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-rows: 52px minmax(0, 1fr);
+  gap: 0 8px;
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mobile-game-topbar { grid-column: 1 / -1; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .stage,
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] #gbody,
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-arena { display: contents; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-main-area { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-column: 1; grid-row: 2; width: auto; height: 100%; min-height: 0; gap: 4px; padding: 4px; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-sidebar { grid-column: 2; grid-row: 2; width: 280px; max-height: 100%; padding-bottom: 84px; overflow: auto; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-board-container { height: 100%; padding: 4px; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-grid-view { width: auto; height: 100%; max-width: 100%; aspect-ratio: 1; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-mobile-sticky-bar { display: flex; left: auto; width: 280px; z-index: 120; }
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-rows: 52px minmax(0, 1fr);
+  gap: 0 8px;
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .mobile-game-topbar { grid-column: 1 / -1; }
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .stage,
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] #gbody,
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-arena { display: contents; }
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-main-area { grid-column: 1; grid-row: 2; height: 100%; }
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-sidebar { grid-column: 2; grid-row: 2; display: flex; width: 280px; max-height: 100%; overflow: auto; }
+body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-mobile-sticky-bar { left: auto; width: 280px; }

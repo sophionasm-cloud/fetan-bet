@@ -1333,6 +1333,18 @@ window.Games = (function () {
 
     const cv = $('plinko-canvas');
     const ctx = cv.getContext('2d');
+    const resizePlinkoCanvas = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const width = Math.round(W * dpr), height = Math.round(H * dpr);
+      if (cv.width !== width || cv.height !== height) {
+        cv.width = width; cv.height = height;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+    };
+    const canvasResizeObserver = new ResizeObserver(resizePlinkoCanvas);
+    canvasResizeObserver.observe($('pboard-wrap'));
+    window.addEventListener('orientationchange', resizePlinkoCanvas, { passive: true });
+    stopFns.push(() => { canvasResizeObserver.disconnect(); window.removeEventListener('orientationchange', resizePlinkoCanvas); });
     let pegRows = [];
     let bucketsCount = selectedRows + 1;
     let colSpacing = 0, rowSpacing = 0;
@@ -3180,7 +3192,7 @@ window.Games = (function () {
     body.innerHTML = `
       <div class="wheel-box"><canvas id="wheel"></canvas></div>
       <div class="history" id="hist"></div>
-      <div class="rtable" id="rtab"></div>
+      <div class="rtable-wrap"><div class="rtable" id="rtab"></div></div>
       <div class="outside" id="rout"></div>
       <div class="pick" id="rpick">${esc(t('pick_prompt'))}</div>
       <div id="rbet"></div>
