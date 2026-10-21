@@ -3313,7 +3313,7 @@ body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-main-
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-sidebar { grid-column: 2; grid-row: 2; width: 280px; max-height: 100%; padding-bottom: 84px; overflow: auto; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-board-container { height: 100%; padding: 4px; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-grid-view { width: auto; height: 100%; max-width: 100%; aspect-ratio: 1; }
-body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-mobile-sticky-bar { display: flex; left: auto; width: 280px; z-index: 120; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-mobile-sticky-bar { position: fixed; display: flex; right: 0; bottom: 0; left: auto; width: 280px; z-index: 120; }
 body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
