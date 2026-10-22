@@ -1774,7 +1774,10 @@ window.Games = (function () {
   // =========================================================
   // ROAD DASH (Chicken Crossing — Chicken Road 3G Style)
   // =========================================================
-  const LANE_W = 118, CURB_W = 140;
+  // The scene uses responsive lane widths on small screens. Keep the camera and
+  // chicken coordinates in sync with the rendered geometry instead of assuming
+  // the desktop pixel dimensions.
+  let LANE_W = 118, CURB_W = 140;
   const heroLeft = (step) =>
     step === 0 ? (CURB_W - 76) / 2 : CURB_W + (step - 1) * LANE_W + (LANE_W - 76) / 2;
 
@@ -3173,6 +3176,20 @@ window.Games = (function () {
         }
       } catch (e) { /* ignore */ }
       renderScene(true);
+      const roadViewport = $('rviewport');
+      if (roadViewport && window.ResizeObserver) {
+        const syncRoadGeometry = () => {
+          const lane = $('road-ln-1');
+          const curb = $('rsidewalk');
+          if (lane) LANE_W = lane.getBoundingClientRect().width || 118;
+          if (curb) CURB_W = curb.getBoundingClientRect().width || 140;
+          updateChickenPosition(st.active ? st.step : 0, false);
+        };
+        const roadResizeObserver = new ResizeObserver(syncRoadGeometry);
+        roadResizeObserver.observe(roadViewport);
+        stopFns.push(() => roadResizeObserver.disconnect());
+        syncRoadGeometry();
+      }
       updateControls();
       renderSubTab();
       loadHistory();

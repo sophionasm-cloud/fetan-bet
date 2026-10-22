@@ -3129,15 +3129,30 @@ body.game-open .road-container {
 }
 body.game-open .road-viewport {
   flex: 1 1 auto;
+  width: 100%;
   min-height: 0;
   container-type: size;
 }
-body.game-open .road-track { height: 100%; min-height: 0; }
+body.game-open .road-scroll { width: 100%; height: 100%; }
+body.game-open .road-track { height: 100%; min-height: 0; min-width: 100%; }
 body.game-open .road-sidewalk-start,
 body.game-open .road-lane,
 body.game-open .road-finish-curb { height: 100%; }
 body.game-open .road-sidewalk-start { width: min(30cqh, 20vw); }
 body.game-open .road-lane { width: min(30cqh, 26vw); }
+body.game-open .road-lanes-wrap {
+  flex: 1 0 auto;
+  min-width: 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(min(30cqh, 26vw) - 2px),
+    rgba(245, 245, 245, .24) calc(min(30cqh, 26vw) - 2px),
+    rgba(245, 245, 245, .24) calc(min(30cqh, 26vw) - 1px),
+    transparent calc(min(30cqh, 26vw) - 1px),
+    transparent min(30cqh, 26vw)
+  );
+}
 body.game-open .road-finish-curb { width: min(22cqh, 18vw); }
 body.game-open .road-panel {
   flex: 0 0 auto;
