@@ -3472,18 +3472,25 @@ window.Games = (function () {
     let busy = false;
 
     body.innerHTML = `
-      <div id="kbet"></div>
-      <div class="keno-meta">
-        <span class="keno-info" id="kpick-info">
-          ${esc(t('keno_pick'))} (0/10)
-        </span>
-        <button class="chip" id="kclear" style="font-size:12px">${esc(t('keno_clear'))}</button>
-      </div>
-      <div class="keno-board" id="kboard"></div>
-      <div class="keno-paytable" id="kpay"></div>
-      <div class="keno-drawn-row" id="kdrawn"></div>
-      <button class="bigbtn" id="kdraw" disabled>🎱 ${esc(t('keno_draw'))}</button>
-      <div class="msg" id="kmsg"></div>`;
+      <div class="keno-game">
+        <section class="keno-main" aria-label="Keno number board">
+          <div class="keno-meta">
+            <span class="keno-info" id="kpick-info">
+              ${esc(t('keno_pick'))} (0/10)
+            </span>
+            <button class="chip" id="kclear" style="font-size:12px">${esc(t('keno_clear'))}</button>
+          </div>
+          <div class="keno-board" id="kboard"></div>
+          <div class="keno-drawn-row" id="kdrawn" aria-live="polite"></div>
+        </section>
+        <aside class="keno-controls" aria-label="Keno wager controls">
+          <div class="keno-controls-title">ፍጣን ቤት <span>KENO 80</span></div>
+          <div id="kbet"></div>
+          <div class="keno-paytable" id="kpay"></div>
+          <button class="bigbtn" id="kdraw" disabled>🎱 ${esc(t('keno_draw'))}</button>
+          <div class="msg" id="kmsg" aria-live="polite"></div>
+        </aside>
+      </div>`;
 
     const bet = betBar($('kbet'));
 
@@ -3517,7 +3524,10 @@ window.Games = (function () {
 
     function renderPaytable() {
       const el = $('kpay');
-      if (picks.size === 0) { el.innerHTML = ''; return; }
+      if (picks.size === 0) {
+        el.innerHTML = `<div class="keno-pay-empty">${esc(t('keno_pick'))}</div>`;
+        return;
+      }
       const row = KENO_PAY_DISPLAY[picks.size] || {};
       el.innerHTML = `
         <div class="keno-pay-title">Paytable for ${picks.size} spot${picks.size > 1 ? 's' : ''}:</div>
@@ -3528,13 +3538,15 @@ window.Games = (function () {
         </div>`;
     }
 
+    renderPaytable();
+
     $('kclear').onclick = () => {
       if (busy) return;
       picks.clear();
       board.querySelectorAll('.keno-num').forEach((b) => b.classList.remove('selected', 'drawn', 'hit'));
       $('kpick-info').textContent = `${esc(t('keno_picked'))}: 0/10`;
       $('kdraw').disabled = true;
-      $('kpay').innerHTML = '';
+      renderPaytable();
       $('kdrawn').innerHTML = '';
       say($('kmsg'), '');
     };

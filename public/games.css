@@ -3314,6 +3314,343 @@ body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chips { gap: 4px;
 body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chipb { width: 44px; height: 44px; }
 body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow { gap: 6px; margin-top: 4px; }
 body.game-open .mobile-game-shell[data-game="roulette"] #rgo { min-height: 48px; }
+
+/* Star Spin and Roulette use compact, game-specific phone layouts so the play
+   area and wager controls remain on the same screen. */
+body.game-open .mobile-game-shell[data-game="star"] #gbody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
+}
+body.game-open .mobile-game-shell[data-game="star"] .slot {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  margin: 0;
+  padding: 8px;
+  max-height: min(52dvh, 440px);
+  border-width: 2px;
+  border-radius: 18px;
+}
+body.game-open .mobile-game-shell[data-game="star"] .slot-title { flex: 0 0 auto; margin: 0 0 6px; font-size: 14px; }
+body.game-open .mobile-game-shell[data-game="star"] .reels3 { flex: 0 1 auto; min-height: 0; gap: 6px; padding: 6px; }
+body.game-open .mobile-game-shell[data-game="star"] .reelwin {
+  width: min(25vw, 100px);
+  height: calc(clamp(48px, 7.4dvh, 66px) * 3);
+  flex: 0 1 100px;
+}
+body.game-open .mobile-game-shell[data-game="star"] .sym {
+  height: clamp(48px, 7.4dvh, 66px);
+  font-size: clamp(32px, 9vw, 48px);
+  line-height: clamp(48px, 7.4dvh, 66px);
+}
+body.game-open .mobile-game-shell[data-game="star"] .paytable {
+  flex: 0 0 auto;
+  margin-top: 5px;
+  font-size: clamp(9px, 2.7vw, 12px);
+  line-height: 1.3;
+}
+body.game-open .mobile-game-shell[data-game="star"] #sbet { flex: 0 0 auto; min-width: 0; margin-top: auto; }
+body.game-open .mobile-game-shell[data-game="star"] #sbet .betbar {
+  margin: 0;
+  padding: 8px;
+  border-radius: 14px;
+}
+body.game-open .mobile-game-shell[data-game="star"] #sbet .chips { gap: clamp(6px, 3vw, 12px); flex-wrap: nowrap; }
+body.game-open .mobile-game-shell[data-game="star"] #sbet .chipb { width: clamp(42px, 12vw, 48px); height: clamp(42px, 12vw, 48px); }
+body.game-open .mobile-game-shell[data-game="star"] #sbet .betrow { gap: 6px; margin-top: 6px; }
+body.game-open .mobile-game-shell[data-game="star"] #sbet .betrow input { width: 84px; min-width: 0; min-height: 44px; font-size: 16px; }
+body.game-open .mobile-game-shell[data-game="star"] #sbet .betrow .chip { min-width: 44px; min-height: 44px; padding: 4px; }
+body.game-open .mobile-game-shell[data-game="star"] #sgo { flex: 0 0 48px; width: min(100%, 240px); min-height: 48px; margin: 0 auto; }
+body.game-open .mobile-game-shell[data-game="star"] #smsg { flex: 0 0 auto; min-height: 0; margin: 0; font-size: 15px; }
+
+body.game-open .mobile-game-shell[data-game="roulette"] #gbody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  padding: 6px;
+  overflow: hidden;
+}
+body.game-open .mobile-game-shell[data-game="roulette"] .wheel-box { flex: 0 0 auto; height: min(17dvh, 150px); align-items: center; margin: 0; }
+body.game-open .mobile-game-shell[data-game="roulette"] #wheel { width: min(17dvh, 44vw, 150px); height: min(17dvh, 44vw, 150px); }
+body.game-open .mobile-game-shell[data-game="roulette"] .history {
+  flex: 0 0 auto;
+  height: 24px;
+  min-height: 0;
+  margin: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+body.game-open .mobile-game-shell[data-game="roulette"] .history:empty { display: none; }
+body.game-open .mobile-game-shell[data-game="roulette"] .hnum { flex: 0 0 auto; min-width: 24px; padding: 2px 4px; font-size: 11px; }
+body.game-open .mobile-game-shell[data-game="roulette"] .rtable-wrap {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) var(--surface-panel);
+}
+body.game-open .mobile-game-shell[data-game="roulette"] .rtable {
+  width: max-content;
+  min-width: 440px;
+  margin: 0;
+  grid-template-columns: 32px repeat(12, 32px);
+  gap: 2px;
+}
+body.game-open .mobile-game-shell[data-game="roulette"] .rtable button { width: 100%; height: 44px; min-height: 44px; padding: 2px; font-size: 13px; }
+body.game-open .mobile-game-shell[data-game="roulette"] .outside { flex: 0 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 0; }
+body.game-open .mobile-game-shell[data-game="roulette"] .outside button { min-width: 0; min-height: 44px; padding: 4px; font-size: 14px; }
+body.game-open .mobile-game-shell[data-game="roulette"] .pick { flex: 0 0 auto; min-height: 0; margin: 0; font-size: 13px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet { flex: 0 0 auto; min-width: 0; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betbar { margin: 0; padding: 6px; border-radius: 12px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chips { flex-wrap: nowrap; gap: 8px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chipb { width: 44px; height: 44px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow { gap: 5px; margin-top: 5px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow input { width: 72px; min-width: 0; min-height: 42px; font-size: 16px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow .chip { min-width: 42px; min-height: 42px; padding: 4px; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rgo { flex: 0 0 48px; width: min(100%, 240px); min-height: 48px; margin: 0 auto; }
+body.game-open .mobile-game-shell[data-game="roulette"] #rmsg { flex: 0 0 auto; min-height: 0; margin: 0; font-size: 14px; }
+
+body.game-open.game-landscape .mobile-game-shell[data-game="star"] #gbody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 32vw);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px 12px;
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="star"] .slot { grid-column: 1; grid-row: 1 / 4; }
+body.game-open.game-landscape .mobile-game-shell[data-game="star"] .reelwin { width: min(17vw, 100px); height: calc(clamp(38px, 12dvh, 52px) * 3); }
+body.game-open.game-landscape .mobile-game-shell[data-game="star"] .sym { height: clamp(38px, 12dvh, 52px); line-height: clamp(38px, 12dvh, 52px); }
+body.game-open.game-landscape .mobile-game-shell[data-game="star"] #sbet { grid-column: 2; grid-row: 1; width: 100%; }
+body.game-open.game-landscape .mobile-game-shell[data-game="star"] #sgo { grid-column: 2; grid-row: 2; width: 100%; }
+body.game-open.game-landscape .mobile-game-shell[data-game="star"] #smsg { grid-column: 2; grid-row: 3; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #gbody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 32vw);
+  grid-template-rows: minmax(74px, .55fr) auto minmax(98px, .8fr) auto auto;
+  gap: 4px 10px;
+  align-content: stretch;
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .wheel-box { grid-column: 1; grid-row: 1; height: auto; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #wheel { width: min(22dvh, 28vw, 120px); height: min(22dvh, 28vw, 120px); }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .history { grid-column: 1; grid-row: 2; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .rtable-wrap { grid-column: 1; grid-row: 3; align-self: stretch; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .rtable { grid-template-columns: 30px repeat(12, 30px); }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .outside { grid-column: 1; grid-row: 4; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .pick { grid-column: 1; grid-row: 5; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #rbet { grid-column: 2; grid-row: 1 / 4; align-self: center; width: 100%; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #rgo { grid-column: 2; grid-row: 4; width: 100%; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #rmsg { grid-column: 2; grid-row: 5; }
+
+/* Keno 80: a compact number wall with a dedicated wager and payout panel. */
+.keno-game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  align-items: start;
+  gap: 16px;
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  margin-inline: auto;
+}
+.keno-main {
+  min-width: 0;
+  padding: clamp(10px, 1.2vw, 18px);
+  border: 1px solid rgba(214, 189, 114, .16);
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(49, 112, 82, .18), transparent 65%), #0d1411;
+  box-shadow: inset 0 1px rgba(255,255,255,.025), 0 12px 32px rgba(0,0,0,.2);
+}
+.keno-meta {
+  min-height: 44px;
+  margin: 0 auto 10px;
+  max-width: 740px;
+}
+.keno-info {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.035);
+  color: var(--text);
+}
+.keno-meta #kclear { min-height: 44px; padding-inline: 14px; }
+.keno-board {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: clamp(4px, .45vw, 7px);
+  width: 100%;
+  max-width: 740px;
+  margin: 0 auto 10px;
+  padding: clamp(8px, 1vw, 14px);
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+}
+.keno-num {
+  aspect-ratio: 1;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: clamp(8px, 1vw, 13px);
+  background: linear-gradient(155deg, #25332f, #18211f 78%);
+  color: #d4ded8;
+  font-size: clamp(13px, 1.25vw, 18px);
+  box-shadow: inset 0 1px rgba(255,255,255,.045), 0 3px 6px rgba(0,0,0,.2);
+}
+.keno-num:hover { background: #33483f; color: #fff; transform: translateY(-2px); }
+.keno-num.selected {
+  border-color: #ffe28a;
+  background: linear-gradient(145deg, #f5d978, #bb8e26);
+  color: #10140f;
+  box-shadow: 0 0 0 2px rgba(242,217,139,.2), 0 0 18px rgba(242,217,139,.24), inset 0 1px rgba(255,255,255,.45);
+  transform: translateY(-2px);
+}
+.keno-num.drawn { border-color: rgba(89,154,124,.15); background: #13231d; color: #557267; }
+.keno-num.hit {
+  border-color: #8ef0b7;
+  background: linear-gradient(145deg, #38bd79, #147749);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(45,190,116,.35), inset 0 1px rgba(255,255,255,.2);
+  animation: keno-hit-pop .38s ease-out;
+}
+@keyframes keno-hit-pop { 50% { transform: scale(1.12); } }
+.keno-drawn-row {
+  max-width: 740px;
+  min-height: 32px;
+  margin: 0 auto;
+  padding: 4px 2px;
+}
+.keno-drawn-label { color: var(--text-muted); }
+.keno-ball { border: 1px solid rgba(255,255,255,.08); background: #24312d; color: #e8eee9; }
+.keno-ball.hit { background: linear-gradient(145deg, #38bd79, #147749); color: #fff; }
+.keno-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(160deg, #171f1b, #0e1411);
+  box-shadow: 0 14px 34px rgba(0,0,0,.25);
+}
+.keno-controls-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #f5e5ad;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.keno-controls-title span { color: #a8baae; font-size: 11px; letter-spacing: .16em; }
+.keno-controls #kbet .betbar { margin: 0; padding: 12px; border-radius: 14px; }
+.keno-controls #kbet .chips { gap: 7px; }
+.keno-controls #kbet .chipb { width: 44px; height: 44px; }
+.keno-controls #kbet .betrow { gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.keno-controls #kbet .betrow input { width: 86px; min-height: 44px; font-size: 16px; }
+.keno-paytable {
+  min-height: 68px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(214,189,114,.12);
+  border-radius: 14px;
+  background: rgba(7,12,10,.55);
+}
+.keno-pay-empty { display: grid; min-height: 42px; place-items: center; color: var(--text-muted); font-size: 13px; text-align: center; }
+.keno-pay-title { color: #c5d2ca; }
+.keno-pay-row { gap: 6px; }
+.keno-pay-chip { border: 1px solid rgba(255,255,255,.06); background: #202b26; color: #c4d1c8; }
+.keno-controls #kdraw { width: 100%; min-height: 52px; margin: 0; }
+.keno-controls #kdraw:disabled { filter: saturate(.45); opacity: .58; }
+.keno-controls #kmsg { min-height: 0; margin: 0; font-size: 15px; }
+
+body.game-open .mobile-game-shell[data-game="keno"] #gbody {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+body.game-open .mobile-game-shell[data-game="keno"] .keno-game {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-height: 0;
+  padding: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+body.game-open .mobile-game-shell[data-game="keno"] .keno-main { flex: 0 0 auto; padding: 8px; border-radius: 16px; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-meta { margin-bottom: 6px; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-board {
+  max-width: min(100%, 64dvh);
+  gap: 4px;
+  margin-bottom: 4px;
+  padding: 6px;
+  border-radius: 14px;
+}
+body.game-open .mobile-game-shell[data-game="keno"] .keno-num { min-width: 0; min-height: 0; padding: 0; font-size: clamp(11px, 3.2vw, 15px); }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-drawn-row {
+  flex-wrap: nowrap;
+  min-height: 30px;
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+body.game-open .mobile-game-shell[data-game="keno"] .keno-controls {
+  flex: 0 0 auto;
+  gap: 7px;
+  padding: 10px;
+  border-radius: 16px;
+}
+body.game-open .mobile-game-shell[data-game="keno"] .keno-controls-title { font-size: 13px; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet { padding: 0; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet .betbar { margin: 0; padding: 8px; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet .chips { gap: 6px; flex-wrap: nowrap; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet .chipb { width: 42px; height: 42px; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet .betrow { gap: 5px; margin-top: 6px; flex-wrap: nowrap; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet .betrow input { width: 78px; min-width: 0; min-height: 42px; font-size: 16px; }
+body.game-open .mobile-game-shell[data-game="keno"] #kbet .betrow .chip { min-width: 42px; min-height: 42px; padding: 4px; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-paytable { min-height: 48px; padding: 7px 9px; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-pay-empty { min-height: 32px; font-size: 12px; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-pay-title { margin-bottom: 4px; font-size: 10px; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-pay-row { flex-wrap: nowrap; overflow-x: auto; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-pay-chip { flex: 0 0 auto; padding: 3px 6px; font-size: 10px; }
+body.game-open .mobile-game-shell[data-game="keno"] #kdraw { min-height: 48px; }
+body.game-open .mobile-game-shell[data-game="keno"] #kmsg { font-size: 13px; }
+body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  align-items: start;
+  gap: 10px;
+  overflow: auto;
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-main { min-width: 0; }
+body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-board {
+  max-width: min(100%, calc((100dvh - 100px) * 1.25));
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-controls { max-height: 100%; overflow-y: auto; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
