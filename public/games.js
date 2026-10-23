@@ -3432,6 +3432,8 @@ window.Games = (function () {
     let busy = false;
     $('sgo').onclick = async () => {
       if (busy) return; busy = true; $('sgo').disabled = true; bet.lock(true); say($('smsg'), '');
+      body.querySelector('.slot')?.classList.remove('is-win');
+      body.querySelector('.slot')?.classList.add('is-spinning');
       [0, 1, 2].forEach((i) => $('rw' + i).classList.remove('win'));
       try {
         const r = await C.api('/games/star', { bet: bet.get() });
@@ -3440,11 +3442,13 @@ window.Games = (function () {
         clearInterval(spinTick); C.setBalance(r.balance);
         if (r.payout) {
           await sleep(100);
+          body.querySelector('.slot')?.classList.add('is-win');
           [0, 1, 2].forEach((i) => $('rw' + i).classList.add('win'));
           say($('smsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} (×${r.mult}) 🎉`, 'win'); sfx.win();
           if (r.mult >= 5) { coinRain(stage); say($('smsg'), `${esc(t('big_win'))} +${C.fmt(r.payout)} (×${r.mult})`, 'win'); }
         } else { say($('smsg'), esc(t('lose')), 'lose'); sfx.lose(); }
       } catch (e) { C.fail(e); }
+      body.querySelector('.slot')?.classList.remove('is-spinning');
       busy = false; $('sgo').disabled = false; bet.lock(false);
     };
   }
@@ -3637,7 +3641,7 @@ window.Games = (function () {
       <div class="bingo-layout">
         <div class="bingo-left">
           <div class="bingo-card-wrap">
-            <div class="bingo-card" id="bcard">
+            <div class="bingo-card" id="bcard" aria-label="Ethiopian Bingo card">
               <div class="bingo-header">
                 ${BINGO_COLS.map((c) => `<div class="bingo-col-head">${c}</div>`).join('')}
               </div>

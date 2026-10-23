@@ -141,5 +141,5 @@ function getAiResponse(userMessage, context = {}) {
   return { reply: fallback, shouldEscalate: false };
 }
 
-module.exports = { getAiResponse };
+module.exports = { getAiResponse }; 
 

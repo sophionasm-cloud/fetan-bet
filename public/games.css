@@ -2991,6 +2991,194 @@
   .mine-cell { font-size: 20px; border-bottom-width: 3px; }
 }
 
+/* Premium, original cabinet finish for Star Spin. The symbols and single
+   payout line remain the same; these treatments only enrich the presentation. */
+.slot {
+  max-width: 560px;
+  padding: 20px 18px 16px;
+  border: 2px solid #7540a0;
+  background:
+    radial-gradient(ellipse at 50% 5%, rgba(255,218,108,.14), transparent 32%),
+    linear-gradient(150deg, #24123b 0%, #10071b 45%, #09030e 100%);
+  box-shadow: 0 16px 44px rgba(0,0,0,.42), 0 0 30px rgba(107,33,168,.22), inset 0 1px rgba(255,255,255,.12), inset 0 0 30px rgba(0,0,0,.42);
+}
+.slot::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(242,217,139,.12);
+  border-radius: 17px;
+  pointer-events: none;
+}
+.slot-title {
+  position: relative;
+  z-index: 1;
+  padding: 4px 0 10px;
+  color: #f6df9b;
+  text-shadow: 0 1px 0 #744f17, 0 0 16px rgba(242,217,139,.34);
+  letter-spacing: .18em;
+}
+.reels3 {
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid rgba(242,217,139,.55);
+  background:
+    linear-gradient(90deg, rgba(242,217,139,.14), transparent 12%, transparent 88%, rgba(242,217,139,.14)),
+    linear-gradient(180deg, #08050d, #160c20 50%, #07040b);
+  box-shadow: inset 0 0 0 3px rgba(0,0,0,.46), inset 0 12px 22px rgba(0,0,0,.48), 0 7px 18px rgba(0,0,0,.44);
+}
+.reelwin {
+  border: 2px solid #a3833c;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #c3b994 0%, #fff 12%, #fff 84%, #c8c2ac 100%);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.4), inset 0 0 16px rgba(42,27,8,.27), 0 2px 6px rgba(0,0,0,.5);
+}
+.reelwin::after {
+  background: linear-gradient(180deg, rgba(43,26,8,.42), rgba(255,255,255,.08) 20%, transparent 38%, transparent 64%, rgba(255,255,255,.16) 80%, rgba(43,26,8,.36));
+}
+.sym { filter: drop-shadow(0 3px 2px rgba(0,0,0,.3)); }
+.payline {
+  left: 8px;
+  right: 8px;
+  height: 4px;
+  border-block: 1px solid rgba(255,226,138,.9);
+  background: linear-gradient(90deg, transparent, #f33a3a 8%, #ff5650 50%, #f33a3a 92%, transparent);
+  box-shadow: 0 0 10px rgba(255,57,57,.85), 0 0 22px rgba(255,36,36,.45);
+}
+.slot.is-spinning .reels3 { animation: slot-cabinet-shake .14s ease-in-out infinite alternate; }
+.slot.is-spinning .reelwin::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -35%;
+  right: 0;
+  left: 0;
+  height: 22%;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,.52), transparent);
+  animation: reel-light-sweep .46s linear infinite;
+  pointer-events: none;
+}
+.slot.is-win { border-color: #f2d98b; box-shadow: 0 0 34px rgba(242,217,139,.4), 0 18px 44px rgba(0,0,0,.48), inset 0 0 30px rgba(242,217,139,.08); }
+.slot.is-win .payline { background: linear-gradient(90deg, transparent, #ffe99c 8%, #fff4cc 50%, #ffe99c 92%, transparent); box-shadow: 0 0 12px #f2d98b, 0 0 28px rgba(242,217,139,.7); }
+@keyframes slot-cabinet-shake { from { transform: translateY(-1px); } to { transform: translateY(1px); } }
+@keyframes reel-light-sweep { to { transform: translateY(650%); } }
+
+/* Fetan Bingo table: jewel tones sit inside the same dark-and-gold cabinet. */
+.bingo-card-wrap { max-width: min(48dvh, 440px); margin-inline: auto; }
+.bingo-card {
+  border: 2px solid rgba(214,189,114,.56);
+  border-radius: 16px;
+  background: #0c1410;
+  box-shadow: 0 16px 34px rgba(0,0,0,.38), 0 0 22px rgba(214,189,114,.08), inset 0 1px rgba(255,255,255,.1);
+}
+.bingo-header { background: linear-gradient(90deg, #18392d, #214a38, #18392d); }
+.bingo-col-head {
+  padding: 10px 2px;
+  color: #f8e4a6;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  border-right: 1px solid rgba(242,217,139,.12);
+}
+.bingo-col-head:nth-child(1) { background: rgba(173,49,45,.55); }
+.bingo-col-head:nth-child(2) { background: rgba(45,91,155,.55); }
+.bingo-col-head:nth-child(3) { background: rgba(27,119,82,.55); }
+.bingo-col-head:nth-child(4) { background: rgba(158,117,37,.5); }
+.bingo-col-head:nth-child(5) { background: rgba(105,67,145,.55); }
+.bingo-grid { gap: 4px; padding: 8px; background: linear-gradient(145deg, #0c1511, #101b16); }
+.bingo-cell {
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 10px;
+  background: linear-gradient(145deg, #25332e, #17221d 82%);
+  box-shadow: inset 0 1px rgba(255,255,255,.045), 0 2px 4px rgba(0,0,0,.2);
+}
+.bingo-cell.free { border-color: #f2d98b; background: radial-gradient(circle at 35% 25%, #ffe89a, #c49a3b 72%); box-shadow: inset 0 1px rgba(255,255,255,.48), 0 0 14px rgba(242,217,139,.2); }
+.bingo-cell.marked:not(.free) { border-color: rgba(132,238,177,.62); background: linear-gradient(145deg, #249764, #116442); box-shadow: inset 0 1px rgba(255,255,255,.17), 0 0 12px rgba(36,181,111,.25); }
+.bingo-num-big { color: #f1f4ed; font-size: clamp(16px, 2vw, 22px); }
+.bingo-col-tag { color: rgba(242,217,139,.62); }
+.bingo-last-ball {
+  border: 2px solid rgba(255,231,159,.84);
+  background-image: radial-gradient(circle at 32% 24%, rgba(255,255,255,.6), transparent 20%), radial-gradient(circle at 38% 30%, #ffe69b, #c18d2b 65%, #68491b);
+  color: #221807;
+  text-shadow: 0 1px rgba(255,255,255,.25);
+  box-shadow: inset 0 2px 5px rgba(255,255,255,.35), inset 0 -8px 14px rgba(65,37,4,.35), 0 8px 20px rgba(0,0,0,.4), 0 0 20px rgba(242,217,139,.12);
+}
+.bingo-draw-count { border-color: rgba(214,189,114,.18); background: #151e19; color: #d5dfd8; }
+.bingo-controls .bigbtn { min-height: 48px; }
+
+body.game-open .mobile-game-shell[data-game="bingo"] #gbody { min-height: 0; overflow-y: auto; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bbet { margin-bottom: 6px; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bbet .betbar { margin: 0; padding: 8px; border-radius: 14px; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bbet .chips { gap: 6px; flex-wrap: nowrap; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bbet .chipb { width: 42px; height: 42px; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bbet .betrow { gap: 5px; margin-top: 6px; flex-wrap: nowrap; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bbet .betrow input { width: 76px; min-width: 0; min-height: 42px; font-size: 16px; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bbet .betrow .chip { min-width: 42px; min-height: 42px; padding: 4px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-layout { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-left { flex: 0 0 auto; width: 100%; min-width: 0; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-right {
+  order: -1;
+  display: grid !important;
+  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-rows: 28px auto;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #18211c, #101713);
+}
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-multiplier-table {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-column: 2;
+  grid-row: 2;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border-radius: 8px;
+}
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-pay-title { grid-column: 1 / -1; margin: 0; font-size: 8px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-pay-row { flex-direction: column; gap: 2px; padding: 2px 0; border: 0; font-size: 8px; line-height: 1.1; text-align: center; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-pay-mult { font-size: 10px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-draw-count { grid-column: 2; grid-row: 1; min-width: 0; padding: 4px 6px; font-size: 11px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-last-ball { grid-column: 1; grid-row: 1 / 3; width: 60px; height: 60px; min-height: 60px; max-width: 60px; font-size: 14px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-card-wrap { width: min(38dvh, 86vw); max-width: 100%; margin: 0 auto 8px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-col-head { padding-block: 6px; font-size: 16px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-grid { gap: 3px; padding: 6px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-cell { border-radius: 8px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-num-big { font-size: clamp(14px, 4.8vw, 20px); }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-called-bar { gap: 4px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-called-label { font-size: 10px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-balls { min-height: 28px; }
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-controls {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 48px;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom) + 12px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(14,20,17,.97);
+  backdrop-filter: blur(12px);
+}
+body.game-open .mobile-game-shell[data-game="bingo"] .bingo-controls .bigbtn { min-width: 0; min-height: 48px; margin: 0; padding: 8px 6px; font-size: 12px; }
+body.game-open .mobile-game-shell[data-game="bingo"] #bauto { min-height: 44px; margin: 0; padding: 6px; font-size: 18px; }
+body.game-open.game-landscape .mobile-game-shell[data-game="bingo"] .bingo-layout { display: grid; grid-template-columns: minmax(0, 1fr) 150px; align-items: start; }
+body.game-open.game-landscape .mobile-game-shell[data-game="bingo"] .bingo-right { order: 0; display: flex !important; flex-direction: column; }
+body.game-open.game-landscape .mobile-game-shell[data-game="bingo"] .bingo-multiplier-table { display: block; }
+body.game-open.game-landscape .mobile-game-shell[data-game="bingo"] .bingo-last-ball { width: 66px; height: 66px; min-height: 66px; }
+body.game-open.game-landscape .mobile-game-shell[data-game="bingo"] .bingo-card-wrap { width: min(52dvh, 48vw); }
+body.game-open .mobile-game-shell[data-game="star"] .slot { border-color: #9b63be; }
+body.game-open .mobile-game-shell[data-game="star"] .reelwin { border-color: #b19451; }
+@media (prefers-reduced-motion: reduce) {
+  .slot.is-spinning .reels3,
+  .slot.is-spinning .reelwin::before,
+  .keno-num.hit { animation: none !important; }
+}
+
 /* Small-screen games use one app shell; the desktop page remains unchanged. */
 main, .stage, #gbody, .game-board, .game-controls { min-width: 0; }
 img, svg, canvas { max-width: 100%; }
