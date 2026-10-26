@@ -128,7 +128,7 @@
   "phone_or_username_hint": "e.g. 0911223344 or admin",
   "err_ACTIVE_ROUND": "Finish your current round first.",
   "err_NOT_FOUND": "Not found or already handled.",
-  "err_DUP_REF": "This transaction reference was already used.",
+  "err_DUP_REF": "This reference is already linked to a deposit. No new request was created. Check My deposit requests, or use the unique reference from a different transfer.",
   "err_SELF": "You cannot do this on your own account.",
   "err_FORBIDDEN": "You do not have permission.",
   "err_SUSPENDED": "This account is suspended.",
