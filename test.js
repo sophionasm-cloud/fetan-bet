@@ -19,7 +19,7 @@ const server = app.listen(0, async () => {
       });
       const sc = r.headers.get('set-cookie');
       if (sc) cookie = sc.split(';')[0];
-      return { status: r.status, data: await r.json() };
+      return { status: r.status, data: await r.json().catch(() => null) };
     };
   };
 
@@ -77,17 +77,29 @@ const server = app.listen(0, async () => {
 
     // 3. Deposits
     const txRef1 = 'DEMO-TX-' + Date.now();
-    const dep = await user('/deposits', { provider_id: 1, amount: 50, tx_ref: txRef1 });
+    const receiptPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j5YkAAAAASUVORK5CYII=';
+    const dep = await user('/deposits', { provider_id: 1, amount: 50, tx_ref: txRef1, receipt_data: receiptPng });
     ok('deposit request created', dep.status === 200);
+    ok('receipt remains pending and does not credit the wallet', (await user('/me')).data.balance === 100000);
+    ok('customer can view their protected receipt', (await user(`/deposits/${dep.data.id}/receipt`)).status === 200);
+    ok('agent can view a receipt for review', (await agent(`/deposits/${dep.data.id}/receipt`)).status === 200);
+    ok('anonymous cannot view a receipt', (await anon(`/deposits/${dep.data.id}/receipt`)).status === 401);
+    ok('malformed image content is rejected', (await user('/deposits', { provider_id: 1, amount: 10, tx_ref: 'BADFILE-' + Date.now(), receipt_data: 'data:image/png;base64,PHN2Zy8+' })).status === 400);
     ok('duplicate tx reference rejected', (await user('/deposits', { provider_id: 1, amount: 50, tx_ref: txRef1 })).data.error === 'DUP_REF');
     ok('negative amount rejected', (await user('/deposits', { provider_id: 1, amount: -5, tx_ref: 'DEMO-NEG' })).data.error === 'INVALID');
     ok('balance unchanged while pending', (await user('/me')).data.balance === 100000);
     ok('user cannot approve own deposit', (await user(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve' })).status === 403);
 
-    const dec = await agent(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve' });
-    ok('agent approves deposit', dec.status === 200);
+    const uncheckedApproval = await agent(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve' });
+    ok('approval without independent verification is rejected', uncheckedApproval.data.error === 'VERIFICATION_REQUIRED');
+    const verification = { amount_matches: true, reference_matches: true, recipient_matches: true, date_plausible: true, independently_verified: true };
+    const concurrentDecisions = await Promise.all([
+      agent(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve', verification }),
+      agent(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve', verification })
+    ]);
+    ok('concurrent duplicate approval attempts allow exactly one credit', concurrentDecisions.filter((r) => r.status === 200).length === 1 && concurrentDecisions.filter((r) => r.status === 400).length === 1);
     ok('balance credited once', (await user('/me')).data.balance === 105000);
-    ok('second approve blocked (no double credit)', (await agent(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve' })).status === 400);
+    ok('second approve blocked (no double credit)', (await agent(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve', verification })).status === 400);
     ok('balance still correct', (await user('/me')).data.balance === 105000);
 
     // 4. Withdrawals
@@ -109,7 +121,9 @@ const server = app.listen(0, async () => {
     // Agent self-action protection
     const adep = await agent('/deposits', { provider_id: 2, amount: 10, tx_ref: 'AGENT-' + Date.now() });
     ok('agent cannot approve own deposit', (await agent(`/agent/deposits/${adep.data.id}/decide`, { action: 'approve' })).data.error === 'SELF');
+    const agentBalanceBeforeReject = (await agent('/me')).data.balance;
     ok('admin can reject with reason', (await admin(`/agent/deposits/${adep.data.id}/decide`, { action: 'reject', reason: 'No payment found' })).status === 200);
+    ok('rejected deposit does not credit the customer wallet', (await agent('/me')).data.balance === agentBalanceBeforeReject);
 
     // 5. Agent Funding Flow
     ok('user cannot request agent funding', (await user('/agent/funding', { amount: 500 })).status === 403);

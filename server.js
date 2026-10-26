@@ -3,6 +3,8 @@
 require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
+const fsp = fs.promises;
+const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
@@ -15,11 +17,38 @@ const { getAiResponse } = require('./ai-support');
 const SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const app = express();
 app.set('trust proxy', 1);
+app.use('/api/', rateLimit({ windowMs: 60 * 1000, max: 120 }));
+app.use('/api/deposits', express.json({ limit: '7mb' }));
 app.use(express.json({ limit: '20kb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api/', rateLimit({ windowMs: 60 * 1000, max: 120 }));
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { error: 'RATE' } });
+const receiptDir = path.resolve(process.env.RECEIPT_STORAGE_DIR || path.join(__dirname, 'private-receipts'));
+const publicDir = path.resolve(__dirname, 'public');
+if (receiptDir === publicDir || receiptDir.startsWith(publicDir + path.sep)) {
+  throw new Error('RECEIPT_STORAGE_DIR must be outside the public web directory.');
+}
+const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
+const receiptFormats = {
+  jpeg: { mime: 'image/jpeg', ext: '.jpg' },
+  png: { mime: 'image/png', ext: '.png' },
+  webp: { mime: 'image/webp', ext: '.webp' }
+};
+
+function decodeReceipt(dataUrl) {
+  if (dataUrl == null || dataUrl === '') return null;
+  if (typeof dataUrl !== 'string' || dataUrl.length > Math.ceil(MAX_RECEIPT_BYTES * 4 / 3) + 100) throw new Error('INVALID_FILE');
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl);
+  if (!match) throw new Error('INVALID_FILE');
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.length > MAX_RECEIPT_BYTES || buffer.toString('base64') !== match[2]) throw new Error('INVALID_FILE');
+  let format;
+  if (buffer.length >= 4 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff && buffer[buffer.length - 2] === 0xff && buffer[buffer.length - 1] === 0xd9) format = receiptFormats.jpeg;
+  else if (buffer.length >= 20 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) && buffer.toString('ascii', buffer.length - 8, buffer.length - 4) === 'IEND') format = receiptFormats.png;
+  else if (buffer.length >= 20 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP' && buffer.readUInt32LE(4) === buffer.length - 8 && ['VP8 ', 'VP8L', 'VP8X'].includes(buffer.toString('ascii', 12, 16))) format = receiptFormats.webp;
+  if (!format || format.mime !== match[1]) throw new Error('INVALID_FILE');
+  return { buffer, ...format };
+}
 
 // Run seed asynchronously on startup
 seed().catch((err) => console.error('[seed] Initialization error:', err.message));
@@ -28,9 +57,9 @@ seed().catch((err) => console.error('[seed] Initialization error:', err.message)
 const wrap = (fn) => async (req, res) => {
   try {
     const result = await fn(req, res);
-    res.json(result ?? { ok: true });
+    if (!res.headersSent && result !== res) res.json(result ?? { ok: true });
   } catch (e) {
-    const known = ['INSUFFICIENT', 'INVALID', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE'];
+    const known = ['INSUFFICIENT', 'INVALID', 'INVALID_FILE', 'VERIFICATION_REQUIRED', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE'];
     if (known.includes(e.message)) return res.status(400).json({ error: e.message });
     console.error('[error]', e);
     res.status(500).json({ error: 'GENERIC' });
@@ -187,15 +216,28 @@ app.post('/api/deposits', auth, wrap(async (req) => {
   const provider = pRes.rows[0];
   if (!provider || !/^[A-Z0-9\-]{4,40}$/.test(tx_ref)) throw new Error('INVALID');
 
+  const receipt = decodeReceipt(req.body.receipt_data);
+  let receiptKey = null;
+  if (receipt) {
+    await fsp.mkdir(receiptDir, { recursive: true, mode: 0o700 });
+    if (process.platform !== 'win32') await fsp.chmod(receiptDir, 0o700);
+    receiptKey = `${crypto.randomBytes(32).toString('hex')}${receipt.ext}`;
+    await fsp.writeFile(path.join(receiptDir, receiptKey), receipt.buffer, { flag: 'wx', mode: 0o600 });
+  }
+
   try {
-    const r = await query(
-      'INSERT INTO deposits (user_id, provider_id, amount, tx_ref) VALUES ($1,$2,$3,$4) RETURNING id',
-      [req.user.id, provider.id, amount, tx_ref]
-    );
-    const id = Number(r.rows[0].id);
-    await audit(req.user.id, 'deposit.create', { id, amount });
+    const id = await withTx(async (client) => {
+      const r = await client.query(
+        'INSERT INTO deposits (user_id, provider_id, amount, tx_ref, receipt_key) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+        [req.user.id, provider.id, amount, tx_ref, receiptKey]
+      );
+      const newId = Number(r.rows[0].id);
+      await audit(req.user.id, 'deposit.create', { id: newId, amount, has_receipt: Boolean(receiptKey) }, client);
+      return newId;
+    });
     return { id };
   } catch (e) {
+    if (receiptKey) await fsp.unlink(path.join(receiptDir, receiptKey)).catch(() => {});
     if (String(e.message).includes('UNIQUE') || String(e.message).includes('duplicate key')) {
       throw new Error('DUP_REF');
     }
@@ -205,7 +247,7 @@ app.post('/api/deposits', auth, wrap(async (req) => {
 
 app.get('/api/deposits', auth, wrap(async (req) => {
   const res = await query(
-    `SELECT d.id, d.amount, d.tx_ref, d.status, d.reason, d.created_at, p.name as provider
+    `SELECT d.id, d.amount, d.tx_ref, d.status, d.reason, d.created_at, (d.receipt_key IS NOT NULL) AS has_receipt, p.name as provider
      FROM deposits d JOIN providers p ON p.id=d.provider_id
      WHERE d.user_id=$1 ORDER BY d.id DESC LIMIT 50`,
     [req.user.id]
@@ -213,6 +255,29 @@ app.get('/api/deposits', auth, wrap(async (req) => {
   return {
     deposits: res.rows.map((r) => ({ ...r, amount: Number(r.amount) }))
   };
+}));
+
+// Receipt bytes are served only after checking the owning deposit and the requester's role.
+app.get('/api/deposits/:id/receipt', auth, wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id <= 0) throw new Error('NOT_FOUND');
+  const result = await query('SELECT user_id, receipt_key FROM deposits WHERE id=$1', [id]);
+  const deposit = result.rows[0];
+  if (!deposit || !deposit.receipt_key) return res.status(404).json({ error: 'NOT_FOUND' });
+  if (Number(deposit.user_id) !== req.user.id && !['agent', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'FORBIDDEN' });
+  }
+  const filePath = path.join(receiptDir, path.basename(deposit.receipt_key));
+  const ext = path.extname(filePath).toLowerCase();
+  const mime = ext === '.jpg' ? 'image/jpeg' : ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : null;
+  if (!mime || path.dirname(filePath) !== receiptDir) throw new Error('NOT_FOUND');
+  try {
+    await fsp.access(filePath, fs.constants.R_OK);
+  } catch {
+    return res.status(404).json({ error: 'NOT_FOUND' });
+  }
+  res.set({ 'Content-Type': mime, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
+  return res.sendFile(filePath);
 }));
 
 app.post('/api/withdrawals', auth, wrap(async (req) => {
@@ -269,8 +334,11 @@ app.get('/api/transactions', auth, wrap(async (req) => {
 app.get('/api/agent/deposits', auth, need('agent', 'admin'), wrap(async (req) => {
   const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
   const res = await query(
-    `SELECT d.id, d.amount, d.tx_ref, d.status, d.reason, d.created_at, d.user_id, u.name as user_name, u.phone, p.name as provider
+    `SELECT d.id, d.amount, d.tx_ref, d.status, d.reason, d.created_at, (d.receipt_key IS NOT NULL) AS has_receipt, d.user_id, u.name as user_name, u.phone, p.name as provider,
+            reviewer.name AS reviewer_name,
+            (SELECT action FROM deposit_reviews r WHERE r.deposit_id=d.id ORDER BY r.id DESC LIMIT 1) AS last_review_action
      FROM deposits d JOIN users u ON u.id=d.user_id JOIN providers p ON p.id=d.provider_id
+     LEFT JOIN users reviewer ON reviewer.id=d.reviewed_by
      WHERE d.status=$1 ORDER BY d.id DESC LIMIT 100`,
     [status]
   );
@@ -280,22 +348,30 @@ app.get('/api/agent/deposits', auth, need('agent', 'admin'), wrap(async (req) =>
 }));
 
 app.post('/api/agent/deposits/:id/decide', auth, need('agent', 'admin'), wrap(async (req) => {
-  const approve = req.body.action === 'approve';
-  if (!approve && req.body.action !== 'reject') throw new Error('INVALID');
+  const depositId = Number(req.params.id);
+  if (!Number.isSafeInteger(depositId) || depositId <= 0) throw new Error('NOT_FOUND');
+  const action = req.body.action;
+  const approve = action === 'approve';
+  if (!['approve', 'reject', 'escalate'].includes(action)) throw new Error('INVALID');
   const reason = String(req.body.reason || '').trim().slice(0, 200);
-  if (!approve && !reason) throw new Error('INVALID');
+  if (['reject', 'escalate'].includes(action) && !reason) throw new Error('INVALID');
+  const checks = req.body.verification || {};
+  const checklistKeys = ['amount_matches', 'reference_matches', 'recipient_matches', 'date_plausible', 'independently_verified'];
+  if (approve && !checklistKeys.every((key) => checks[key] === true)) throw new Error('VERIFICATION_REQUIRED');
 
   return withTx(async (client) => {
-    const dRes = await client.query('SELECT * FROM deposits WHERE id=$1 FOR UPDATE', [Number(req.params.id)]);
+    const dRes = await client.query('SELECT * FROM deposits WHERE id=$1 FOR UPDATE', [depositId]);
     const d = dRes.rows[0];
     if (!d || d.status !== 'pending') throw new Error('NOT_FOUND');
     if (Number(d.user_id) === req.user.id) throw new Error('SELF');
 
-    const nextStatus = approve ? 'approved' : 'rejected';
-    await client.query(
-      'UPDATE deposits SET status=$1, reviewed_by=$2, reason=$3, reviewed_at=NOW() WHERE id=$4',
-      [nextStatus, req.user.id, reason || null, d.id]
-    );
+    const nextStatus = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'pending';
+    if (action !== 'escalate') {
+      await client.query(
+        'UPDATE deposits SET status=$1, reviewed_by=$2, reason=$3, reviewed_at=NOW() WHERE id=$4',
+        [nextStatus, req.user.id, reason || null, d.id]
+      );
+    }
     if (approve) {
       await postLedger({
         client,
@@ -307,9 +383,26 @@ app.post('/api/agent/deposits/:id/decide', auth, need('agent', 'admin'), wrap(as
         by: req.user.id
       });
     }
-    await audit(req.user.id, approve ? 'deposit.approve' : 'deposit.reject', { id: Number(d.id), amount: Number(d.amount), reason }, client);
-    return { ok: true };
+    await client.query(
+      `INSERT INTO deposit_reviews (deposit_id, reviewer_id, action, reason, verification)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [Number(d.id), req.user.id, action, reason || null, approve ? JSON.stringify(checks) : null]
+    );
+    await audit(req.user.id, `deposit.${action}`, { id: Number(d.id), amount: Number(d.amount), reason }, client);
+    return { ok: true, status: nextStatus };
   });
+}));
+
+app.get('/api/agent/deposits/:id/reviews', auth, need('agent', 'admin'), wrap(async (req) => {
+  const depositId = Number(req.params.id);
+  if (!Number.isSafeInteger(depositId) || depositId <= 0) throw new Error('NOT_FOUND');
+  const result = await query(
+    `SELECT r.action, r.reason, r.created_at, u.name AS reviewer
+     FROM deposit_reviews r JOIN users u ON u.id=r.reviewer_id
+     WHERE r.deposit_id=$1 ORDER BY r.id DESC`,
+    [depositId]
+  );
+  return { reviews: result.rows };
 }));
 
 app.get('/api/agent/withdrawals', auth, need('agent', 'admin'), wrap(async (req) => {
@@ -651,7 +744,10 @@ const admin = [auth, need('admin')];
 app.get('/api/admin/stats', ...admin, wrap(async () => ({
   users: Number((await query("SELECT COUNT(*) c FROM users WHERE role='user'")).rows[0].c),
   agents: Number((await query("SELECT COUNT(*) c FROM users WHERE role='agent'")).rows[0].c),
+  active_agents: Number((await query("SELECT COUNT(*) c FROM users WHERE role='agent' AND status='active'")).rows[0].c),
+  suspended_agents: Number((await query("SELECT COUNT(*) c FROM users WHERE role='agent' AND status='suspended'")).rows[0].c),
   pending: Number((await query("SELECT COUNT(*) c FROM deposits WHERE status='pending'")).rows[0].c),
+  pending_withdrawals: Number((await query("SELECT COUNT(*) c FROM withdrawals WHERE status='pending'")).rows[0].c),
   pending_funding: Number((await query("SELECT COUNT(*) c FROM agent_funding_requests WHERE status='pending'")).rows[0].c),
   credited: Number((await query("SELECT COALESCE(SUM(amount),0) s FROM ledger WHERE type='deposit'")).rows[0].s),
   rounds: Number((await query('SELECT COUNT(*) c FROM game_rounds')).rows[0].c),

@@ -55,6 +55,53 @@ async function api(path, body) {
   return data;
 }
 
+async function openDepositReview(deposit, onDone) {
+  const reviewHistory = await api(`/agent/deposits/${encodeURIComponent(deposit.id)}/reviews`).catch(() => ({ reviews: [] }));
+  let dialog = $('deposit-review-dialog');
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'deposit-review-dialog';
+    dialog.className = 'deposit-review-dialog';
+    document.body.appendChild(dialog);
+  }
+  const hasReceipt = deposit.has_receipt === true || deposit.has_receipt === 't';
+  const checks = [
+    ['amount_matches', 'Requested amount matches authorized payment records'],
+    ['reference_matches', 'Transaction reference matches authorized records'],
+    ['recipient_matches', 'Recipient is the authorized payment destination'],
+    ['date_plausible', 'Payment date and time are plausible'],
+    ['independently_verified', 'I independently verified receipt in authorized bank/provider records']
+  ];
+  dialog.innerHTML = `
+    <form method="dialog" class="deposit-review-card">
+      <div class="deposit-review-head"><div><span class="eyebrow">DEPOSIT REVIEW · #${esc(deposit.id)}</span><h2>${esc(deposit.user_name || 'Customer deposit')}</h2></div><button class="icon-btn" value="close" aria-label="Close review">×</button></div>
+      <div class="deposit-review-facts"><span><b>Amount</b>${fmt(deposit.amount)} ETB</span><span><b>Method</b>${esc(deposit.provider)}</span><span><b>Reference</b>${esc(deposit.tx_ref)}</span><span><b>Submitted</b>${esc(deposit.created_at)}</span><span><b>Customer</b>${esc(deposit.phone || '')}</span></div>
+      ${hasReceipt ? `<div class="receipt-preview-wrap"><img class="receipt-preview" alt="Receipt submitted for deposit ${esc(deposit.id)}" src="/api/deposits/${encodeURIComponent(deposit.id)}/receipt"><a class="btn btn-outline" href="/api/deposits/${encodeURIComponent(deposit.id)}/receipt" target="_blank" rel="noopener">Open full image</a></div>` : '<p class="notice">No receipt image was attached. Verify against authorized payment records.</p>'}
+      <p class="notice">A screenshot is supporting evidence only. This system has no payment-provider verification integration; independent manual verification is required before approval.</p>
+      ${reviewHistory.reviews.length ? `<section class="deposit-review-history"><h3>Previous review activity</h3>${reviewHistory.reviews.map((review) => `<p><b>${esc(review.action)}</b> · ${esc(review.reviewer)} · ${esc(review.created_at)}${review.reason ? `<br>${esc(review.reason)}` : ''}</p>`).join('')}</section>` : ''}
+      <fieldset class="review-checklist"><legend>Verification checklist</legend>${checks.map(([key, label]) => `<label><input type="checkbox" name="${key}"><span>${label}</span></label>`).join('')}</fieldset>
+      <label for="deposit-review-note">Review note / rejection reason</label><textarea id="deposit-review-note" maxlength="200" rows="2" placeholder="Required for reject or escalate"></textarea>
+      <div class="deposit-review-actions"><button type="button" class="btn btn-outline" data-review-action="escalate">Escalate</button><button type="button" class="btn bad" data-review-action="reject">Reject</button><button type="button" class="btn btn-gold" data-review-action="approve">Approve verified deposit</button></div>
+    </form>`;
+  dialog.showModal();
+  dialog.querySelector('form').onsubmit = (ev) => { ev.preventDefault(); dialog.close(); };
+  dialog.querySelectorAll('[data-review-action]').forEach((button) => {
+    button.onclick = async () => {
+      const action = button.dataset.reviewAction;
+      const reason = dialog.querySelector('#deposit-review-note').value.trim();
+      if (action !== 'approve' && !reason) { dialog.querySelector('#deposit-review-note').focus(); return; }
+      const verification = Object.fromEntries(checks.map(([key]) => [key, dialog.querySelector(`[name="${key}"]`).checked]));
+      button.disabled = true;
+      try {
+        await api(`/agent/deposits/${encodeURIComponent(deposit.id)}/decide`, { action, reason, verification });
+        dialog.close();
+        success(action === 'approve' ? 'Payment independently verified; deposit approved.' : action === 'reject' ? t('status_rejected') : 'Deposit escalated for senior review.');
+        onDone();
+      } catch (error) { fail(error); button.disabled = false; }
+    };
+  });
+}
+
 // ---------- Toast & Errors ----------
 function getErrMsg(e) {
   const code = e?.message || 'GENERIC';
@@ -732,7 +779,7 @@ async function depositView(app) {
             <div class="provider-card-item ${p.id === selectedProvId ? 'selected' : ''}" data-id="${p.id}">
               <div class="provider-card-icon">${providerIcons[p.code] || '💳'}</div>
               <div class="provider-card-name">${esc(p.name)}</div>
-              <span class="provider-card-badge">${esc(t('status_approved'))}</span>
+              <span class="provider-card-badge">${esc(t('manual'))}</span>
             </div>
           `).join('')}
         </div>
@@ -773,6 +820,15 @@ async function depositView(app) {
         <input id="tx" name="tx_ref" placeholder="${esc(t('tx_ref_hint'))}" required
           style="font-family:monospace;letter-spacing:1.5px;text-transform:uppercase;font-size:15px;padding:12px 14px">
 
+        <label for="deposit-receipt" class="receipt-upload-label">${lang === 'am' ? 'የክፍያ ደረሰኝ ምስል' : 'Payment receipt image'} <span class="muted">(${lang === 'am' ? 'አማራጭ · JPG፣ PNG ወይም WEBP · እስከ 5 ሜባ' : 'optional · JPG, PNG or WEBP · max 5 MB'})</span></label>
+        <input id="deposit-receipt" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" class="receipt-file-input">
+        <div id="deposit-receipt-preview-wrap" class="receipt-upload-preview" hidden>
+          <img id="deposit-receipt-preview" alt="Selected receipt preview">
+          <div><span id="deposit-receipt-name"></span><button type="button" class="btn btn-outline sm" id="deposit-receipt-remove">Remove</button></div>
+        </div>
+        <p id="deposit-receipt-error" class="receipt-error" role="alert" hidden></p>
+        <p class="notice">${lang === 'am' ? 'ደረሰኞች በግል ይቀመጣሉ እና ለሰው ግምገማ ብቻ ይላካሉ። ምስል መጫን ክፍያን አያረጋግጥም ወይም ገንዘብ አይጨምርም።' : 'Receipt images are private and submitted for manual review only. Uploading an image does not verify payment or add funds.'}</p>
+
         <button type="submit" class="btn btn-gold" id="dep-submit-btn" style="margin-top:18px;padding:14px;font-size:15px">
           ${esc(t('submit'))}
         </button>
@@ -787,12 +843,13 @@ async function depositView(app) {
       </div>
       ${!deposits.length ? emptyState('⬆', t('no_data')) : `
       <div class="scroll"><table>
-        <tr><th>${esc(t('date'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>${esc(t('status'))}</th></tr>
+        <tr><th>${esc(t('date'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>Receipt</th><th>${esc(t('status'))}</th></tr>
         ${deposits.map((d) => `<tr>
           <td class="muted" style="white-space:nowrap">${esc(d.created_at)}</td>
           <td><b>${esc(d.provider)}</b></td>
           <td style="font-weight:800;color:var(--gold-bright);font-size:15px">${fmt(d.amount)} ${esc(t('currency_etb'))}</td>
           <td><span style="font-size:12px;font-family:monospace;background:var(--surface-hover);padding:3px 8px;border-radius:4px">${esc(d.tx_ref)}</span></td>
+          <td>${d.has_receipt ? `<a class="btn btn-outline sm" href="/api/deposits/${encodeURIComponent(d.id)}/receipt" target="_blank" rel="noopener">View receipt</a>` : '<span class="muted">Not attached</span>'}</td>
           <td>${statusTag(d.status)}${d.reason ? `<div class="muted" style="margin-top:3px;font-size:11px">${esc(d.reason)}</div>` : ''}</td>
         </tr>`).join('')}
       </table></div>`}
@@ -830,12 +887,45 @@ async function depositView(app) {
     });
   };
 
+  let receiptData = null;
+  $('deposit-receipt').onchange = async (ev) => {
+    const file = ev.target.files?.[0];
+    const error = $('deposit-receipt-error');
+    error.hidden = true;
+    receiptData = null;
+    $('deposit-receipt-preview-wrap').hidden = true;
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      error.textContent = file.size > 5 * 1024 * 1024 ? 'Image must be 5 MB or smaller.' : 'Choose a JPG, PNG or WEBP image.';
+      error.hidden = false;
+      ev.target.value = '';
+      return;
+    }
+    receiptData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    }).catch(() => null);
+    if (!receiptData) { error.textContent = 'Could not read that image. Please try another file.'; error.hidden = false; return; }
+    $('deposit-receipt-preview').src = receiptData;
+    $('deposit-receipt-name').textContent = file.name;
+    $('deposit-receipt-preview-wrap').hidden = false;
+  };
+  $('deposit-receipt-remove').onclick = () => {
+    receiptData = null;
+    $('deposit-receipt').value = '';
+    $('deposit-receipt-preview-wrap').hidden = true;
+  };
+
   $('df').onsubmit = async (ev) => {
     ev.preventDefault();
     const btn = $('dep-submit-btn');
     btn.disabled = true; btn.textContent = '...';
     try {
-      await api('/deposits', Object.fromEntries(new FormData(ev.target)));
+      const request = Object.fromEntries(new FormData(ev.target));
+      if (receiptData) request.receipt_data = receiptData;
+      await api('/deposits', request);
       success(t('deposit_created'));
       tab = 'wallet';
       render();
@@ -865,6 +955,7 @@ async function withdrawView(app) {
         <span class="tag approved" style="font-size:13px">🪙 ${fmt(balance)} ${esc(t('currency_etb'))}</span>
       </div>
       <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">${esc(t('withdraw_created'))}</p>
+      <p class="notice">${lang === 'am' ? 'የምናባዊ ክሬዲት ሙከራ ብቻ ነው። የክፍያ አቅራቢ አልተገናኘም፤ ጥያቄ መቀበል እውነተኛ ክፍያ መላኩን አያረጋግጥም።' : 'Virtual-credit demo only: no cash-out provider is connected. An accepted request records an internal demo status and does not confirm that a real payment was sent.'}</p>
 
       <form id="wf">
         <!-- Step 1: Payout Method -->
@@ -1133,7 +1224,27 @@ async function agentView(app) {
   const pendingTickets = ticketsRes.tickets.filter((t) => t.status === 'open' || t.status === 'escalated');
 
   app.innerHTML = `
-    <!-- Agent Float Balance Banner -->
+    <div class="ops-dashboard agent-dashboard">
+      <aside class="ops-sidebar" aria-label="Agent navigation">
+        <div class="ops-sidebar-brand"><span class="logo">ϟ</span><span><b>FETAN BET</b><small>Agent workspace</small></span></div>
+        <nav class="ops-side-nav" aria-label="Agent sections">
+          <button id="as-dep" class="${isDep ? 'on' : ''}"><span>▣</span>Deposit requests <i>${dp.deposits.length}</i></button>
+          <button id="as-with" class="${isWith ? 'on' : ''}"><span>↗</span>Withdrawal requests <i>${wp.withdrawals.length}</i></button>
+          <button id="as-tickets" class="${isTickets ? 'on' : ''}"><span>◌</span>Customer support <i>${pendingTickets.length}</i></button>
+          <button id="as-fund" class="${isFund ? 'on' : ''}"><span>◈</span>Performance & float</button>
+          <button id="as-ann" class="${isAnn ? 'on' : ''}"><span>▤</span>Announcements</button>
+        </nav>
+        <div class="ops-sidebar-foot"><span class="ops-status-dot"></span> Signed in as Agent</div>
+      </aside>
+      <div class="ops-main">
+        <div class="ops-page-heading"><div><div class="ops-eyebrow">FETAN BET · OPERATIONS</div><h1>Agent workspace</h1><p>Review customer requests and track your activity.</p></div><button id="toggle-funding-btn" class="btn btn-gold ops-primary">＋ ${esc(t('request_funding'))}</button></div>
+        <div class="ops-metrics">
+          <div class="ops-metric"><span class="ops-metric-icon">▣</span><div><small>Pending deposits</small><b>${dp.deposits.length}</b></div></div>
+          <div class="ops-metric"><span class="ops-metric-icon">↗</span><div><small>Pending withdrawals</small><b>${wp.withdrawals.length}</b></div></div>
+          <div class="ops-metric"><span class="ops-metric-icon">◌</span><div><small>Open support cases</small><b>${pendingTickets.length}</b></div></div>
+          <div class="ops-metric"><span class="ops-metric-icon">✓</span><div><small>Reviewed today</small><b>${(perf.today_deposits_count ?? 0) + (perf.today_withdrawals_count ?? 0)}</b><em>${perf.today_deposits_count ?? 0} deposits · ${perf.today_withdrawals_count ?? 0} withdrawals</em></div></div>
+        </div>
+        <!-- Agent Float Balance Banner -->
     <div class="agent-float-card">
       <div class="agent-float-info">
         <div class="agent-float-title">🔑 ${esc(t('agent_float_balance'))}</div>
@@ -1145,9 +1256,6 @@ async function agentView(app) {
           <div class="stat-label">Today's Verified</div>
           <b>${perf.today_deposits_count ?? 0} in · ${perf.today_withdrawals_count ?? 0} out</b>
         </div>
-        <button id="toggle-funding-btn" class="btn btn-gold" style="width:auto;padding:10px 18px;font-size:13px">
-          ⚡ ${esc(t('request_funding'))}
-        </button>
       </div>
     </div>
 
@@ -1182,42 +1290,21 @@ async function agentView(app) {
 
     <!-- Main Agent Operations Card -->
     <div class="card">
-      <div class="subtabs">
-        <button class="subtab ${isDep ? 'on' : ''}" id="as-dep">
-          ⬇ ${esc(t('customer_deposits'))}
-          <span class="tag ${dp.deposits.length ? 'pending' : 'approved'}">${dp.deposits.length}</span>
-        </button>
-        <button class="subtab ${isWith ? 'on' : ''}" id="as-with">
-          ⬆ ${esc(t('customer_withdrawals'))}
-          <span class="tag ${wp.withdrawals.length ? 'pending' : 'approved'}">${wp.withdrawals.length}</span>
-        </button>
-        <button class="subtab ${isTickets ? 'on' : ''}" id="as-tickets">
-          💬 ${esc(t('tickets'))}
-          <span class="tag ${pendingTickets.length ? 'pending' : 'approved'}">${pendingTickets.length}</span>
-        </button>
-        <button class="subtab ${isFund ? 'on' : ''}" id="as-fund">
-          ⚡ ${esc(t('funding_history'))}
-        </button>
-        <button class="subtab ${isAnn ? 'on' : ''}" id="as-ann">
-          📢 ${esc(t('announcements'))} (${annRes.announcements.length})
-        </button>
-      </div>
-
       <!-- TAB 1: CUSTOMER DEPOSITS -->
       ${isDep ? `
         <h3>${esc(t('pending_requests'))}</h3>
         ${dp.deposits.length ? `
           <div class="scroll"><table>
-            <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th></th></tr>
+            <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>Receipt</th><th></th></tr>
             ${dp.deposits.map((d) => `<tr>
               <td class="muted" style="white-space:nowrap">${esc(d.created_at)}</td>
               <td><div style="font-weight:600">${esc(d.user_name)}</div><div class="muted">${esc(d.phone)}</div></td>
-              <td><b>${esc(d.provider)}</b></td>
+              <td><b>${esc(d.provider)}</b>${d.last_review_action === 'escalate' ? '<div class="tag pending">Escalated for review</div>' : ''}</td>
               <td style="font-weight:800;color:var(--gold-bright);font-size:16px">${fmt(d.amount)} ${esc(t('currency_etb'))}</td>
               <td><span style="font-size:12px;font-family:monospace;background:var(--surface-hover);padding:3px 8px;border-radius:4px">${esc(d.tx_ref)}</span></td>
+              <td>${d.has_receipt ? 'Attached' : 'None'}</td>
               <td style="white-space:nowrap">
-                <button class="btn sm alt" data-kind="deposit" data-a="approve" data-id="${d.id}">✓ ${esc(t('approve'))}</button>
-                <button class="btn sm bad" data-kind="deposit" data-a="reject" data-id="${d.id}">✕ ${esc(t('reject'))}</button>
+                <button class="btn sm btn-gold" data-open-deposit-review="${d.id}">Review request</button>
               </td>
             </tr>`).join('')}
           </table></div>` : emptyState('✅', t('no_data'))
@@ -1227,12 +1314,14 @@ async function agentView(app) {
         <h3>${esc(t('decided_requests'))}</h3>
         ${[...da.deposits, ...dr.deposits].length ? `
           <div class="scroll"><table>
-            <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>${esc(t('status'))}</th></tr>
+            <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>Receipt</th><th>Reviewed by</th><th>${esc(t('status'))}</th></tr>
             ${[...da.deposits, ...dr.deposits].sort((x, y) => y.id - x.id).slice(0, 30).map((d) => `<tr>
               <td class="muted" style="white-space:nowrap">${esc(d.created_at)}</td>
               <td><div style="font-weight:600">${esc(d.user_name)}</div><div class="muted">${esc(d.provider)}</div></td>
               <td style="font-weight:700">${fmt(d.amount)}</td>
               <td><span style="font-size:12px;font-family:monospace">${esc(d.tx_ref)}</span></td>
+              <td>${d.has_receipt ? `<a class="btn btn-outline sm" href="/api/deposits/${encodeURIComponent(d.id)}/receipt" target="_blank" rel="noopener">View</a>` : 'None'}</td>
+              <td>${esc(d.reviewer_name || '—')}</td>
               <td>${statusTag(d.status)}${d.reason ? `<div class="muted" style="margin-top:3px;font-size:11px">${esc(d.reason)}</div>` : ''}</td>
             </tr>`).join('')}
           </table></div>` : emptyState('📋', t('no_data'))
@@ -1241,6 +1330,7 @@ async function agentView(app) {
 
       <!-- TAB 2: CUSTOMER WITHDRAWALS -->
       ${isWith ? `
+        <p class="notice">${lang === 'am' ? 'የምናባዊ ክሬዲት ሙከራ ብቻ። እነዚህ ድርጊቶች ክፍያ አይልኩም፤ የክፍያ አቅራቢ ግንኙነት የለም።' : 'Virtual-credit demo only. These actions do not send a payout; the project has no payment-provider payout integration.'}</p>
         <h3>${esc(t('pending_withdrawals'))}</h3>
         ${wp.withdrawals.length ? `
           <div class="scroll"><table>
@@ -1368,7 +1458,7 @@ async function agentView(app) {
           `).join('')}
         `}
       ` : ''}
-    </div>`;
+    </div></div></div>`;
 
   $('toggle-funding-btn').onclick = () => {
     const box = $('funding-request-box');
@@ -1406,6 +1496,11 @@ async function agentView(app) {
   $('as-tickets').onclick = () => { agentSubtab = 'tickets'; render(); };
   $('as-fund').onclick = () => { agentSubtab = 'funding'; render(); };
   $('as-ann').onclick = () => { agentSubtab = 'announcements'; render(); };
+
+  app.querySelectorAll('[data-open-deposit-review]').forEach((button) => {
+    const deposit = dp.deposits.find((item) => String(item.id) === button.dataset.openDepositReview);
+    if (deposit) button.onclick = () => openDepositReview(deposit, render);
+  });
 
   // Agent approvals
   app.querySelectorAll('button[data-a]').forEach((b) => (b.onclick = async () => {
@@ -1502,12 +1597,27 @@ async function adminView(app) {
   const pendingFundingCount = fundReqs.requests.filter((r) => r.status === 'pending').length;
 
   app.innerHTML = `
-    <div class="section-head">
+    <div class="ops-dashboard admin-dashboard">
+      <aside class="ops-sidebar" aria-label="Super Admin navigation">
+        <div class="ops-sidebar-brand"><span class="logo">ϟ</span><span><b>FETAN BET</b><small>Admin control</small></span></div>
+        <nav class="ops-side-nav" aria-label="Admin sections">
+          <button id="adm-tab-analytics" class="${adminSection === 'analytics' ? 'on' : ''}"><span>▥</span>Overview</button>
+          <button id="adm-tab-dep" class="${adminSection === 'deposits' ? 'on' : ''}"><span>▣</span>Deposit requests <i>${depPending.deposits.length}</i></button>
+          <button id="adm-tab-fund" class="${adminSection === 'funding' ? 'on' : ''}"><span>◈</span>Agent funding <i>${pendingFundingCount}</i></button>
+          <button id="adm-tab-tx" class="${adminSection === 'transactions' ? 'on' : ''}"><span>▤</span>Transaction ledger</button>
+          <button id="adm-tab-supp" class="${adminSection === 'support' ? 'on' : ''}"><span>◌</span>Support & settings</button>
+          <button id="adm-tab-users" class="${adminSection === 'users' ? 'on' : ''}"><span>♙</span>Users & audit</button>
+        </nav>
+        <div class="ops-sidebar-foot"><span class="ops-status-dot"></span> Super Admin access</div>
+      </aside>
+      <div class="ops-main">
+    <div class="ops-page-heading">
       <div>
-        <h2>⚙ ${esc(t('admin'))}</h2>
-        <span class="brand-sub" style="color:var(--gold-bright)">SUPER ADMIN EXECUTIVE DESK</span>
+        <div class="ops-eyebrow">FETAN BET · ADMINISTRATION</div>
+        <h1>${adminSection === 'analytics' ? 'Operations overview' : ({ deposits: 'Deposit requests', funding: 'Agent funding', transactions: 'Transaction ledger', support: 'Support & settings', users: 'Users & audit' }[adminSection] || 'Administration')}</h1>
+        <p>Monitor platform activity and manage authorized operations.</p>
       </div>
-      <span class="tag rejected" style="font-size:12px;letter-spacing:1px;font-weight:800">SUPER ADMIN</span>
+      <span class="ops-role-pill">SUPER ADMIN</span>
     </div>
 
     <!-- Executive KPI Grid -->
@@ -1526,42 +1636,16 @@ async function adminView(app) {
         <div class="label">${esc(t('total_payouts'))} (${analytics.total_wins_count ?? 0})</div>
       </div>
       <div class="admin-stat">
-        <div class="value ${depPending.deposits.length ? 'accent' : ''}">${depPending.deposits.length} in · ${withPending.withdrawals.length} out</div>
-        <div class="label">Pending Transfers</div>
+        <div class="value ${(analytics.pending_deposits_count || analytics.pending_withdrawals_count) ? 'accent' : ''}">${analytics.pending_deposits_count ?? depPending.deposits.length} in · ${analytics.pending_withdrawals_count ?? withPending.withdrawals.length} out</div>
+        <div class="label">Pending · deposits ${fmt(analytics.pending_deposits_amount ?? 0)} ETB · withdrawals ${fmt(analytics.pending_withdrawals_amount ?? 0)} ETB</div>
       </div>
       <div class="admin-stat">
         <div class="value ${pendingFundingCount ? 'accent' : ''}">${pendingFundingCount}</div>
         <div class="label">${esc(t('stat_funding_pending'))}</div>
       </div>
       <div class="admin-stat">
-        <div class="value">${s.users} users · ${s.agents} agents</div>
-        <div class="label">Platform Accounts</div>
-      </div>
-    </div>
-
-    <!-- Admin Subtabs Navigation -->
-    <div class="card" style="padding:14px 20px 6px">
-      <div class="subtabs" style="margin-bottom:0;border-bottom:none;overflow-x:auto">
-        <button class="subtab ${adminSection === 'analytics' ? 'on' : ''}" id="adm-tab-analytics">
-          📊 ${esc(t('financial_analytics'))}
-        </button>
-        <button class="subtab ${adminSection === 'deposits' ? 'on' : ''}" id="adm-tab-dep">
-          ⬇ ${esc(t('sec_customer_deposits'))}
-          <span class="tag ${depPending.deposits.length ? 'pending' : 'approved'}">${depPending.deposits.length}</span>
-        </button>
-        <button class="subtab ${adminSection === 'funding' ? 'on' : ''}" id="adm-tab-fund">
-          ⚡ ${esc(t('sec_agent_funding'))}
-          <span class="tag ${pendingFundingCount ? 'pending' : 'approved'}">${pendingFundingCount}</span>
-        </button>
-        <button class="subtab ${adminSection === 'transactions' ? 'on' : ''}" id="adm-tab-tx">
-          📋 ${esc(t('sec_system_tx'))}
-        </button>
-        <button class="subtab ${adminSection === 'support' ? 'on' : ''}" id="adm-tab-supp">
-          💬 ${esc(t('tickets'))} &amp; AI (${ticketsRes.tickets.length})
-        </button>
-        <button class="subtab ${adminSection === 'users' ? 'on' : ''}" id="adm-tab-users">
-          👥 ${esc(t('users'))} &amp; Audit
-        </button>
+        <div class="value">${s.users} customers · ${s.active_agents ?? s.agents} active agents</div>
+        <div class="label">${s.suspended_agents ?? 0} suspended · registered agents ${s.agents}</div>
       </div>
     </div>
 
@@ -1592,8 +1676,8 @@ async function adminView(app) {
           </div>
           <div class="analytics-kpi-item">
             <div class="analytics-kpi-val" style="color:#F87171">${fmt(analytics.total_withdrawals_amount ?? 0)} ETB</div>
-            <div class="analytics-kpi-lbl">Approved Customer Withdrawals</div>
-            <div class="analytics-kpi-formula">${analytics.total_withdrawals_count ?? 0} settled payouts</div>
+            <div class="analytics-kpi-lbl">Withdrawal holds · virtual demo</div>
+            <div class="analytics-kpi-formula">${analytics.total_withdrawals_count ?? 0} withdrawal requests; no payout confirmation is recorded</div>
           </div>
           <div class="analytics-kpi-item">
             <div class="analytics-kpi-val">${analytics.margin_percent ?? '0.0'}%</div>
@@ -1674,15 +1758,15 @@ async function adminView(app) {
         <h3>${esc(t('sec_customer_deposits'))}</h3>
         ${!depPending.deposits.length ? emptyState('✅', 'No pending customer deposit requests') : `
         <div class="scroll"><table>
-          <tr><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th></th></tr>
+          <tr><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>Receipt</th><th></th></tr>
           ${depPending.deposits.map((d) => `<tr>
             <td><div style="font-weight:600">${esc(d.user_name)}</div><div class="muted">${esc(d.phone)}</div></td>
             <td><b>${esc(d.provider)}</b></td>
             <td style="font-weight:800;color:var(--gold-bright);font-size:16px">${fmt(d.amount)} ${esc(t('currency_etb'))}</td>
             <td><span style="font-size:12px;font-family:monospace;background:var(--surface-hover);padding:3px 8px;border-radius:4px">${esc(d.tx_ref)}</span></td>
+              <td>${d.has_receipt ? 'Attached' : 'None'}</td>
             <td style="white-space:nowrap">
-              <button class="btn sm alt" data-adm-dep="approve" data-id="${d.id}">✓ ${esc(t('approve'))}</button>
-              <button class="btn sm bad" data-adm-dep="reject" data-id="${d.id}">✕ ${esc(t('reject'))}</button>
+                <button class="btn sm btn-gold" data-open-admin-deposit-review="${d.id}">Review request</button>
             </td>
           </tr>`).join('')}
         </table></div>`}
@@ -1835,6 +1919,7 @@ async function adminView(app) {
         </table></div>
       </div>
     ` : ''}
+    </div></div>
   `;
 
   // Subtab switching
@@ -1844,6 +1929,11 @@ async function adminView(app) {
   $('adm-tab-tx').onclick = () => { adminSection = 'transactions'; render(); };
   $('adm-tab-supp').onclick = () => { adminSection = 'support'; render(); };
   $('adm-tab-users').onclick = () => { adminSection = 'users'; render(); };
+
+  app.querySelectorAll('[data-open-admin-deposit-review]').forEach((button) => {
+    const deposit = depPending.deposits.find((item) => String(item.id) === button.dataset.openAdminDepositReview);
+    if (deposit) button.onclick = () => openDepositReview(deposit, render);
+  });
 
   // Date range filter
   document.querySelectorAll('.filter-pill[data-range]').forEach((pill) => {

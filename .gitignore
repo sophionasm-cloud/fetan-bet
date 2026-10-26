@@ -3,6 +3,7 @@ data.db
 data.db-wal
 data.db-shm
 *.backup
+private-receipts/
 .env
 .env.*
 !.env.example
