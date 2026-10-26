@@ -209,10 +209,8 @@ function nav() {
   if (me.role === 'admin') {
     tabs.push(['admin', '⚙', 'admin']);
     tabs.push(['agent', '🔑', 'agent']);
-    tabs.push(['history', '📋', 'history']);
   } else if (me.role === 'agent') {
     tabs.push(['agent', '🔑', 'agent']);
-    tabs.push(['history', '📋', 'history']);
   } else {
     if (mobileUserTabs) {
       tabs.push(['games', '🎰', t('games')]);
@@ -255,12 +253,14 @@ async function render(subMode = '') {
 
   if (gameRoute && me.role === 'user') tab = 'games';
 
-  // Enforce administrative role restriction (Requirement 6)
-  if (me.role === 'admin' || me.role === 'agent') {
-    if (tab === 'games' || tab === 'deposit' || tab === 'withdraw') {
-      tab = me.role === 'admin' ? 'admin' : 'agent';
-      toast(t('admin_game_blocked'), 'err');
-    }
+  // Restrict each authenticated role to its own page set. In particular, do
+  // not allow staff to land on the customer transaction-history renderer.
+  if (me.role === 'agent' && tab !== 'agent') tab = 'agent';
+  if (me.role === 'admin' && !['admin', 'agent'].includes(tab)) tab = 'admin';
+  if (me.role === 'user' && ['agent', 'admin'].includes(tab)) tab = 'games';
+  if ((me.role === 'admin' || me.role === 'agent') && ['games', 'deposit', 'withdraw', 'wallet', 'support', 'profile'].includes(tab)) {
+    tab = me.role === 'admin' ? 'admin' : 'agent';
+    toast(t('admin_game_blocked'), 'err');
   }
 
   nav();
@@ -1224,27 +1224,17 @@ async function agentView(app) {
   const pendingTickets = ticketsRes.tickets.filter((t) => t.status === 'open' || t.status === 'escalated');
 
   app.innerHTML = `
-    <div class="ops-dashboard agent-dashboard">
-      <aside class="ops-sidebar" aria-label="Agent navigation">
-        <div class="ops-sidebar-brand"><span class="logo">ϟ</span><span><b>FETAN BET</b><small>Agent workspace</small></span></div>
-        <nav class="ops-side-nav" aria-label="Agent sections">
-          <button id="as-dep" class="${isDep ? 'on' : ''}"><span>▣</span>Deposit requests <i>${dp.deposits.length}</i></button>
-          <button id="as-with" class="${isWith ? 'on' : ''}"><span>↗</span>Withdrawal requests <i>${wp.withdrawals.length}</i></button>
-          <button id="as-tickets" class="${isTickets ? 'on' : ''}"><span>◌</span>Customer support <i>${pendingTickets.length}</i></button>
-          <button id="as-fund" class="${isFund ? 'on' : ''}"><span>◈</span>Performance & float</button>
-          <button id="as-ann" class="${isAnn ? 'on' : ''}"><span>▤</span>Announcements</button>
-        </nav>
-        <div class="ops-sidebar-foot"><span class="ops-status-dot"></span> Signed in as Agent</div>
-      </aside>
-      <div class="ops-main">
-        <div class="ops-page-heading"><div><div class="ops-eyebrow">FETAN BET · OPERATIONS</div><h1>Agent workspace</h1><p>Review customer requests and track your activity.</p></div><button id="toggle-funding-btn" class="btn btn-gold ops-primary">＋ ${esc(t('request_funding'))}</button></div>
-        <div class="ops-metrics">
-          <div class="ops-metric"><span class="ops-metric-icon">▣</span><div><small>Pending deposits</small><b>${dp.deposits.length}</b></div></div>
-          <div class="ops-metric"><span class="ops-metric-icon">↗</span><div><small>Pending withdrawals</small><b>${wp.withdrawals.length}</b></div></div>
-          <div class="ops-metric"><span class="ops-metric-icon">◌</span><div><small>Open support cases</small><b>${pendingTickets.length}</b></div></div>
-          <div class="ops-metric"><span class="ops-metric-icon">✓</span><div><small>Reviewed today</small><b>${(perf.today_deposits_count ?? 0) + (perf.today_withdrawals_count ?? 0)}</b><em>${perf.today_deposits_count ?? 0} deposits · ${perf.today_withdrawals_count ?? 0} withdrawals</em></div></div>
-        </div>
-        <!-- Agent Float Balance Banner -->
+    <div class="section-head agent-dashboard-heading">
+      <div><h2>🔑 Agent Dashboard</h2><span class="brand-sub" style="color:var(--gold-bright)">REQUESTS · VERIFICATION · SUPPORT</span></div>
+      <span class="tag approved">${esc(me.status || 'active')}</span>
+    </div>
+    <div class="agent-overview-cards" aria-label="Agent activity overview">
+      <div class="agent-overview-stat"><span aria-hidden="true">⬇</span><div><small>Pending deposits</small><b>${dp.deposits.length}</b></div></div>
+      <div class="agent-overview-stat"><span aria-hidden="true">⬆</span><div><small>Pending withdrawals</small><b>${wp.withdrawals.length}</b></div></div>
+      <div class="agent-overview-stat"><span aria-hidden="true">✓</span><div><small>Reviewed today</small><b>${(perf.today_deposits_count ?? 0) + (perf.today_withdrawals_count ?? 0)}</b><em>${perf.today_deposits_count ?? 0} deposits · ${perf.today_withdrawals_count ?? 0} withdrawals</em></div></div>
+      <div class="agent-overview-stat"><span aria-hidden="true">◉</span><div><small>Open support cases</small><b>${pendingTickets.length}</b></div></div>
+    </div>
+    <!-- Agent Float Balance Banner -->
     <div class="agent-float-card">
       <div class="agent-float-info">
         <div class="agent-float-title">🔑 ${esc(t('agent_float_balance'))}</div>
@@ -1256,6 +1246,9 @@ async function agentView(app) {
           <div class="stat-label">Today's Verified</div>
           <b>${perf.today_deposits_count ?? 0} in · ${perf.today_withdrawals_count ?? 0} out</b>
         </div>
+          <button id="toggle-funding-btn" class="btn btn-gold" style="width:auto;padding:10px 18px;font-size:13px">
+            ⚡ ${esc(t('request_funding'))}
+          </button>
       </div>
     </div>
 
@@ -1290,6 +1283,13 @@ async function agentView(app) {
 
     <!-- Main Agent Operations Card -->
     <div class="card">
+      <div class="subtabs">
+        <button class="subtab ${isDep ? 'on' : ''}" id="as-dep">⬇ ${esc(t('customer_deposits'))}<span class="tag ${dp.deposits.length ? 'pending' : 'approved'}">${dp.deposits.length}</span></button>
+        <button class="subtab ${isWith ? 'on' : ''}" id="as-with">⬆ ${esc(t('customer_withdrawals'))}<span class="tag ${wp.withdrawals.length ? 'pending' : 'approved'}">${wp.withdrawals.length}</span></button>
+        <button class="subtab ${isTickets ? 'on' : ''}" id="as-tickets">💬 ${esc(t('tickets'))}<span class="tag ${pendingTickets.length ? 'pending' : 'approved'}">${pendingTickets.length}</span></button>
+        <button class="subtab ${isFund ? 'on' : ''}" id="as-fund">⚡ ${esc(t('funding_history'))}</button>
+        <button class="subtab ${isAnn ? 'on' : ''}" id="as-ann">📢 ${esc(t('announcements'))} (${annRes.announcements.length})</button>
+      </div>
       <!-- TAB 1: CUSTOMER DEPOSITS -->
       ${isDep ? `
         <h3>${esc(t('pending_requests'))}</h3>
@@ -1458,7 +1458,7 @@ async function agentView(app) {
           `).join('')}
         `}
       ` : ''}
-    </div></div></div>`;
+    </div>`;
 
   $('toggle-funding-btn').onclick = () => {
     const box = $('funding-request-box');
@@ -1597,27 +1597,12 @@ async function adminView(app) {
   const pendingFundingCount = fundReqs.requests.filter((r) => r.status === 'pending').length;
 
   app.innerHTML = `
-    <div class="ops-dashboard admin-dashboard">
-      <aside class="ops-sidebar" aria-label="Super Admin navigation">
-        <div class="ops-sidebar-brand"><span class="logo">ϟ</span><span><b>FETAN BET</b><small>Admin control</small></span></div>
-        <nav class="ops-side-nav" aria-label="Admin sections">
-          <button id="adm-tab-analytics" class="${adminSection === 'analytics' ? 'on' : ''}"><span>▥</span>Overview</button>
-          <button id="adm-tab-dep" class="${adminSection === 'deposits' ? 'on' : ''}"><span>▣</span>Deposit requests <i>${depPending.deposits.length}</i></button>
-          <button id="adm-tab-fund" class="${adminSection === 'funding' ? 'on' : ''}"><span>◈</span>Agent funding <i>${pendingFundingCount}</i></button>
-          <button id="adm-tab-tx" class="${adminSection === 'transactions' ? 'on' : ''}"><span>▤</span>Transaction ledger</button>
-          <button id="adm-tab-supp" class="${adminSection === 'support' ? 'on' : ''}"><span>◌</span>Support & settings</button>
-          <button id="adm-tab-users" class="${adminSection === 'users' ? 'on' : ''}"><span>♙</span>Users & audit</button>
-        </nav>
-        <div class="ops-sidebar-foot"><span class="ops-status-dot"></span> Super Admin access</div>
-      </aside>
-      <div class="ops-main">
-    <div class="ops-page-heading">
+    <div class="section-head">
       <div>
-        <div class="ops-eyebrow">FETAN BET · ADMINISTRATION</div>
-        <h1>${adminSection === 'analytics' ? 'Operations overview' : ({ deposits: 'Deposit requests', funding: 'Agent funding', transactions: 'Transaction ledger', support: 'Support & settings', users: 'Users & audit' }[adminSection] || 'Administration')}</h1>
-        <p>Monitor platform activity and manage authorized operations.</p>
+        <h2>⚙ ${esc(t('admin'))}</h2>
+        <span class="brand-sub" style="color:var(--gold-bright)">SUPER ADMIN EXECUTIVE DESK</span>
       </div>
-      <span class="ops-role-pill">SUPER ADMIN</span>
+      <span class="tag rejected" style="font-size:12px;letter-spacing:1px;font-weight:800">SUPER ADMIN</span>
     </div>
 
     <!-- Executive KPI Grid -->
@@ -1646,6 +1631,18 @@ async function adminView(app) {
       <div class="admin-stat">
         <div class="value">${s.users} customers · ${s.active_agents ?? s.agents} active agents</div>
         <div class="label">${s.suspended_agents ?? 0} suspended · registered agents ${s.agents}</div>
+      </div>
+    </div>
+
+    <!-- Admin Subtabs Navigation -->
+    <div class="card" style="padding:14px 20px 6px">
+      <div class="subtabs" style="margin-bottom:0;border-bottom:none;overflow-x:auto">
+        <button class="subtab ${adminSection === 'analytics' ? 'on' : ''}" id="adm-tab-analytics">📊 ${esc(t('financial_analytics'))}</button>
+        <button class="subtab ${adminSection === 'deposits' ? 'on' : ''}" id="adm-tab-dep">⬇ ${esc(t('sec_customer_deposits'))}<span class="tag ${depPending.deposits.length ? 'pending' : 'approved'}">${depPending.deposits.length}</span></button>
+        <button class="subtab ${adminSection === 'funding' ? 'on' : ''}" id="adm-tab-fund">⚡ ${esc(t('sec_agent_funding'))}<span class="tag ${pendingFundingCount ? 'pending' : 'approved'}">${pendingFundingCount}</span></button>
+        <button class="subtab ${adminSection === 'transactions' ? 'on' : ''}" id="adm-tab-tx">📋 ${esc(t('sec_system_tx'))}</button>
+        <button class="subtab ${adminSection === 'support' ? 'on' : ''}" id="adm-tab-supp">💬 ${esc(t('tickets'))} &amp; AI (${ticketsRes.tickets.length})</button>
+        <button class="subtab ${adminSection === 'users' ? 'on' : ''}" id="adm-tab-users">👥 ${esc(t('users'))} &amp; Audit</button>
       </div>
     </div>
 
@@ -1919,7 +1916,7 @@ async function adminView(app) {
         </table></div>
       </div>
     ` : ''}
-    </div></div>
+    </div>
   `;
 
   // Subtab switching
