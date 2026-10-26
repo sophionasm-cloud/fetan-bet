@@ -3872,3 +3872,177 @@ body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-are
 body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-main-area { grid-column: 1; grid-row: 2; height: 100%; }
 body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-sidebar { grid-column: 2; grid-row: 2; display: flex; width: 280px; max-height: 100%; overflow: auto; }
 body.game-open.game-landscape .mobile-game-shell[data-game="plinko"] .plinko-mobile-sticky-bar { left: auto; width: 280px; }
+
+/* Premium Fetan Bet game surfaces: shared gold selection, slate panels and
+   responsive play areas for Keno 80, Ethiopian Bingo and European Roulette. */
+.keno-game, .bingo-layout, .roulette-play-layout { color: var(--text); }
+.keno-main, .keno-controls, .bingo-card, .bingo-multiplier-table,
+.roulette-wheel-panel, .roulette-bet-panel {
+  border-color: var(--border);
+  background-color: var(--surface-panel);
+  box-shadow: inset 0 1px rgba(255,255,255,.025), 0 12px 28px rgba(0,0,0,.2);
+}
+.keno-main { background: radial-gradient(ellipse at 50% 0%, rgba(72,169,255,.08), transparent 60%), var(--surface-panel); }
+.keno-controls { background: linear-gradient(155deg, #151D28, #0D121A); }
+.keno-controls-title { color: var(--text); letter-spacing: .04em; }
+.keno-controls-title span { color: var(--gold-bright); }
+.keno-num {
+  border-color: #303D4B;
+  background: linear-gradient(155deg, #273443, #17212D 78%);
+  color: #D8E0E8;
+}
+.keno-num:hover { border-color: var(--gold-muted); background: #33404D; }
+.keno-num.selected {
+  border-color: var(--gold-bright);
+  background: linear-gradient(145deg, var(--gold-bright), #D49F08);
+  color: #17150B;
+  box-shadow: 0 0 0 2px rgba(255,211,41,.16), 0 0 16px rgba(255,211,41,.2);
+}
+.keno-num.drawn { border-color: #25303C; background: #101720; color: #667485; }
+.keno-num.hit { border-color: #73E6B4; background: linear-gradient(145deg, #38D49A, #16845E); }
+.keno-paytable { border-color: var(--border); background: rgba(7,9,13,.55); }
+.keno-pay-chip { border: 1px solid var(--border); background: #1A2430; color: var(--text-secondary); }
+.keno-pay-chip b, .bingo-pay-mult { color: var(--gold-bright); }
+
+.bingo-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 190px); gap: 18px; align-items: start; }
+.bingo-left, .bingo-right { min-width: 0; }
+.bingo-right { flex-basis: auto; }
+.bingo-card-wrap { width: min(100%, 560px); max-width: none; margin: 0 auto 12px; }
+.bingo-card { border: 1px solid var(--gold-border); background: #0A0E14; }
+.bingo-header { background: #17212D; }
+.bingo-col-head { color: #F8F9FB; font-family: var(--font); font-size: clamp(15px, 1.5vw, 19px); }
+.bingo-col-head:nth-child(1) { background: #244263; }
+.bingo-col-head:nth-child(2) { background: #315273; }
+.bingo-col-head:nth-child(3) { background: #4B5A69; }
+.bingo-col-head:nth-child(4) { background: #7E6420; }
+.bingo-col-head:nth-child(5) { background: #A17C13; }
+.bingo-grid { gap: 4px; padding: clamp(6px, 1vw, 10px); background: #080B10; }
+.bingo-cell { border: 1px solid #2B3542; border-radius: 8px; background: linear-gradient(145deg, #202B39, #141C27); }
+.bingo-cell.free { border: 1px solid var(--gold-bright); background: linear-gradient(145deg, #FFE46B, #C99008); box-shadow: 0 0 12px rgba(255,211,41,.18); }
+.bingo-cell.marked:not(.free) { border-color: #FFD329; background: linear-gradient(145deg, #937113, #59450C); box-shadow: 0 0 12px rgba(255,211,41,.16); }
+.bingo-num-big { color: #F5F7FA; font-size: clamp(16px, 2vw, 22px); }
+.bingo-col-tag { color: #C5D0DC; }
+.bingo-multiplier-table { border-radius: 12px; padding: 12px; }
+.bingo-pay-title { color: var(--text); }
+.bingo-pay-row { color: var(--text-secondary); border-color: var(--border); }
+.bingo-draw-count { color: var(--text-secondary); background: #0D1118; border-color: var(--border); }
+.bingo-last-ball {
+  border: 1px solid var(--gold-border);
+  background: radial-gradient(circle at 32% 24%, #FFF2AE, #D3A613 64%, #765707);
+  color: #1A170B;
+  box-shadow: inset 0 1px 5px rgba(255,255,255,.35), 0 8px 20px rgba(0,0,0,.4), 0 0 20px rgba(255,211,41,.12);
+}
+.bingo-controls .bigbtn.green { background: linear-gradient(135deg, #FFD329, #D59E06); color: #11130D; }
+.bingo-controls .bigbtn.green:hover { background: linear-gradient(135deg, #FFE46B, #E7B920); }
+.lobby-hero {
+  background-color: #07090D;
+  background-image: radial-gradient(ellipse at 82% 20%, rgba(30,55,78,.46), rgba(13,17,24,.88) 64%, #07090D 100%), url('casino-pattern.svg');
+  box-shadow: 0 16px 42px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.035);
+}
+.lobby-hero::before { background: radial-gradient(circle, rgba(255,211,41,.13), transparent 70%); }
+.lobby-hero-badge { background: var(--gold-bg); border-color: var(--gold-border); }
+
+/* Keep Keno's board and wager controls in the game viewport; only the number
+   strip scrolls sideways on narrow phones, never the whole game panel. */
+body.game-open .mobile-game-shell[data-game="keno"] .keno-game {
+  flex: 1 1 auto; min-height: 0; overflow: hidden; overscroll-behavior: none;
+}
+body.game-open .mobile-game-shell[data-game="keno"] .keno-main { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-board { flex: 0 0 auto; }
+body.game-open .mobile-game-shell[data-game="keno"] .keno-controls { max-height: none; overflow: hidden; }
+body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-game { overflow: hidden; }
+body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-controls { max-height: 100%; overflow-y: auto; }
+.chip#bauto.on { background: var(--gold); color: #11130D; border-color: var(--gold-bright); }
+
+.roulette-play-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, .72fr) minmax(0, 1.28fr);
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.roulette-wheel-panel, .roulette-bet-panel { min-width: 0; border: 1px solid var(--border); border-radius: 16px; padding: clamp(10px, 1.2vw, 18px); }
+.roulette-wheel-panel { display: flex; flex-direction: column; justify-content: center; background: radial-gradient(ellipse at 50% 40%, rgba(255,211,41,.08), transparent 60%), var(--surface-panel); }
+.roulette-wheel-panel .wheel-box { flex: 0 0 auto; margin: 0; }
+.roulette-wheel-panel #wheel { width: min(100%, 360px); height: auto; aspect-ratio: 1; }
+.roulette-wheel-panel .history { margin: 12px 0 0; }
+.roulette-bet-panel { display: flex; flex-direction: column; justify-content: center; gap: 10px; background: linear-gradient(155deg, #121923, #0D1118); }
+.roulette-bet-panel .rtable { margin: 0; gap: 3px; }
+.roulette-bet-panel .rtable button { min-height: 44px; border-color: rgba(255,255,255,.16); border-radius: 4px; }
+.roulette-bet-panel .rtable .red, .roulette-bet-panel .outside .red { background: #B51F31; }
+.roulette-bet-panel .rtable .black, .roulette-bet-panel .outside .black { background: #131820; }
+.roulette-bet-panel .rtable .zero { background: #08794F; }
+.roulette-bet-panel .outside .eo { background: #172B24; }
+.roulette-bet-panel .pick { margin: 0; color: var(--gold-bright); }
+.roulette-bet-panel #rgo { min-height: 50px; margin: 0; }
+.roulette-bet-panel .msg { min-height: 0; margin: 0; }
+
+@media (max-width: 1024px) {
+  .bingo-layout { grid-template-columns: minmax(0, 1fr) minmax(132px, 180px); gap: 12px; }
+  .bingo-card-wrap { width: min(100%, 58dvh, 560px); }
+  .roulette-play-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .roulette-wheel-panel, .roulette-bet-panel { padding: 8px; border-radius: 14px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] #gbody { display: flex; padding: 6px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout { display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; min-height: 0; overflow: hidden; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { flex: 0 0 auto; min-height: 0; padding: 4px; border-radius: 12px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .wheel-box { height: min(15dvh, 130px); }
+  body.game-open .mobile-game-shell[data-game="roulette"] #wheel { width: min(15dvh, 40vw, 130px); height: min(15dvh, 40vw, 130px); }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel .history { height: 22px; margin: 2px 0 0; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { flex: 1 1 auto; gap: 5px; min-height: 0; padding: 6px; overflow: hidden; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .rtable-wrap { flex: 0 0 auto; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .outside { gap: 4px; }
+  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #gbody { display: flex; }
+  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-play-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 34vw); grid-template-rows: minmax(0, 1fr); gap: 8px; }
+  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { grid-column: 1; grid-row: 1; }
+  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { grid-column: 2; grid-row: 1; }
+  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(32dvh, 34vw, 220px); height: min(32dvh, 34vw, 220px); }
+}
+
+@media (max-width: 600px) {
+  .bingo-layout { display: flex; flex-direction: column; gap: 10px; }
+  .bingo-right { display: grid; grid-template-columns: 1fr 72px; align-items: center; gap: 6px; width: 100%; }
+  .bingo-multiplier-table { grid-row: span 2; padding: 9px; }
+  .bingo-last-ball { width: 64px; height: 64px; min-height: 64px; font-size: 14px; }
+  .bingo-card-wrap { width: min(100%, 440px); }
+  .bingo-col-head { padding: 7px 2px; font-size: 15px; }
+  .bingo-controls { gap: 7px; }
+  .bingo-controls .bigbtn { flex: 1 1 auto; min-width: 110px; }
+  .roulette-bet-panel .rtable { min-width: 480px; grid-template-columns: 34px repeat(12, 34px); }
+  .roulette-bet-panel .rtable-wrap { overflow-x: auto; overscroll-behavior-inline: contain; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keno-num, .bingo-cell, .bingo-ball-called, .roulette-bet-panel button { animation: none !important; transition: none !important; }
+}
+
+/* Final ordering for the responsive Roulette layout. The existing full-screen
+   shell previously positioned its old direct children; these rules keep the
+   new wheel/table groups usable without changing the game flow. */
+body.game-open .mobile-game-shell[data-game="roulette"] #gbody { display: flex; }
+body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
+  display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; min-height: 0; overflow: hidden;
+}
+body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel {
+  flex: 0 0 auto; min-height: 0; padding: 4px; border-radius: 12px;
+}
+body.game-open .mobile-game-shell[data-game="roulette"] .wheel-box { height: min(15dvh, 130px); }
+body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(15dvh, 40vw, 130px); height: min(15dvh, 40vw, 130px); }
+body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel .history { height: 22px; margin: 2px 0 0; }
+body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { flex: 1 1 auto; gap: 5px; min-height: 0; padding: 6px; overflow: hidden; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #gbody { display: flex; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 40vw); grid-template-rows: minmax(0, 1fr); gap: 8px;
+}
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { grid-column: 1; grid-row: 1; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { grid-column: 2; grid-row: 1; }
+body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(32dvh, 34vw, 220px); height: min(32dvh, 34vw, 220px); }
+
+/* Override legacy game colors after their original rules so the design tokens
+   stay consistent across older game components and staff/customer pages. */
+.keno-num.selected { background: linear-gradient(145deg, var(--gold-bright), #D49F08); color: #17150B; }
+.bingo-cell.free { background: linear-gradient(145deg, #FFE46B, #C99008); }
+.bingo-cell.marked:not(.free) { background: linear-gradient(145deg, #937113, #59450C); }
+.bingo-controls .bigbtn.green { background: linear-gradient(135deg, #FFD329, #D59E06); color: #11130D; }
+.bingo-controls .bigbtn.green:hover { background: linear-gradient(135deg, #FFE46B, #E7B920); }

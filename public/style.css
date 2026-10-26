@@ -4,50 +4,51 @@
    ============================================================ */
 
 :root {
-  /* Surface colors: dark green-black hierarchy */
-  --bg: #0B0E0D;             /* Primary page background */
-  --bg-secondary: #101512;   /* Secondary page background */
-  --surface-panel: #151B17;  /* Elevated panels */
-  --surface-card: #1B221D;   /* Cards and secondary surfaces */
-  --surface-hover: #222A24;  /* Hover and active surfaces */
-  --surface-active: #29342C; /* Selected / pressed surfaces */
+  /* Near-black and slate surfaces, shared by customer and staff screens. */
+  --bg: #07090D;
+  --bg-secondary: #0D1118;
+  --surface-panel: #121923;
+  --surface-card: #121923;
+  --surface-hover: #1A2430;
+  --surface-active: #202D3A;
 
   /* Aliases for backwards compatibility */
-  --surface: #151B17;
-  --surface2: #1B221D;
-  --black: #0B0E0D;
-  --white: #F5F5F0;
+  --surface: #121923;
+  --surface2: #18212C;
+  --black: #07090D;
+  --white: #F5F7FA;
 
   /* Brand Colors: Antique Gold & Highlights */
-  --gold: #D6BD72;           /* Signature antique gold */
-  --gold-bright: #F2D98B;    /* Brighter gold for primary highlights */
-  --gold-muted: #A9965F;     /* Muted gold for borders & secondary accents */
-  --gold-dark: #8E7A43;      /* Deep gold accent */
-  --gold-bg: rgba(214, 189, 114, 0.08);
-  --gold-border: rgba(214, 189, 114, 0.32);
-  --gold-light: #F2D98B;
+  --gold: #FFD329;
+  --gold-bright: #FFE46B;
+  --gold-muted: #A8861D;
+  --gold-dark: #765C12;
+  --gold-bg: rgba(255, 211, 41, 0.08);
+  --gold-border: rgba(255, 211, 41, 0.28);
+  --gold-light: #FFE46B;
 
   /* Text colors */
-  --text: #F5F5F0;           /* Primary text */
-  --text-secondary: #B7BDB7; /* Secondary text */
-  --text-muted: #828A83;     /* Muted text */
+  --text: #F5F7FA;
+  --text-secondary: #B3BDCA;
+  --text-muted: #8996A5;
 
   /* Borders: low-contrast gray-green & subtle gold */
-  --border: #1E2822;
-  --border-soft: #17201A;
-  --border-subtle: #27342C;
-  --border-gold: rgba(214, 189, 114, 0.4);
+  --border: #25303C;
+  --border-soft: #1A232E;
+  --border-subtle: #344252;
+  --border-gold: rgba(255, 211, 41, 0.42);
 
   /* Status colors */
-  --green: #22c55e;
-  --green-bright: #4ade80;
-  --green-bg: rgba(34, 197, 94, 0.12);
-  --green-border: rgba(34, 197, 94, 0.3);
+  --green: #28C98B;
+  --green-bright: #59DDA8;
+  --green-bg: rgba(40, 201, 139, 0.12);
+  --green-border: rgba(40, 201, 139, 0.3);
 
-  --red: #ef4444;
-  --red-bright: #f87171;
-  --red-bg: rgba(239, 68, 68, 0.12);
-  --red-border: rgba(239, 68, 68, 0.3);
+  --red: #FF5364;
+  --red-bright: #FF7A87;
+  --red-bg: rgba(255, 83, 100, 0.12);
+  --red-border: rgba(255, 83, 100, 0.3);
+  --info: #48A9FF;
 
   /* Geometry & Shadows */
   --radius-xs: 6px;
@@ -58,7 +59,7 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.55);
-  --shadow-gold: 0 6px 24px rgba(214, 189, 114, 0.18);
+  --shadow-gold: 0 6px 24px rgba(255, 211, 41, 0.16);
 
   /* Typography */
   --font: 'Inter', 'Noto Sans Ethiopic', system-ui, -apple-system, sans-serif;
@@ -79,7 +80,7 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background: radial-gradient(ellipse at 70% -20%, rgba(40, 60, 78, .18), transparent 42%), var(--bg);
   color: var(--text);
   font-family: var(--font);
   font-size: 15px;
@@ -102,7 +103,7 @@ body {
   align-items: center;
   padding: 0 24px;
   height: 64px;
-  background: rgba(11, 14, 13, 0.95);
+  background: rgba(7, 9, 13, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   position: sticky;
@@ -123,8 +124,8 @@ body {
 }
 
 .logo {
-  background: linear-gradient(135deg, #F2D98B 0%, #D6BD72 60%, #A9965F 100%);
-  color: #0B0E0D;
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold) 65%, #C89D12);
+  color: #10120B;
   width: 38px;
   height: 38px;
   border-radius: 10px;
@@ -132,14 +133,14 @@ body {
   place-items: center;
   font-size: 20px;
   font-weight: 900;
-  box-shadow: 0 0 16px rgba(214, 189, 114, 0.3);
+  box-shadow: 0 0 16px rgba(255, 211, 41, 0.22);
   flex-shrink: 0;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .brand:hover .logo {
   transform: scale(1.05);
-  box-shadow: 0 0 22px rgba(214, 189, 114, 0.45);
+  box-shadow: 0 0 22px rgba(255, 211, 41, 0.34);
 }
 
 #brandName {
@@ -194,7 +195,7 @@ body {
 /* Top Accent Stripe */
 .stripe {
   height: 2px;
-  background: linear-gradient(90deg, transparent 0%, #A9965F 20%, #F2D98B 50%, #A9965F 80%, transparent 100%);
+  background: linear-gradient(90deg, transparent, var(--gold-muted) 20%, var(--gold-bright) 50%, var(--gold-muted) 80%, transparent);
   opacity: 0.6;
 }
 
@@ -241,11 +242,51 @@ body {
   background: rgba(214, 189, 114, 0.06);
 }
 
+/* A quiet, consistent focus treatment for keyboard and switch navigation. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
 /* ---- MAIN CONTAINER ---- */
 main {
   max-width: 1180px;
   margin: 0 auto;
   padding: 24px 20px 60px;
+}
+
+/* Desktop navigation becomes a compact app rail; mobile keeps its existing
+   bottom navigation and dedicated full-screen game shell. */
+@media (min-width: 1025px) {
+  body:has(#nav:not([hidden])):not(.game-open) {
+    display: grid;
+    grid-template-columns: 216px minmax(0, 1fr);
+    grid-template-rows: 64px minmax(0, 1fr);
+    align-items: start;
+    min-height: 100vh;
+  }
+  body:has(#nav:not([hidden])):not(.game-open) > .top { grid-column: 1 / -1; grid-row: 1; width: 100%; }
+  body:has(#nav:not([hidden])):not(.game-open) > .stripe { display: none; }
+  body:has(#nav:not([hidden])):not(.game-open) > #nav.tabs {
+    grid-column: 1; grid-row: 2; position: sticky; top: 64px; align-self: start;
+    display: flex; flex-direction: column; gap: 4px; width: 216px;
+    height: calc(100vh - 64px); max-height: calc(100dvh - 64px); overflow: auto;
+    padding: 16px 12px; border: 0; border-right: 1px solid var(--border);
+    background: rgba(13, 17, 24, .96);
+  }
+  body:has(#nav:not([hidden])):not(.game-open) > #nav.tabs button {
+    justify-content: flex-start; min-height: 44px; padding: 10px 12px;
+    border: 1px solid transparent; border-radius: 9px; color: var(--text-secondary);
+  }
+  body:has(#nav:not([hidden])):not(.game-open) > #nav.tabs button:hover { color: var(--text); background: rgba(255,255,255,.035); }
+  body:has(#nav:not([hidden])):not(.game-open) > #nav.tabs button.on {
+    color: #11130e; background: var(--gold); border-color: var(--gold-bright);
+    box-shadow: 0 5px 16px rgba(255, 211, 41, .14);
+  }
+  body:has(#nav:not([hidden])):not(.game-open) > main {
+    grid-column: 2; grid-row: 2; width: 100%; max-width: 1480px; margin: 0 auto;
+    padding: 26px clamp(20px, 3vw, 44px) 60px;
+  }
 }
 
 /* ---- CARDS & ELEVATED PANELS ---- */
@@ -343,8 +384,8 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--gold);
-  background: #141A16;
-  box-shadow: 0 0 0 3px rgba(214, 189, 114, 0.16);
+  background: var(--surface-hover);
+  box-shadow: 0 0 0 3px rgba(255, 211, 41, 0.14);
 }
 
 input::placeholder, textarea::placeholder {
@@ -438,15 +479,15 @@ button {
 
 /* Primary Gold Button */
 .btn-gold, .btn.alt {
-  background: linear-gradient(135deg, #F2D98B 0%, #D6BD72 65%, #A9965F 100%);
-  color: #0B0E0D;
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold) 68%, #D5AA18);
+  color: #11130D;
   border: none;
   font-weight: 800;
   box-shadow: 0 4px 14px rgba(214, 189, 114, 0.25);
 }
 
 .btn-gold:hover, .btn.alt:hover {
-  background: linear-gradient(135deg, #FFF0B3 0%, #E3CB7F 65%, #BAA56B 100%);
+  background: linear-gradient(135deg, #FFF0A5, var(--gold-bright) 65%, #DAB533);
   color: #000000;
   box-shadow: 0 6px 18px rgba(214, 189, 114, 0.4);
 }

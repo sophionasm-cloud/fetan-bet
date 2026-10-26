@@ -3207,14 +3207,20 @@ window.Games = (function () {
     const { t, esc } = C;
     let sel = null, spinning = false, everSpun = false, wheelA = 0, ballA = 0, ballR = 150, history = [];
     body.innerHTML = `
-      <div class="wheel-box"><canvas id="wheel"></canvas></div>
-      <div class="history" id="hist"></div>
-      <div class="rtable-wrap"><div class="rtable" id="rtab"></div></div>
-      <div class="outside" id="rout"></div>
-      <div class="pick" id="rpick">${esc(t('pick_prompt'))}</div>
-      <div id="rbet"></div>
-      <button class="bigbtn" id="rgo">${esc(t('spin'))}</button>
-      <div class="msg" id="rmsg"></div>`;
+      <div class="roulette-play-layout">
+        <section class="roulette-wheel-panel" aria-label="Roulette wheel and recent results">
+          <div class="wheel-box"><canvas id="wheel" aria-label="European roulette wheel"></canvas></div>
+          <div class="history" id="hist" aria-label="Recent roulette results"></div>
+        </section>
+        <section class="roulette-bet-panel" aria-label="Roulette betting table">
+          <div class="rtable-wrap"><div class="rtable" id="rtab"></div></div>
+          <div class="outside" id="rout"></div>
+          <div class="pick" id="rpick">${esc(t('pick_prompt'))}</div>
+          <div id="rbet"></div>
+          <button class="bigbtn" id="rgo">${esc(t('spin'))}</button>
+          <div class="msg" id="rmsg"></div>
+        </section>
+      </div>`;
 
     const bet = betBar($('rbet'));
     const tab = $('rtab');
