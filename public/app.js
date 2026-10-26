@@ -281,7 +281,12 @@ async function render(subMode = '') {
     const fn = views[tab] || (me.role === 'admin' ? adminView : me.role === 'agent' ? agentView : gamesView);
     await fn(app);
     renderA2hsHint(app, Boolean(gameRoute));
-  } catch (e) { fail(e); }
+  } catch (e) {
+    fail(e);
+    app.innerHTML = `<div class="card agent-api-error" role="alert"><div><b>This page could not be rendered.</b><p>${esc(getErrMsg(e))}</p></div><button type="button" class="btn btn-outline" id="view-retry">Retry</button></div>`;
+    const retry = $('view-retry');
+    if (retry) retry.onclick = () => render();
+  }
 }
 
 function renderA2hsHint(app, gameRoute) {
@@ -1202,18 +1207,37 @@ async function supportView(app) {
 // AGENT VIEW — Float Funding, Verification & Support Queue
 // =====================================================
 async function agentView(app) {
-  const [dp, da, dr, wp, wa, wr, fund, ticketsRes, perf, annRes] = await Promise.all([
-    api('/agent/deposits?status=pending'),
-    api('/agent/deposits?status=approved'),
-    api('/agent/deposits?status=rejected'),
-    api('/agent/withdrawals?status=pending'),
-    api('/agent/withdrawals?status=approved'),
-    api('/agent/withdrawals?status=rejected'),
-    api('/agent/funding').catch(() => ({ requests: [] })),
-    api('/agent/tickets').catch(() => ({ tickets: [] })),
-    api('/agent/performance').catch(() => ({})),
-    api('/announcements').catch(() => ({ announcements: [] })),
+  app.innerHTML = '<div class="card agent-loading" role="status"><span class="agent-loading-dot"></span>Loading Agent Dashboard…</div>';
+  const load = async (url, key, fallback = []) => {
+    try { return { value: await api(url), error: null }; }
+    catch (error) { return { value: { [key]: fallback }, error }; }
+  };
+  const [dpR, daR, drR, wpR, waR, wrR, fundR, ticketsR, perfR, annR] = await Promise.all([
+    load('/agent/deposits?status=pending', 'deposits'),
+    load('/agent/deposits?status=approved', 'deposits'),
+    load('/agent/deposits?status=rejected', 'deposits'),
+    load('/agent/withdrawals?status=pending', 'withdrawals'),
+    load('/agent/withdrawals?status=approved', 'withdrawals'),
+    load('/agent/withdrawals?status=rejected', 'withdrawals'),
+    load('/agent/funding', 'requests'),
+    load('/agent/tickets', 'tickets'),
+    load('/agent/performance', 'performance', {}),
+    load('/announcements', 'announcements'),
   ]);
+  const dp = dpR.value, da = daR.value, dr = drR.value;
+  const wp = wpR.value, wa = waR.value, wr = wrR.value;
+  const fund = fundR.value, ticketsRes = ticketsR.value;
+  const perf = perfR.value.performance || perfR.value;
+  const annRes = annR.value;
+  const agentErrors = [
+    ['Pending deposits', dpR.error], ['Approved deposits', daR.error], ['Rejected deposits', drR.error],
+    ['Pending withdrawals', wpR.error], ['Approved withdrawals', waR.error], ['Rejected withdrawals', wrR.error],
+    ['Funding requests', fundR.error], ['Support requests', ticketsR.error], ['Performance', perfR.error], ['Announcements', annR.error]
+  ];
+  const errorText = (error) => error?.message === 'SCHEMA_NOT_READY'
+    ? 'Deposit review database schema is unavailable. Migration 002 must be applied by an authorized operator.'
+    : getErrMsg(error);
+  const errorPanel = (label, error) => `<div class="agent-api-error" role="alert"><div><b>${esc(label)} could not be loaded</b><p>${esc(errorText(error))}</p></div><button type="button" class="btn btn-outline sm" data-agent-retry>Retry</button></div>`;
 
   const isDep = agentSubtab === 'deposits';
   const isWith = agentSubtab === 'withdrawals';
@@ -1221,7 +1245,7 @@ async function agentView(app) {
   const isFund = agentSubtab === 'funding';
   const isAnn = agentSubtab === 'announcements';
 
-  const pendingTickets = ticketsRes.tickets.filter((t) => t.status === 'open' || t.status === 'escalated');
+  const pendingTickets = (ticketsRes.tickets || []).filter((t) => t.status === 'open' || t.status === 'escalated');
 
   app.innerHTML = `
     <div class="section-head agent-dashboard-heading">
@@ -1229,11 +1253,12 @@ async function agentView(app) {
       <span class="tag approved">${esc(me.status || 'active')}</span>
     </div>
     <div class="agent-overview-cards" aria-label="Agent activity overview">
-      <div class="agent-overview-stat"><span aria-hidden="true">⬇</span><div><small>Pending deposits</small><b>${dp.deposits.length}</b></div></div>
-      <div class="agent-overview-stat"><span aria-hidden="true">⬆</span><div><small>Pending withdrawals</small><b>${wp.withdrawals.length}</b></div></div>
-      <div class="agent-overview-stat"><span aria-hidden="true">✓</span><div><small>Reviewed today</small><b>${(perf.today_deposits_count ?? 0) + (perf.today_withdrawals_count ?? 0)}</b><em>${perf.today_deposits_count ?? 0} deposits · ${perf.today_withdrawals_count ?? 0} withdrawals</em></div></div>
-      <div class="agent-overview-stat"><span aria-hidden="true">◉</span><div><small>Open support cases</small><b>${pendingTickets.length}</b></div></div>
+      <div class="agent-overview-stat"><span aria-hidden="true">⬇</span><div><small>Pending deposits</small><b>${dpR.error ? '—' : dp.deposits.length}</b></div></div>
+      <div class="agent-overview-stat"><span aria-hidden="true">⬆</span><div><small>Pending withdrawals</small><b>${wpR.error ? '—' : wp.withdrawals.length}</b></div></div>
+      <div class="agent-overview-stat"><span aria-hidden="true">✓</span><div><small>Reviewed today</small><b>${perfR.error ? '—' : (perf.today_deposits_count ?? 0) + (perf.today_withdrawals_count ?? 0)}</b><em>${perfR.error ? 'Unavailable' : `${perf.today_deposits_count ?? 0} deposits · ${perf.today_withdrawals_count ?? 0} withdrawals`}</em></div></div>
+      <div class="agent-overview-stat"><span aria-hidden="true">◉</span><div><small>Open support cases</small><b>${ticketsR.error ? '—' : pendingTickets.length}</b></div></div>
     </div>
+    ${agentErrors.filter(([, error]) => error).map(([label, error]) => errorPanel(label, error)).join('')}
     <!-- Agent Float Balance Banner -->
     <div class="agent-float-card">
       <div class="agent-float-info">
@@ -1244,7 +1269,7 @@ async function agentView(app) {
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <div class="stat" style="padding:8px 14px;background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
           <div class="stat-label">Today's Verified</div>
-          <b>${perf.today_deposits_count ?? 0} in · ${perf.today_withdrawals_count ?? 0} out</b>
+          <b>${perfR.error ? '—' : `${perf.today_deposits_count ?? 0} in · ${perf.today_withdrawals_count ?? 0} out`}</b>
         </div>
           <button id="toggle-funding-btn" class="btn btn-gold" style="width:auto;padding:10px 18px;font-size:13px">
             ⚡ ${esc(t('request_funding'))}
@@ -1293,7 +1318,7 @@ async function agentView(app) {
       <!-- TAB 1: CUSTOMER DEPOSITS -->
       ${isDep ? `
         <h3>${esc(t('pending_requests'))}</h3>
-        ${dp.deposits.length ? `
+        ${dpR.error ? errorPanel('Pending deposits', dpR.error) : dp.deposits.length ? `
           <div class="scroll"><table>
             <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>Receipt</th><th></th></tr>
             ${dp.deposits.map((d) => `<tr>
@@ -1312,7 +1337,7 @@ async function agentView(app) {
 
         <div class="divider"></div>
         <h3>${esc(t('decided_requests'))}</h3>
-        ${[...da.deposits, ...dr.deposits].length ? `
+        ${daR.error || drR.error ? errorPanel('Deposit review history', daR.error || drR.error) : [...da.deposits, ...dr.deposits].length ? `
           <div class="scroll"><table>
             <tr><th>${esc(t('date'))}</th><th>${esc(t('name'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('tx_ref'))}</th><th>Receipt</th><th>Reviewed by</th><th>${esc(t('status'))}</th></tr>
             ${[...da.deposits, ...dr.deposits].sort((x, y) => y.id - x.id).slice(0, 30).map((d) => `<tr>
@@ -1332,7 +1357,7 @@ async function agentView(app) {
       ${isWith ? `
         <p class="notice">${lang === 'am' ? 'የምናባዊ ክሬዲት ሙከራ ብቻ። እነዚህ ድርጊቶች ክፍያ አይልኩም፤ የክፍያ አቅራቢ ግንኙነት የለም።' : 'Virtual-credit demo only. These actions do not send a payout; the project has no payment-provider payout integration.'}</p>
         <h3>${esc(t('pending_withdrawals'))}</h3>
-        ${wp.withdrawals.length ? `
+        ${wpR.error ? errorPanel('Pending withdrawals', wpR.error) : wp.withdrawals.length ? `
           <div class="scroll"><table>
             <tr><th>${esc(t('name'))}</th><th>${esc(t('method'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('account_number'))}</th><th></th></tr>
             ${wp.withdrawals.map((w) => `<tr>
@@ -1350,7 +1375,7 @@ async function agentView(app) {
 
         <div class="divider"></div>
         <h3>${esc(t('decided_withdrawals'))}</h3>
-        ${[...wa.withdrawals, ...wr.withdrawals].length ? `
+        ${waR.error || wrR.error ? errorPanel('Withdrawal history', waR.error || wrR.error) : [...wa.withdrawals, ...wr.withdrawals].length ? `
           <div class="scroll"><table>
             <tr><th>${esc(t('name'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('account_number'))}</th><th>${esc(t('status'))}</th></tr>
             ${[...wa.withdrawals, ...wr.withdrawals].sort((x, y) => y.id - x.id).slice(0, 30).map((w) => `<tr>
@@ -1368,7 +1393,7 @@ async function agentView(app) {
         <div class="section-head">
           <h3>💬 Customer Support & Escalated Requests</h3>
         </div>
-        ${!ticketsRes.tickets.length ? emptyState('💬', t('no_data')) : `
+        ${ticketsR.error ? errorPanel('Support requests', ticketsR.error) : !ticketsRes.tickets.length ? emptyState('💬', t('no_data')) : `
           <div class="scroll"><table>
             <tr><th>Ticket ID</th><th>${esc(t('name'))}</th><th>Status</th><th>Escalation Reason</th><th>Date</th><th>Action</th></tr>
             ${ticketsRes.tickets.map((tk) => `<tr>
@@ -1413,23 +1438,23 @@ async function agentView(app) {
         <div class="grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:14px;margin-bottom:20px">
           <div class="stat">
             <div class="stat-label">Total Deposits Approved</div>
-            <b style="color:var(--gold-bright)">${perf.approved_deposits_count ?? 0}</b>
-            <div class="muted">${fmt(perf.approved_deposits_volume ?? 0)} ${esc(t('currency_etb'))}</div>
+            <b style="color:var(--gold-bright)">${perfR.error ? '—' : (perf.approved_deposits_count ?? 0)}</b>
+            <div class="muted">${perfR.error ? 'Unavailable' : `${fmt(perf.approved_deposits_volume ?? 0)} ${esc(t('currency_etb'))}`}</div>
           </div>
           <div class="stat">
             <div class="stat-label">Total Withdrawals Handled</div>
-            <b>${perf.approved_withdrawals_count ?? 0}</b>
-            <div class="muted">${fmt(perf.approved_withdrawals_volume ?? 0)} ${esc(t('currency_etb'))}</div>
+            <b>${perfR.error ? '—' : (perf.approved_withdrawals_count ?? 0)}</b>
+            <div class="muted">${perfR.error ? 'Unavailable' : `${fmt(perf.approved_withdrawals_volume ?? 0)} ${esc(t('currency_etb'))}`}</div>
           </div>
           <div class="stat">
             <div class="stat-label">Tickets Resolved</div>
-            <b style="color:var(--green)">${perf.tickets_resolved ?? 0}</b>
+            <b style="color:var(--green)">${perfR.error ? '—' : (perf.tickets_resolved ?? 0)}</b>
             <div class="muted">Customer issues closed</div>
           </div>
         </div>
 
         <h3>${esc(t('funding_history'))}</h3>
-        ${!fund.requests.length ? emptyState('⚡', t('no_data')) : `
+        ${fundR.error ? errorPanel('Funding requests', fundR.error) : !fund.requests.length ? emptyState('⚡', t('no_data')) : `
           <div class="scroll"><table>
             <tr><th>${esc(t('date'))}</th><th>${esc(t('amount'))}</th><th>${esc(t('message'))}</th><th>${esc(t('status'))}</th><th>${esc(t('admin_note'))}</th></tr>
             ${fund.requests.map((r) => `<tr>
@@ -1448,7 +1473,7 @@ async function agentView(app) {
         <div class="section-head">
           <h3>📢 Super Admin Instructions & Announcements</h3>
         </div>
-        ${!annRes.announcements.length ? emptyState('📢', 'No announcements posted yet.') : `
+        ${annR.error ? errorPanel('Announcements', annR.error) : !annRes.announcements.length ? emptyState('📢', 'No announcements posted yet.') : `
           ${annRes.announcements.map((a) => `
             <div class="announcement-box">
               <div class="announcement-box-title">📢 ${esc(a.title)}</div>
@@ -1459,6 +1484,14 @@ async function agentView(app) {
         `}
       ` : ''}
     </div>`;
+
+  app.querySelectorAll('[data-agent-retry]').forEach((button) => {
+    button.onclick = async () => {
+      button.disabled = true;
+      button.textContent = 'Loading…';
+      await agentView(app);
+    };
+  });
 
   $('toggle-funding-btn').onclick = () => {
     const box = $('funding-request-box');

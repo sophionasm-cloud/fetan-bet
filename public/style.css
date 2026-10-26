@@ -1413,11 +1413,21 @@ tr:hover td {
 .agent-overview-stat small { overflow: hidden; color: var(--text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .agent-overview-stat b { color: var(--text); font-family: var(--font-heading); font-size: 22px; line-height: 1.15; }
 .agent-overview-stat em { overflow: hidden; color: var(--text-muted); font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.agent-loading { display: flex; align-items: center; gap: 10px; min-height: 84px; color: var(--text-secondary); }
+.agent-loading-dot { width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 12px var(--gold-muted); animation: agent-loading-pulse 1s ease-in-out infinite alternate; }
+@keyframes agent-loading-pulse { to { opacity: .35; transform: scale(.78); } }
+.agent-api-error { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin: 0 0 10px; padding: 12px 14px; border: 1px solid var(--red-border); border-radius: 9px; background: var(--red-bg); }
+.agent-api-error > div { min-width: 0; }
+.agent-api-error b { color: var(--text); font-size: 13px; }
+.agent-api-error p { margin-top: 3px; color: var(--text-secondary); font-size: 12px; overflow-wrap: anywhere; }
+.agent-api-error button { width: auto; flex: 0 0 auto; margin: 0; }
 @media (max-width: 700px) {
   .agent-overview-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .agent-overview-stat { gap: 8px; padding: 9px; }
   .agent-overview-stat > span { width: 30px; height: 30px; flex-basis: 30px; }
   .agent-overview-stat b { font-size: 20px; }
+  .agent-api-error { align-items: flex-start; flex-direction: column; }
+  .agent-api-error button { width: 100%; }
 }
 
 /* ============================================================

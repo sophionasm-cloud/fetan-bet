@@ -61,7 +61,12 @@ const wrap = (fn) => async (req, res) => {
   } catch (e) {
     const known = ['INSUFFICIENT', 'INVALID', 'INVALID_FILE', 'VERIFICATION_REQUIRED', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE'];
     if (known.includes(e.message)) return res.status(400).json({ error: e.message });
-    console.error('[error]', e);
+    // Keep server-side diagnostics useful without logging SQL values or customer data.
+    console.error('[api failure]', { method: req.method, path: req.path, name: e.name, code: e.code, stack: e.stack });
+    // The current deposit receipt/review code depends on additive migration 002.
+    // Signal an unavailable schema clearly instead of presenting it as a bad request.
+    if (e.code === '42P01' || e.code === '42703') return res.status(503).json({ error: 'SCHEMA_NOT_READY' });
+    if (String(e.code || '').startsWith('08') || e.code === '57P01') return res.status(503).json({ error: 'SERVICE_UNAVAILABLE' });
     res.status(500).json({ error: 'GENERIC' });
   }
 };
