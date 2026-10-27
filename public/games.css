@@ -3488,20 +3488,8 @@ body.game-open .mobile-game-shell[data-game="keno"] .keno-board { grid-template-
 body.game-open .mobile-game-shell[data-game="keno"] .keno-num { min-width: 0; min-height: 32px; padding: 2px; font-size: 12px; }
 body.game-open .mobile-game-shell[data-game="keno"] #kbet { position: sticky; bottom: 0; z-index: 3; padding: 6px; background: var(--surface-panel); }
 body.game-open .mobile-game-shell[data-game="keno"] #kdraw { position: sticky; bottom: 0; z-index: 4; width: 100%; min-height: 48px; }
-body.game-open .mobile-game-shell[data-game="roulette"] .rtable-wrap { overflow-x: auto; overscroll-behavior-inline: contain; }
 body.game-open .mobile-game-shell[data-game="star"] .star-arena,
 body.game-open .mobile-game-shell[data-game="roulette"] .roulette-arena { min-width: 0; max-width: 100%; }
-body.game-open .mobile-game-shell[data-game="roulette"] #wheel { width: min(25dvh, 68vw); height: min(25dvh, 68vw); }
-body.game-open .mobile-game-shell[data-game="roulette"] .history { min-height: 18px; margin: 4px 0; }
-body.game-open .mobile-game-shell[data-game="roulette"] .rtable { min-width: 440px; margin-top: 4px; grid-template-columns: 36px repeat(12, minmax(30px, 1fr)); }
-body.game-open .mobile-game-shell[data-game="roulette"] .rtable button { min-height: 44px; padding: 3px 0; }
-body.game-open .mobile-game-shell[data-game="roulette"] .outside { margin-top: 4px; gap: 4px; }
-body.game-open .mobile-game-shell[data-game="roulette"] .outside button { min-height: 44px; padding: 4px 0; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betbar { margin: 4px 0; padding: 8px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chips { gap: 4px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chipb { width: 44px; height: 44px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow { gap: 6px; margin-top: 4px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rgo { min-height: 48px; }
 
 /* Star Spin and Roulette use compact, game-specific phone layouts so the play
    area and wager controls remain on the same screen. */
@@ -3560,62 +3548,6 @@ body.game-open .mobile-game-shell[data-game="star"] #sbet .betrow .chip { min-wi
 body.game-open .mobile-game-shell[data-game="star"] #sgo { flex: 0 0 48px; width: min(100%, 240px); min-height: 48px; margin: 0 auto; }
 body.game-open .mobile-game-shell[data-game="star"] #smsg { flex: 0 0 auto; min-height: 0; margin: 0; font-size: 15px; }
 
-body.game-open .mobile-game-shell[data-game="roulette"] #gbody {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  min-height: 0;
-  padding: 6px;
-  overflow: hidden;
-}
-body.game-open .mobile-game-shell[data-game="roulette"] .wheel-box { flex: 0 0 auto; height: min(17dvh, 150px); align-items: center; margin: 0; }
-body.game-open .mobile-game-shell[data-game="roulette"] #wheel { width: min(17dvh, 44vw, 150px); height: min(17dvh, 44vw, 150px); }
-body.game-open .mobile-game-shell[data-game="roulette"] .history {
-  flex: 0 0 auto;
-  height: 24px;
-  min-height: 0;
-  margin: 0;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-}
-body.game-open .mobile-game-shell[data-game="roulette"] .history:empty { display: none; }
-body.game-open .mobile-game-shell[data-game="roulette"] .hnum { flex: 0 0 auto; min-width: 24px; padding: 2px 4px; font-size: 11px; }
-body.game-open .mobile-game-shell[data-game="roulette"] .rtable-wrap {
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-inline: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gold) var(--surface-panel);
-}
-body.game-open .mobile-game-shell[data-game="roulette"] .rtable {
-  width: max-content;
-  min-width: 440px;
-  margin: 0;
-  grid-template-columns: 32px repeat(12, 32px);
-  gap: 2px;
-}
-body.game-open .mobile-game-shell[data-game="roulette"] .rtable button { width: 100%; height: 44px; min-height: 44px; padding: 2px; font-size: 13px; }
-body.game-open .mobile-game-shell[data-game="roulette"] .outside { flex: 0 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 0; }
-body.game-open .mobile-game-shell[data-game="roulette"] .outside button { min-width: 0; min-height: 44px; padding: 4px; font-size: 14px; }
-body.game-open .mobile-game-shell[data-game="roulette"] .pick { flex: 0 0 auto; min-height: 0; margin: 0; font-size: 13px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet { flex: 0 0 auto; min-width: 0; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betbar { margin: 0; padding: 6px; border-radius: 12px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chips { flex-wrap: nowrap; gap: 8px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .chipb { width: 44px; height: 44px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow { gap: 5px; margin-top: 5px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow input { width: 72px; min-width: 0; min-height: 42px; font-size: 16px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rbet .betrow .chip { min-width: 42px; min-height: 42px; padding: 4px; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rgo { flex: 0 0 48px; width: min(100%, 240px); min-height: 48px; margin: 0 auto; }
-body.game-open .mobile-game-shell[data-game="roulette"] #rmsg { flex: 0 0 auto; min-height: 0; margin: 0; font-size: 14px; }
-
 body.game-open.game-landscape .mobile-game-shell[data-game="star"] #gbody {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 32vw);
@@ -3629,24 +3561,6 @@ body.game-open.game-landscape .mobile-game-shell[data-game="star"] .sym { height
 body.game-open.game-landscape .mobile-game-shell[data-game="star"] #sbet { grid-column: 2; grid-row: 1; width: 100%; }
 body.game-open.game-landscape .mobile-game-shell[data-game="star"] #sgo { grid-column: 2; grid-row: 2; width: 100%; }
 body.game-open.game-landscape .mobile-game-shell[data-game="star"] #smsg { grid-column: 2; grid-row: 3; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #gbody {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 32vw);
-  grid-template-rows: minmax(74px, .55fr) auto minmax(98px, .8fr) auto auto;
-  gap: 4px 10px;
-  align-content: stretch;
-}
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .wheel-box { grid-column: 1; grid-row: 1; height: auto; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #wheel { width: min(22dvh, 28vw, 120px); height: min(22dvh, 28vw, 120px); }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .history { grid-column: 1; grid-row: 2; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .rtable-wrap { grid-column: 1; grid-row: 3; align-self: stretch; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .rtable { grid-template-columns: 30px repeat(12, 30px); }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .outside { grid-column: 1; grid-row: 4; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .pick { grid-column: 1; grid-row: 5; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #rbet { grid-column: 2; grid-row: 1 / 4; align-self: center; width: 100%; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #rgo { grid-column: 2; grid-row: 4; width: 100%; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #rmsg { grid-column: 2; grid-row: 5; }
-
 /* Keno 80: a compact number wall with a dedicated wager and payout panel. */
 .keno-game {
   display: grid;
@@ -3954,50 +3868,9 @@ body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-game { 
 body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-controls { max-height: 100%; overflow-y: auto; }
 .chip#bauto.on { background: var(--gold); color: #11130D; border-color: var(--gold-bright); }
 
-.roulette-play-layout {
-  display: grid;
-  grid-template-columns: minmax(250px, .72fr) minmax(0, 1.28fr);
-  gap: 16px;
-  align-items: stretch;
-  width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-}
-.roulette-wheel-panel, .roulette-bet-panel { min-width: 0; border: 1px solid var(--border); border-radius: 16px; padding: clamp(10px, 1.2vw, 18px); }
-.roulette-wheel-panel { display: flex; flex-direction: column; justify-content: center; background: radial-gradient(ellipse at 50% 40%, rgba(255,211,41,.08), transparent 60%), var(--surface-panel); }
-.roulette-wheel-panel .wheel-box { flex: 0 0 auto; margin: 0; }
-.roulette-wheel-panel #wheel { width: min(100%, 360px); height: auto; aspect-ratio: 1; }
-.roulette-wheel-panel .history { margin: 12px 0 0; }
-.roulette-bet-panel { display: flex; flex-direction: column; justify-content: center; gap: 10px; background: linear-gradient(155deg, #121923, #0D1118); }
-.roulette-bet-panel .rtable { margin: 0; gap: 3px; }
-.roulette-bet-panel .rtable button { min-height: 44px; border-color: rgba(255,255,255,.16); border-radius: 4px; }
-.roulette-bet-panel .rtable .red, .roulette-bet-panel .outside .red { background: #B51F31; }
-.roulette-bet-panel .rtable .black, .roulette-bet-panel .outside .black { background: #131820; }
-.roulette-bet-panel .rtable .zero { background: #08794F; }
-.roulette-bet-panel .outside .eo { background: #172B24; }
-.roulette-bet-panel .pick { margin: 0; color: var(--gold-bright); }
-.roulette-bet-panel #rgo { min-height: 50px; margin: 0; }
-.roulette-bet-panel .msg { min-height: 0; margin: 0; }
-
 @media (max-width: 1024px) {
   .bingo-layout { grid-template-columns: minmax(0, 1fr) minmax(132px, 180px); gap: 12px; }
   .bingo-card-wrap { width: min(100%, 58dvh, 560px); }
-  .roulette-play-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .roulette-wheel-panel, .roulette-bet-panel { padding: 8px; border-radius: 14px; }
-  body.game-open .mobile-game-shell[data-game="roulette"] #gbody { display: flex; padding: 6px; }
-  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout { display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; min-height: 0; overflow: hidden; }
-  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { flex: 0 0 auto; min-height: 0; padding: 4px; border-radius: 12px; }
-  body.game-open .mobile-game-shell[data-game="roulette"] .wheel-box { height: min(15dvh, 130px); }
-  body.game-open .mobile-game-shell[data-game="roulette"] #wheel { width: min(15dvh, 40vw, 130px); height: min(15dvh, 40vw, 130px); }
-  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel .history { height: 22px; margin: 2px 0 0; }
-  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { flex: 1 1 auto; gap: 5px; min-height: 0; padding: 6px; overflow: hidden; }
-  body.game-open .mobile-game-shell[data-game="roulette"] .rtable-wrap { flex: 0 0 auto; }
-  body.game-open .mobile-game-shell[data-game="roulette"] .outside { gap: 4px; }
-  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #gbody { display: flex; }
-  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-play-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 34vw); grid-template-rows: minmax(0, 1fr); gap: 8px; }
-  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { grid-column: 1; grid-row: 1; }
-  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { grid-column: 2; grid-row: 1; }
-  body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(32dvh, 34vw, 220px); height: min(32dvh, 34vw, 220px); }
 }
 
 @media (max-width: 600px) {
@@ -4009,40 +3882,154 @@ body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-control
   .bingo-col-head { padding: 7px 2px; font-size: 15px; }
   .bingo-controls { gap: 7px; }
   .bingo-controls .bigbtn { flex: 1 1 auto; min-width: 110px; }
-  .roulette-bet-panel .rtable { min-width: 480px; grid-template-columns: 34px repeat(12, 34px); }
-  .roulette-bet-panel .rtable-wrap { overflow-x: auto; overscroll-behavior-inline: contain; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .keno-num, .bingo-cell, .bingo-ball-called, .roulette-bet-panel button { animation: none !important; transition: none !important; }
 }
 
-/* Final ordering for the responsive Roulette layout. The existing full-screen
-   shell previously positioned its old direct children; these rules keep the
-   new wheel/table groups usable without changing the game flow. */
-body.game-open .mobile-game-shell[data-game="roulette"] #gbody { display: flex; }
-body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
-  display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; min-height: 0; overflow: hidden;
-}
-body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel {
-  flex: 0 0 auto; min-height: 0; padding: 4px; border-radius: 12px;
-}
-body.game-open .mobile-game-shell[data-game="roulette"] .wheel-box { height: min(15dvh, 130px); }
-body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(15dvh, 40vw, 130px); height: min(15dvh, 40vw, 130px); }
-body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel .history { height: 22px; margin: 2px 0 0; }
-body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { flex: 1 1 auto; gap: 5px; min-height: 0; padding: 6px; overflow: hidden; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] #gbody { display: flex; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 40vw); grid-template-rows: minmax(0, 1fr); gap: 8px;
-}
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { grid-column: 1; grid-row: 1; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { grid-column: 2; grid-row: 1; }
-body.game-open.game-landscape .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(32dvh, 34vw, 220px); height: min(32dvh, 34vw, 220px); }
-
 /* Override legacy game colors after their original rules so the design tokens
    stay consistent across older game components and staff/customer pages. */
 .keno-num.selected { background: linear-gradient(145deg, var(--gold-bright), #D49F08); color: #17150B; }
 .bingo-cell.free { background: linear-gradient(145deg, #FFE46B, #C99008); }
 .bingo-cell.marked:not(.free) { background: linear-gradient(145deg, #937113, #59450C); }
+
+/* European Roulette responsive layout. The grouped markup keeps the wheel and
+   betting controls together while the game shell provides the only mobile scroll area. */
+.roulette-play-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr);
+  align-items: stretch;
+  gap: clamp(10px, 1.5vw, 20px);
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.roulette-wheel-panel,
+.roulette-bet-panel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: clamp(10px, 1.2vw, 18px);
+}
+.roulette-wheel-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255,211,41,.08), transparent 60%), var(--surface-panel);
+}
+.roulette-wheel-panel .wheel-box {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  margin: 0;
+}
+.roulette-wheel-panel #wheel {
+  display: block;
+  width: min(100%, 440px, 42vw);
+  height: auto;
+  aspect-ratio: 1;
+}
+.roulette-wheel-panel .history { margin: 12px 0 0; }
+.roulette-bet-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(155deg, #121923, #0D1118);
+}
+.roulette-bet-panel .rtable-wrap { width: 100%; min-width: 0; }
+.roulette-bet-panel .rtable {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: clamp(32px, 3.2vw, 44px) repeat(12, minmax(0, 1fr));
+  gap: clamp(2px, .25vw, 4px);
+  margin: 0;
+}
+.roulette-bet-panel .rtable button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 2px 0;
+  border-color: rgba(255,255,255,.16);
+  border-radius: 4px;
+  font-size: clamp(11px, 1.05vw, 15px);
+}
+.roulette-bet-panel .rtable .red, .roulette-bet-panel .outside .red { background: #B51F31; }
+.roulette-bet-panel .rtable .black, .roulette-bet-panel .outside .black { background: #131820; }
+.roulette-bet-panel .rtable .zero { background: #08794F; }
+.roulette-bet-panel .outside .eo { background: #172B24; }
+.roulette-bet-panel .outside { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.roulette-bet-panel .outside button { min-width: 0; min-height: 44px; padding: 6px; }
+.roulette-bet-panel .pick { margin: 0; color: var(--gold-bright); }
+.roulette-bet-panel #rbet { min-width: 0; }
+.roulette-bet-panel #rbet .betbar { margin: 0; padding: 10px; }
+.roulette-bet-panel #rbet .chips { justify-content: center; gap: clamp(5px, 1vw, 10px); }
+.roulette-bet-panel #rbet .chipb { width: 46px; height: 46px; flex: 0 0 46px; }
+.roulette-bet-panel #rbet .betrow { justify-content: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.roulette-bet-panel #rbet .betrow input { width: 88px; min-width: 0; min-height: 44px; font-size: 16px; }
+.roulette-bet-panel #rbet .betrow .chip { min-width: 44px; min-height: 44px; }
+.roulette-bet-panel #rgo { width: min(100%, 320px); min-height: 50px; margin: 0 auto; }
+.roulette-bet-panel .msg { min-height: 0; margin: 0; }
+
+@media (max-width: 1024px) {
+  .roulette-play-layout { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .roulette-wheel-panel, .roulette-bet-panel { padding: 10px; border-radius: 14px; }
+  .roulette-wheel-panel #wheel { width: min(88vw, 38dvh, 390px); }
+  body.game-open .mobile-game-shell[data-game="roulette"] #gbody {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout { display: flex; flex-direction: column; gap: 8px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { padding: 8px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(88vw, 36dvh, 380px); }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel .history { margin-top: 8px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { gap: 8px; padding: 8px; overflow: visible; }
+}
+
+@media (max-width: 430px) {
+  .roulette-play-layout { gap: 8px; }
+  .roulette-wheel-panel, .roulette-bet-panel { padding: 7px; border-radius: 12px; }
+  .roulette-bet-panel .rtable { grid-template-columns: 30px repeat(12, minmax(0, 1fr)); gap: 2px; }
+  .roulette-bet-panel .rtable button { min-height: 42px; font-size: clamp(10px, 3.2vw, 13px); }
+  .roulette-bet-panel .outside { gap: 4px; }
+  .roulette-bet-panel #rbet .betbar { padding: 8px 6px; }
+  .roulette-bet-panel #rbet .chipb { width: 42px; height: 42px; flex-basis: 42px; }
+}
+
+@media (max-width: 360px) {
+  .roulette-bet-panel .rtable-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold) var(--surface-panel);
+  }
+  .roulette-bet-panel .rtable {
+    width: max-content;
+    min-width: 416px;
+    grid-template-columns: 32px repeat(12, 30px);
+    gap: 2px;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1024px) {
+  body.game-open .mobile-game-shell[data-game="roulette"] #gbody { padding: 6px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
+    display: grid;
+    grid-template-columns: minmax(230px, .85fr) minmax(0, 1.15fr);
+    align-items: start;
+    gap: 8px;
+  }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel,
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { padding: 8px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(40vw, 82dvh, 360px); }
+}
 .bingo-controls .bigbtn.green { background: linear-gradient(135deg, #FFD329, #D59E06); color: #11130D; }
 .bingo-controls .bigbtn.green:hover { background: linear-gradient(135deg, #FFE46B, #E7B920); }

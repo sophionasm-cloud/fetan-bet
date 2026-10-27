@@ -3246,9 +3246,8 @@ window.Games = (function () {
       sfx.tick();
     }));
 
-    const cv = $('wheel'), dpr = Math.min(window.devicePixelRatio || 1, 2), S = 320;
-    cv.width = S * dpr; cv.height = S * dpr;
-    const g = cv.getContext('2d'); g.scale(dpr, dpr);
+    const cv = $('wheel'), S = 320;
+    const g = cv.getContext('2d');
     const seg = (Math.PI * 2) / 37, cx = S / 2, cy = S / 2;
 
     function drawWheel() {
@@ -3324,6 +3323,27 @@ window.Games = (function () {
       g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 7, 0, 7); g.fill();
       g.shadowBlur = 0;
     }
+
+    // Match the backing store to the displayed wheel size and device pixel
+    // ratio so the canvas stays sharp as the responsive layout changes size.
+    let canvasSize = 0, canvasDpr = 0;
+    function syncCanvasResolution() {
+      const size = Math.max(1, cv.getBoundingClientRect().width);
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      if (Math.abs(size - canvasSize) < 1 && dpr === canvasDpr) return;
+      canvasSize = size;
+      canvasDpr = dpr;
+      cv.width = Math.round(size * dpr);
+      cv.height = Math.round(size * dpr);
+      g.setTransform((size * dpr) / S, 0, 0, (size * dpr) / S, 0, 0);
+      drawWheel();
+    }
+    syncCanvasResolution();
+    const wheelResizeObserver = new ResizeObserver(syncCanvasResolution);
+    wheelResizeObserver.observe(cv);
+    stopFns.push(() => wheelResizeObserver.disconnect());
+    window.addEventListener('resize', syncCanvasResolution, { passive: true });
+    stopFns.push(() => window.removeEventListener('resize', syncCanvasResolution));
 
     let alive = true; stopFns.push(() => (alive = false));
     (function idle() {
