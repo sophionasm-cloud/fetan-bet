@@ -143,42 +143,36 @@
 /* ---- GAME LOBBY GRID ---- */
 .lobby {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: clamp(12px, 1.5vw, 20px);
 }
 
 .gcard {
-  background: linear-gradient(165deg, #1B241E 0%, #121915 60%, #0D1310 100%);
+  min-width: 0;
+  padding: 0;
+  background: #101611;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 24px 20px 20px;
   cursor: pointer;
-  text-align: center;
+  text-align: left;
   color: #fff;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.gcard:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 24px rgba(214, 189, 114, 0.16);
-  border-color: var(--border-gold);
+  justify-content: flex-start;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .22);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
 .gcard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 90px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
-  pointer-events: none;
+  display: none;
+}
+
+.gcard:focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 3px; }
+@media (hover: hover) {
+  .gcard:hover { transform: translateY(-3px); border-color: var(--border-gold); box-shadow: 0 12px 26px rgba(0,0,0,.36); }
+  .gcard:hover .game-poster { transform: scale(1.035); }
 }
 
 /* Game Card Badges */
@@ -225,49 +219,49 @@
   border: 1px solid rgba(59, 130, 246, 0.4);
 }
 
-/* Card Icons */
+/* Game posters */
 .gcard-icon-wrap {
-  width: 76px;
-  height: 76px;
-  margin: 6px auto 14px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  margin: 0;
+  overflow: hidden;
+  background: #151b17;
   display: grid;
   place-items: center;
-  transition: transform 0.2s ease;
+  border: 0;
+  border-radius: 0;
 }
-
-.gcard:hover .gcard-icon-wrap {
-  transform: scale(1.1);
-}
-
-.gcard .big {
-  font-size: 44px;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
-  line-height: 1;
-}
-.gcard .game-art { display: grid; width: 56px; height: 56px; place-items: center; font-size: 0; }
-.gcard .game-art svg { display: block; width: 100%; height: 100%; }
+.game-poster { display: block; width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center; transition: transform .25s ease; }
+.poster-fallback { display: none; width: 30%; aspect-ratio: 1; place-items: center; }
+.poster-fallback svg { display: block; width: 100%; height: 100%; }
+.poster-missing .poster-fallback { display: grid; }
 
 .gcard h3 {
   font-family: var(--font-heading);
-  font-size: 21px;
+  min-width: 0;
+  padding: 12px 14px 0;
+  font-size: clamp(16px, 1.35vw, 20px);
   font-weight: 800;
   color: #FFFFFF;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   letter-spacing: 0.5px;
 }
 
 .gcard p {
+  min-width: 0;
+  padding: 0 14px;
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.45;
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 .gcard-meta {
-  margin-bottom: 16px;
+  min-width: 0;
+  margin: auto 0 0;
+  padding: 10px 14px 0;
 }
 
 .gcard-meta span {
@@ -282,20 +276,14 @@
 }
 
 .gcard .btn {
-  margin: 0;
-  padding: 11px;
+  margin: 10px 14px 14px;
+  padding: 10px 12px;
   font-size: 13.5px;
   font-weight: 800;
 }
 
 /* Distinct Card Accent Borders */
-.gcard.g1 { border-bottom: 2px solid #22c55e; }
-.gcard.g4 { border-bottom: 2px solid #38bdf8; }
-.gcard.g5 { border-bottom: 2px solid #f59e0b; }
-.gcard.g-keno { border-bottom: 2px solid #10b981; }
-.gcard.g-bingo { border-bottom: 2px solid #a855f7; }
-.gcard.g2 { border-bottom: 2px solid #f43f5e; }
-.gcard.g3 { border-bottom: 2px solid #eab308; }
+.gcard.g1, .gcard.g4, .gcard.g5, .gcard.g-keno, .gcard.g-bingo, .gcard.g2, .gcard.g3 { border-bottom: 1px solid var(--border); }
 
 /* ---- GAME STAGE ---- */
 .stage {
@@ -2953,7 +2941,7 @@
 @media (max-width: 768px) {
   .lobby-hero { padding: 26px 20px; }
   .lobby-hero-title { font-size: 32px; }
-  .lobby { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .lobby { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 14px; }
 }
 
 @media (max-width: 600px) {
@@ -2962,14 +2950,13 @@
   .lobby-hero-sub { font-size: 13px; }
   .hero-pill { font-size: 11px; padding: 4px 10px; }
   .gfilter { padding: 6px 12px; font-size: 12px; }
-  .lobby { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .gcard { padding: 16px 12px 14px; border-radius: 14px; }
-  .gcard-icon-wrap { width: 52px; height: 52px; border-radius: 14px; margin: 2px auto 8px; }
-  .gcard .big { font-size: 32px; }
-  .gcard h3 { font-size: 16px; }
-  .gcard p { font-size: 11.5px; margin-bottom: 8px; }
-  .gcard-meta span { font-size: 10px; padding: 2px 6px; }
-  .gcard .btn { padding: 8px; font-size: 12px; }
+  .lobby { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .gcard { border-radius: 13px; }
+  .gcard h3 { padding: 9px 10px 0; font-size: 15px; }
+  .gcard p { padding: 0 10px; font-size: 11px; }
+  .gcard-meta { padding: 8px 10px 0; }
+  .gcard-meta span { font-size: 9px; padding: 2px 6px; }
+  .gcard .btn { margin: 8px 10px 10px; padding: 8px; font-size: 12px; }
   .bigbtn { padding: 12px 30px; font-size: 16px; }
   .chipb { width: 44px; height: 44px; font-size: 13px; }
   .reelwin { width: 80px; height: 210px; }
@@ -2982,9 +2969,11 @@
 }
 
 @media (max-width: 400px) {
-  .lobby { grid-template-columns: 1fr; }
-  .gcard { padding: 18px 14px; }
-  .gcard .big { font-size: 44px; }
+  .lobby { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .gcard h3 { padding-inline: 8px; font-size: 14px; }
+  .gcard p { padding-inline: 8px; font-size: 10px; }
+  .gcard-meta { padding-inline: 8px; }
+  .gcard .btn { margin-inline: 8px; font-size: 11px; }
   .reelwin { width: 72px; height: 195px; }
   .sym { height: 65px; font-size: 38px; line-height: 65px; }
   .mines-grid { gap: 4px; max-width: 290px; }
@@ -3885,7 +3874,9 @@ body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-control
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .keno-num, .bingo-cell, .bingo-ball-called, .roulette-bet-panel button { animation: none !important; transition: none !important; }
+  .keno-num, .bingo-cell, .bingo-ball-called, .roulette-bet-panel button,
+  .gcard, .game-poster { animation: none !important; transition: none !important; }
+  .gcard:hover, .gcard:hover .game-poster { transform: none; }
 }
 
 /* Override legacy game colors after their original rules so the design tokens

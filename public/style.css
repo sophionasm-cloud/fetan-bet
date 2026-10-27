@@ -1825,28 +1825,25 @@ body.mobile-app:not(.game-open) .lobby-hero-sub { font-size: 13px; margin-bottom
 body.mobile-app:not(.game-open) .lobby-nav-bar { align-items: flex-start; gap: 8px; margin-bottom: 12px; }
 body.mobile-app:not(.game-open) .lobby-filter-pills { gap: 6px; }
 body.mobile-app:not(.game-open) .gfilter { min-height: 40px; padding: 7px 10px; }
-body.mobile-app:not(.game-open) .lobby { display: flex; flex-direction: column; gap: 10px; }
+body.mobile-app:not(.game-open) .lobby { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; }
 body.mobile-app:not(.game-open) .gcard {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) 76px;
-  grid-template-areas: "icon title action" "icon desc action" "icon meta action";
-  align-items: center;
-  column-gap: 10px;
-  row-gap: 2px;
-  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
   min-width: 0;
   text-align: left;
 }
-body.mobile-app:not(.game-open) .gcard-icon-wrap { grid-area: icon; width: 48px; height: 48px; margin: 0; border-radius: 14px; }
-body.mobile-app:not(.game-open) .gcard .big { font-size: 28px; }
-body.mobile-app:not(.game-open) .gcard-icon-wrap > .game-art { display: grid; width: 38px; height: 38px; place-items: center; font-size: 0; }
-body.mobile-app:not(.game-open) .gcard-icon-wrap > .game-art svg { display: block; width: 100%; height: 100%; }
-body.mobile-app:not(.game-open) .gcard h3 { grid-area: title; min-width: 0; margin: 0; padding-right: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
-body.mobile-app:not(.game-open) .gcard p { grid-area: desc; display: -webkit-box; min-width: 0; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 11px; line-height: 1.35; }
-body.mobile-app:not(.game-open) .gcard-meta { grid-area: meta; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.mobile-app:not(.game-open) .gcard-icon-wrap { width: 100%; height: auto; aspect-ratio: 1 / 1; margin: 0; border: 0; border-radius: 0; }
+body.mobile-app:not(.game-open) .gcard h3 { min-width: 0; padding: 9px 10px 0; margin: 0 0 4px; overflow-wrap: anywhere; white-space: normal; font-size: 16px; }
+body.mobile-app:not(.game-open) .gcard p { display: -webkit-box; min-width: 0; padding: 0 10px; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 11px; line-height: 1.35; }
+body.mobile-app:not(.game-open) .gcard-meta { min-width: 0; margin: auto 0 0; padding: 8px 10px 0; overflow: hidden; }
 body.mobile-app:not(.game-open) .gcard-meta span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 9px; }
-body.mobile-app:not(.game-open) .gcard .btn { grid-area: action; align-self: center; min-width: 68px; min-height: 44px; padding: 6px; font-size: 11px; }
+body.mobile-app:not(.game-open) .gcard .btn { align-self: stretch; min-width: 0; min-height: 44px; margin: 8px 10px 10px; padding: 6px; font-size: 11px; text-align: center; }
 body.mobile-app:not(.game-open) .gcard-badge { top: 5px; right: 7px; padding: 2px 5px; font-size: 8px; }
+@media (max-width: 600px) {
+  body.mobile-app:not(.game-open) .lobby { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
 .profile-page { max-width: 760px; margin-inline: auto; }
 .profile-page-heading { display: flex; align-items: center; gap: 14px; }
 .profile-page-heading .avatar { flex: 0 0 52px; width: 52px; height: 52px; }
