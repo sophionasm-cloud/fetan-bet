@@ -2216,6 +2216,9 @@ window.Games = (function () {
     let st = C.roadState || { active: false, balance: 100000, difficulty: 'easy', ladder: [], maxSteps: 24, next: 1.00, next_crash_chance: 1.8 };
     let curDiff = st.difficulty || 'easy';
     let busy = false;
+    let roadRoundSerial = 0;
+    let resultShownForRound = -1;
+    let closeResultModal = null;
     let currentBetCents = 1000; // 10 credits default
     let activeSubTab = 'bets';
     let roundHistory = [];
@@ -2300,10 +2303,10 @@ window.Games = (function () {
               <button class="road-step-btn" id="bet-max" type="button">MAX</button>
             </div>
             <div class="road-chips-group">
-              <button class="road-chip-btn" id="chip-1" type="button">🪙 1</button>
-              <button class="road-chip-btn" id="chip-2" type="button">🪙 2</button>
-              <button class="road-chip-btn" id="chip-5" type="button">🪙 5</button>
-              <button class="road-chip-btn" id="chip-10" type="button">🪙 10</button>
+              <button class="road-chip-btn" id="chip-1" type="button">1</button>
+              <button class="road-chip-btn" id="chip-2" type="button">2</button>
+              <button class="road-chip-btn" id="chip-5" type="button">5</button>
+              <button class="road-chip-btn" id="chip-10" type="button">10</button>
               <button class="road-chip-btn" id="chip-half" type="button">½</button>
               <button class="road-chip-btn" id="chip-double" type="button">2×</button>
             </div>
@@ -2385,6 +2388,46 @@ window.Games = (function () {
 
     // Rules modal
     $('road-how-btn').onclick = () => showRulesModal();
+    stopFns.push(() => { if (closeResultModal) closeResultModal(); });
+    function showRoadResult(kind, result, stake) {
+      if (resultShownForRound === roadRoundSerial) return;
+      resultShownForRound = roadRoundSerial;
+      const slot = $('road-modal-slot');
+      if (!slot) return;
+      const net = Number(result.net) || 0;
+      const gross = Number(result.payout) || 0;
+      const isCrash = kind === 'crash';
+      const isWin = !isCrash && net > 0;
+      const isRefund = !isCrash && net === 0;
+      const icon = isCrash ? '💥' : isWin ? '🎉' : '🪙';
+      const title = isCrash ? t('road_result_crashed') : isWin ? `${t('road_result_win')}${C.fmt(net)}!` : isRefund ? t('road_result_refund') : t('road_result_complete');
+      const subtitle = isCrash ? t('road_result_try_again') : isWin ? t('road_result_congrats') : isRefund ? t('road_result_refund_note') : t('road_result_complete_note');
+      const detail = isCrash
+        ? `<p class="road-result-detail">${esc(t('road_result_lost_stake'))} ${C.fmt(stake)}</p>`
+        : `<p class="road-result-detail">${esc(t('road_result_gross'))} ${C.fmt(gross)}${net < 0 ? ` · ${esc(t('road_result_net_loss'))} ${C.fmt(-net)}` : ''}</p>`;
+      slot.innerHTML = `
+        <div class="road-modal-overlay road-result-overlay" id="road-result-overlay">
+          <section class="road-modal-box road-result-card ${isCrash ? 'is-loss' : 'is-win'}" role="dialog" aria-modal="true" aria-labelledby="road-result-title">
+            <div class="road-result-icon" aria-hidden="true">${icon}</div>
+            <h2 class="road-result-title" id="road-result-title">${esc(title)}</h2>
+            <p class="road-result-subtitle">${esc(subtitle)}</p>
+            ${detail}
+            <button class="road-result-close" id="road-result-close" type="button">${esc(t('close') || 'Close')}</button>
+          </section>
+        </div>`;
+      const close = () => {
+        slot.innerHTML = '';
+        document.removeEventListener('keydown', onKeyDown);
+        if (closeResultModal === close) closeResultModal = null;
+      };
+      const onKeyDown = (event) => { if (event.key === 'Escape') close(); };
+      closeResultModal = close;
+      $('road-result-close').onclick = close;
+      $('road-result-overlay').onclick = (event) => { if (event.target.id === 'road-result-overlay') close(); };
+      document.addEventListener('keydown', onKeyDown);
+      $('road-result-close').focus();
+    }
+
     function showRulesModal() {
       const slot = $('road-modal-slot');
       if (!slot) return;
@@ -3069,6 +3112,7 @@ window.Games = (function () {
             client_seed: customClientSeed
           });
           C.setBalance(st.balance);
+          roadRoundSerial++;
           const chicken = $('road-chicken');
           if (chicken) chicken.classList.remove('is-dead', 'is-win', 'is-hopping');
           renderScene(true); // Full reset: all lanes active, traffic in every lane
@@ -3142,9 +3186,9 @@ window.Games = (function () {
             chicken.classList.add('is-dead');
           }
           spawnFeathers(laneEl);
-          say($('rmsg'), `💥 ${esc(t('crashed'))}: ${grossNetText(r.payout, st.bet)} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'lose');
+          say($('rmsg'), '');
           sfx.lose();
-          await sleep(1400);
+          showRoadResult('crash', r, st.bet);
 
           isCrashAnimActive = false;
           st = {
@@ -3172,8 +3216,8 @@ window.Games = (function () {
           }
           sfx.coin();
           if (r.net > 0) { sfx.win(); coinRain(stage); }
-          say($('rmsg'), `${r.net === 0 ? 'Stake returned' : 'Round complete'} · ${grossNetText(r.payout, st.bet)} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, r.net > 0 ? 'win' : '');
-          await sleep(1400);
+          say($('rmsg'), '');
+          showRoadResult('complete', r, st.bet);
 
           st = {
             active: false,
@@ -3222,8 +3266,8 @@ window.Games = (function () {
           chicken.classList.add('is-win');
         }
         if (r.net > 0) { sfx.win(); coinRain(stage); }
-        say($('rmsg'), `${r.net === 0 ? 'Stake returned' : 'Cashout'} · ${grossNetText(r.payout, st.bet)} (×${r.mult})`, r.net > 0 ? 'win' : '');
-        await sleep(1200);
+        say($('rmsg'), '');
+        showRoadResult('cashout', r, st.bet);
 
         st = {
           active: false,
