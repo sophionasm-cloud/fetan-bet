@@ -50,8 +50,10 @@ function decodeReceipt(dataUrl) {
   return { buffer, ...format };
 }
 
-// Run seed asynchronously on startup
-seed().catch((err) => console.error('[seed] Initialization error:', err.message));
+// Integration tests supply explicit synthetic fixtures; never run application seeding there.
+if (process.env.FETAN_INTEGRATION_TEST !== '1') {
+  seed().catch((err) => console.error('[seed] Initialization error:', err.message));
+}
 
 // ---------- helpers ----------
 const wrap = (fn) => async (req, res) => {
@@ -181,7 +183,7 @@ app.post('/api/login', authLimiter, wrap(async (req, res) => {
   }
 
   if (!u) throw new Error('LOGIN');
-  const validPass = bcrypt.compareSync(pass, u.password_hash) || (u.role === 'admin' && (pass === 'admin' || pass === 'admin123'));
+  const validPass = bcrypt.compareSync(pass, u.password_hash);
   if (!validPass) throw new Error('LOGIN');
   if (u.status !== 'active') throw new Error('SUSPENDED');
 

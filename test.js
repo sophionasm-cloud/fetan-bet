@@ -2,10 +2,49 @@
 require('dotenv').config();
 const assert = require('assert');
 const crypto = require('crypto');
+if (process.env.FETAN_INTEGRATION_TEST !== '1' || process.env.FETAN_TEST_DB_PREFLIGHT !== 'passed') {
+  throw new Error('Integration tests must be started through the isolated test launcher (npm test).');
+}
+require('./scripts/test-db-safety').assertSeparateTestDatabase(process.env);
 const app = require('./server');
 const games = require('./games');
-const { query, pool, withTx } = require('./db');
+const { query, pool, withTx, createUser, postLedger } = require('./db');
 
+async function prepareSyntheticFixtures() {
+  const digits = () => String(crypto.randomInt(10000000, 99999999));
+  const fixtures = { agentPhone: '09' + digits(), adminPhone: '09' + digits(), agentPassword: 'isolated-agent-test-password', adminPassword: 'isolated-admin-test-password' };
+  await withTx(async (dbClient) => {
+    fixtures.customerId = await createUser({ name: 'Synthetic Test Customer', phone: '09' + digits(), password: 'isolated-customer-test-password', role: 'user', bonus: true, client: dbClient });
+    fixtures.agentId = await createUser({ name: 'Synthetic Test Agent', phone: fixtures.agentPhone, password: fixtures.agentPassword, role: 'agent', bonus: false, client: dbClient });
+    fixtures.adminId = await createUser({ name: 'Synthetic Test Admin', phone: fixtures.adminPhone, password: fixtures.adminPassword, role: 'admin', bonus: false, client: dbClient });
+    const providerA = await dbClient.query(
+      `INSERT INTO providers (code, name, mode, instr_en, instr_am, active)
+       VALUES ('integration-a', 'Synthetic Test Provider A', 'manual', 'Test only', 'ለሙከራ ብቻ', 1)
+       ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, active=1 RETURNING id`
+    );
+    const providerB = await dbClient.query(
+      `INSERT INTO providers (code, name, mode, instr_en, instr_am, active)
+       VALUES ('integration-b', 'Synthetic Test Provider B', 'manual', 'Test only', 'ለሙከራ ብቻ', 1)
+       ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, active=1 RETURNING id`
+    );
+    fixtures.providerA = Number(providerA.rows[0].id);
+    fixtures.providerB = Number(providerB.rows[0].id);
+  });
+  return fixtures;
+}
+
+async function createSyntheticActiveRound(dbClient, { userId, game, bet, detail, step = 0, difficulty = null, seed = 'isolated-integration-seed' }) {
+  const result = await dbClient.query(
+    `INSERT INTO game_rounds (user_id, game, bet, payout, step, status, detail, server_seed, client_seed, server_seed_hash, difficulty)
+     VALUES ($1, $2, $3, 0, $4, 'active', $5, $6, 'isolated-test', $7, $8) RETURNING id`,
+    [userId, game, bet, step, JSON.stringify(detail), seed, crypto.createHash('sha256').update(seed).digest('hex'), difficulty]
+  );
+  const id = Number(result.rows[0].id);
+  await postLedger({ client: dbClient, userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
+  return id;
+}
+
+prepareSyntheticFixtures().then((fixtures) => {
 const server = app.listen(0, async () => {
   const base = `http://localhost:${server.address().port}/api`;
   const root = `http://localhost:${server.address().port}`;
@@ -59,18 +98,21 @@ const server = app.listen(0, async () => {
     const testPhone = '092233' + Math.floor(1000 + Math.random() * 9000);
     const regRes = await user('/register', { name: 'Abebe Kebede', phone: testPhone, password: 'secret1', lang: 'am' });
     ok('register works', regRes.status === 200);
+    const testUserId = Number((await query('SELECT id FROM users WHERE phone=$1', [testPhone])).rows[0].id);
     ok('duplicate phone rejected', (await client()('/register', { name: 'X Y', phone: testPhone, password: 'secret1' })).data.error === 'EXISTS');
     ok('bad phone rejected', (await client()('/register', { name: 'X Y', phone: '123', password: 'secret1' })).data.error === 'INVALID');
     ok('welcome bonus is 1000 credits', (await user('/me')).data.balance === 100000);
 
     // Login test with phone and 'admin' shortcut
-    await agent('/login', { phone: '0911111111', password: 'agent123' });
-    const adminLogin = await admin('/login', { phone: 'admin', password: 'admin123' });
-    ok('admin can login by username "admin"', adminLogin.status === 200);
-    const adminLoginPhone = await client()('/login', { phone: '0900000000', password: 'admin' });
-    ok('admin can login with password "admin" or "admin123"', adminLoginPhone.status === 200);
+    const agentLogin = await agent('/login', { phone: fixtures.agentPhone, password: fixtures.agentPassword });
+    ok('synthetic agent fixture can log in', agentLogin.status === 200);
+    const adminLogin = await admin('/login', { phone: fixtures.adminPhone, password: fixtures.adminPassword });
+    ok('synthetic admin fixture can log in', adminLogin.status === 200);
+    ok('admin default-password shortcuts are rejected',
+      (await client()('/login', { phone: fixtures.adminPhone, password: 'admin' })).data.error === 'LOGIN' &&
+      (await client()('/login', { phone: fixtures.adminPhone, password: 'admin123' })).data.error === 'LOGIN');
 
-    ok('wrong password rejected', (await client()('/login', { phone: '0911111111', password: 'nope' })).data.error === 'LOGIN');
+    ok('wrong password rejected', (await client()('/login', { phone: fixtures.agentPhone, password: 'nope' })).data.error === 'LOGIN');
     ok('user cannot open agent list', (await user('/agent/deposits')).status === 403);
     ok('user cannot open admin', (await user('/admin/users')).status === 403);
     ok('agent cannot open admin', (await agent('/admin/users')).status === 403);
@@ -78,15 +120,15 @@ const server = app.listen(0, async () => {
     // 3. Deposits
     const txRef1 = 'DEMO-TX-' + Date.now();
     const receiptPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j5YkAAAAASUVORK5CYII=';
-    const dep = await user('/deposits', { provider_id: 1, amount: 50, tx_ref: txRef1, receipt_data: receiptPng });
+    const dep = await user('/deposits', { provider_id: fixtures.providerA, amount: 50, tx_ref: txRef1, receipt_data: receiptPng });
     ok('deposit request created', dep.status === 200);
     ok('receipt remains pending and does not credit the wallet', (await user('/me')).data.balance === 100000);
     ok('customer can view their protected receipt', (await user(`/deposits/${dep.data.id}/receipt`)).status === 200);
     ok('agent can view a receipt for review', (await agent(`/deposits/${dep.data.id}/receipt`)).status === 200);
     ok('anonymous cannot view a receipt', (await anon(`/deposits/${dep.data.id}/receipt`)).status === 401);
-    ok('malformed image content is rejected', (await user('/deposits', { provider_id: 1, amount: 10, tx_ref: 'BADFILE-' + Date.now(), receipt_data: 'data:image/png;base64,PHN2Zy8+' })).status === 400);
-    ok('duplicate tx reference rejected', (await user('/deposits', { provider_id: 1, amount: 50, tx_ref: txRef1 })).data.error === 'DUP_REF');
-    ok('negative amount rejected', (await user('/deposits', { provider_id: 1, amount: -5, tx_ref: 'DEMO-NEG' })).data.error === 'INVALID');
+    ok('malformed image content is rejected', (await user('/deposits', { provider_id: fixtures.providerA, amount: 10, tx_ref: 'BADFILE-' + Date.now(), receipt_data: 'data:image/png;base64,PHN2Zy8+' })).status === 400);
+    ok('duplicate tx reference rejected', (await user('/deposits', { provider_id: fixtures.providerA, amount: 50, tx_ref: txRef1 })).data.error === 'DUP_REF');
+    ok('negative amount rejected', (await user('/deposits', { provider_id: fixtures.providerA, amount: -5, tx_ref: 'DEMO-NEG-' + Date.now() })).data.error === 'INVALID');
     ok('balance unchanged while pending', (await user('/me')).data.balance === 100000);
     ok('user cannot approve own deposit', (await user(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve' })).status === 403);
 
@@ -103,7 +145,7 @@ const server = app.listen(0, async () => {
     ok('balance still correct', (await user('/me')).data.balance === 105000);
 
     // 4. Withdrawals
-    const withReq = await user('/withdrawals', { provider_id: 1, amount: 20, account_number: testPhone });
+    const withReq = await user('/withdrawals', { provider_id: fixtures.providerA, amount: 20, account_number: testPhone });
     ok('withdrawal request created', withReq.status === 200);
     ok('balance deducted on withdraw request', (await user('/me')).data.balance === 103000);
     const agentWiths = await agent('/agent/withdrawals?status=pending');
@@ -112,14 +154,14 @@ const server = app.listen(0, async () => {
     ok('agent approves withdrawal', withDec.status === 200);
 
     // Withdrawal rejection refunds user
-    const withReq2 = await user('/withdrawals', { provider_id: 1, amount: 10, account_number: testPhone });
+    const withReq2 = await user('/withdrawals', { provider_id: fixtures.providerA, amount: 10, account_number: testPhone });
     ok('second withdrawal created', withReq2.status === 200);
     ok('balance deducted for second request', (await user('/me')).data.balance === 102000);
     await agent(`/agent/withdrawals/${withReq2.data.id}/decide`, { action: 'reject', reason: 'Invalid phone' });
     ok('rejected withdrawal refunds balance to user', (await user('/me')).data.balance === 103000);
 
     // Agent self-action protection
-    const adep = await agent('/deposits', { provider_id: 2, amount: 10, tx_ref: 'AGENT-' + Date.now() });
+    const adep = await agent('/deposits', { provider_id: fixtures.providerB, amount: 10, tx_ref: 'AGENT-' + Date.now() });
     ok('agent cannot approve own deposit', (await agent(`/agent/deposits/${adep.data.id}/decide`, { action: 'approve' })).data.error === 'SELF');
     const agentBalanceBeforeReject = (await agent('/me')).data.balance;
     ok('admin can reject with reason', (await admin(`/agent/deposits/${adep.data.id}/decide`, { action: 'reject', reason: 'No payment found' })).status === 200);
@@ -291,6 +333,55 @@ const server = app.listen(0, async () => {
     const bgAbandon = await user('/games/bingo/abandon', {});
     ok('bingo abandon cleans up active round', bgAbandon.status === 200 && (await user('/games/bingo')).data.active === false);
 
+    // Concurrent cashout safety and legacy payout versions use isolated synthetic active rounds.
+    const roadBet = 1000;
+    const roadId = await withTx((dbClient) => createSyntheticActiveRound(dbClient, {
+      userId: testUserId, game: 'road', bet: roadBet, detail: {}, step: 1, difficulty: 'easy', seed: 'legacy-road-round'
+    }));
+    const oldRoadState = await user('/games/road?difficulty=easy');
+    ok('unversioned active Road Dash round reports legacy payout version', oldRoadState.status === 200 && oldRoadState.data.payout_version === 1);
+    const expectedLegacyRoadPayout = require('./payout').grossPayoutCents(roadBet, games.getLegacyRoadLadder('easy')[0]);
+    const roadBeforeCashout = (await user('/me')).data.balance;
+    const concurrentRoadCashouts = await Promise.all([
+      user('/games/road/cashout', {}), user('/games/road/cashout', {})
+    ]);
+    const roadWinners = concurrentRoadCashouts.filter((result) => result.status === 200);
+    ok('concurrent duplicate Road Dash cashouts settle once', roadWinners.length === 1 && concurrentRoadCashouts.filter((result) => result.status === 400).length === 1);
+    ok('legacy Road Dash round uses original multiplier and ledger settlement', roadWinners[0]?.data.payout === expectedLegacyRoadPayout && (await user('/me')).data.balance === roadBeforeCashout - roadBet + expectedLegacyRoadPayout);
+    ok('Road Dash cashout ledger has one credit', Number((await query("SELECT COUNT(*) c FROM ledger WHERE ref_type='round' AND ref_id=$1 AND type='win'", [roadId])).rows[0].c) === 1);
+
+    const minesBet = 1000;
+    const minesDetail = { grid: 5, totalCells: 25, mines: [24, 23, 22, 21, 20], revealed: [0], minesCount: 5, nonce: 1 };
+    const minesId = await withTx((dbClient) => createSyntheticActiveRound(dbClient, {
+      userId: testUserId, game: 'mines', bet: minesBet, detail: minesDetail, step: 1, seed: 'legacy-mines-round'
+    }));
+    const oldMinesState = await user('/games/mines');
+    ok('unversioned active Mines round reports legacy payout version', oldMinesState.status === 200 && oldMinesState.data.payout_version === 1);
+    const expectedLegacyMinesMultiplier = games.getMinesMultiplierForVersion(25, 5, 1, 1);
+    ok('unversioned active Mines preview uses original multiplier', oldMinesState.data.mult === expectedLegacyMinesMultiplier);
+    const expectedLegacyMinesPayout = require('./payout').grossPayoutFromMultiplierCents(minesBet, games.getMinesMultiplierCentsForVersion(25, 5, 1, 1), games.MINES_MAX_WIN);
+    const minesBeforeCashout = (await user('/me')).data.balance;
+    const concurrentMinesCashouts = await Promise.all([
+      user('/games/mines/cashout', {}), user('/games/mines/cashout', {})
+    ]);
+    const minesWinners = concurrentMinesCashouts.filter((result) => result.status === 200);
+    ok('concurrent duplicate Mines cashouts settle once', minesWinners.length === 1 && concurrentMinesCashouts.filter((result) => result.status === 400).length === 1);
+    ok('legacy Mines round uses original payout and ledger settlement', minesWinners[0]?.data.payout === expectedLegacyMinesPayout && (await user('/me')).data.balance === minesBeforeCashout - minesBet + expectedLegacyMinesPayout);
+    ok('Mines cashout ledger has one credit', Number((await query("SELECT COUNT(*) c FROM ledger WHERE ref_type='round' AND ref_id=$1 AND type='win'", [minesId])).rows[0].c) === 1);
+
+    const bingoCard = Array.from({ length: 5 }, (_, column) => Array.from({ length: 5 }, (_, row) => column * 15 + row + 1));
+    bingoCard[2][2] = 0;
+    const bingoMarked = new Array(25).fill(true);
+    bingoMarked[0] = false;
+    const bingoDetail = { card: bingoCard, drawn: Array.from({ length: 74 }, (_, index) => index + 2), marked: bingoMarked };
+    await withTx((dbClient) => createSyntheticActiveRound(dbClient, {
+      userId: testUserId, game: 'bingo', bet: 1000, detail: bingoDetail, step: 74, seed: 'legacy-bingo-round'
+    }));
+    const oldBingoState = await user('/games/bingo');
+    ok('unversioned active Bingo round reports legacy payout version', oldBingoState.status === 200 && oldBingoState.data.payout_version === 1);
+    const oldBingoResult = await user('/games/bingo/call', {});
+    ok('unversioned active Bingo round settles using legacy payout', oldBingoResult.status === 200 && oldBingoResult.data.won === true && oldBingoResult.data.mult === 1.5 && oldBingoResult.data.payout === 1500);
+
     // Role restrictions
     ok('agent cannot play roulette', (await agent('/games/roulette', { bet: 1000, kind: 'color', value: 'red' })).status === 403);
     ok('admin cannot play road dash', (await admin('/games/road/start', { bet: 1000 })).status === 403);
@@ -322,6 +413,20 @@ const server = app.listen(0, async () => {
     `);
     ok('wallet balance equals sum of ledger for every user', badRes.rows.length === 0);
 
+    const rollbackBalance = Number((await query('SELECT balance FROM wallets WHERE user_id=$1', [testUserId])).rows[0].balance);
+    let rollbackObserved = false;
+    try {
+      await withTx(async (dbClient) => {
+        await postLedger({ client: dbClient, userId: testUserId, delta: -100, type: 'integration_rollback', refType: 'test', refId: testUserId });
+        throw new Error('integration rollback sentinel');
+      });
+    } catch (error) {
+      rollbackObserved = error.message === 'integration rollback sentinel';
+    }
+    const rollbackAfter = Number((await query('SELECT balance FROM wallets WHERE user_id=$1', [testUserId])).rows[0].balance);
+    const rollbackLedgerCount = Number((await query("SELECT COUNT(*) c FROM ledger WHERE user_id=$1 AND type='integration_rollback'", [testUserId])).rows[0].c);
+    ok('transaction rollback restores wallet and suppresses ledger row', rollbackObserved && rollbackAfter === rollbackBalance && rollbackLedgerCount === 0);
+
     const auditRes = await query('SELECT COUNT(*) c FROM audit_logs');
     ok('audit log has entries', Number(auditRes.rows[0].c) > 3);
     ok('amharic translations load', (await fetch(base + '/i18n/am').then((r) => r.json())).brand === 'ፈጣን ቤት');
@@ -336,4 +441,9 @@ const server = app.listen(0, async () => {
     await pool.end();
     process.exit(1);
   }
+});
+}).catch(async (error) => {
+  console.error(`Synthetic test fixture setup failed (${error.name}${error.code ? `, ${error.code}` : ''}).`);
+  await pool.end();
+  process.exit(1);
 });

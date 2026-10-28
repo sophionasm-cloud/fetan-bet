@@ -5,8 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node --no-warnings server.js",
-    "test": "node --no-warnings test.js",
-    "test:payout": "node --no-warnings payout.test.js && node --no-warnings payout-rules.test.js"
+    "test": "node --no-warnings scripts/run-integration-tests.js",
+    "test:integration:check": "node --no-warnings scripts/run-integration-tests.js --check",
+    "test:payout": "node --no-warnings payout.test.js && node --no-warnings payout-rules.test.js",
+    "test:static": "node --no-warnings payout.test.js && node --no-warnings payout-rules.test.js && node --no-warnings scripts/test-db-safety.test.js"
   },
   "engines": {
     "node": ">=22.13"

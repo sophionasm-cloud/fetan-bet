@@ -4,16 +4,24 @@ require('dotenv').config();
 const { Pool, types } = require('pg');
 const bcrypt = require('bcryptjs');
 const { sanitizeConnectionString } = require('./scripts/run-migrations');
+const { assertSeparateTestDatabase } = require('./scripts/test-db-safety');
 
 // Parse BIGINT (int8) as JavaScript numbers for smooth arithmetic and strict === comparison
 types.setTypeParser(types.builtins.INT8, (val) => (val === null ? null : parseInt(val, 10)));
 
-const connString = sanitizeConnectionString(
-  process.env.DATABASE_URL || process.env.TEST_DATABASE_URL || ''
-);
+const integrationTestMode = process.env.FETAN_INTEGRATION_TEST === '1';
+if (integrationTestMode && process.env.FETAN_TEST_DB_PREFLIGHT !== 'passed') {
+  throw new Error('Integration database must pass the isolated launcher preflight before pool initialization.');
+}
+const connString = integrationTestMode
+  ? (() => {
+      assertSeparateTestDatabase(process.env);
+      return sanitizeConnectionString(process.env.TEST_DATABASE_URL);
+    })()
+  : sanitizeConnectionString(process.env.DATABASE_URL || process.env.TEST_DATABASE_URL || '');
 
 if (!connString) {
-  console.warn('[db.js] Warning: DATABASE_URL is not set. Database operations will fail until configured.');
+  console.warn('[db.js] Warning: no database connection is configured. Database operations will fail until configured.');
 }
 
 // Configured for Neon serverless: small pool, idle timeouts, keepalives

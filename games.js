@@ -1157,6 +1157,8 @@ module.exports = {
   ROAD_CONFIG,
   getLadder,
   getMultiplier,
+  getLegacyRoadLadder,
+  getRoadLadderForVersion,
   minesState,
   minesStart,
   minesStep,
