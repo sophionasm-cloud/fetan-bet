@@ -202,10 +202,10 @@ const server = app.listen(0, async () => {
     // Mines
     const mState = await user('/games/mines');
     ok('mines state retrieves', mState.status === 200 && typeof mState.data.balance === 'number');
-    ok('multiplier 3x3 k=1 is correct', games.getMinesMultiplier(9, 1, 1) === 1.11);
-    ok('multiplier 5x5 k=1 is correct', games.getMinesMultiplier(25, 1, 1) === 1.03);
-    ok('multiplier 7x7 k=1 is correct', games.getMinesMultiplier(49, 1, 1) === 1.01);
-    ok('multiplier 9x9 k=1 is correct', games.getMinesMultiplier(81, 1, 1) === 1.01);
+    ok('multiplier 3x3 k=1 is correct', games.getMinesMultiplier(9, 1, 1) === 1.03);
+    ok('multiplier 5x5 k=1 is correct', games.getMinesMultiplier(25, 1, 1) === 0.95);
+    ok('multiplier 7x7 k=1 is correct', games.getMinesMultiplier(49, 1, 1) === 0.93);
+    ok('multiplier 9x9 k=1 is correct', games.getMinesMultiplier(81, 1, 1) === 0.93);
     ok('mine count 0 rejected', (await user('/games/mines/start', { bet: 1000, mines: 0, grid: 5 })).data.error === 'INVALID');
     ok('mine count >= N rejected', (await user('/games/mines/start', { bet: 1000, mines: 25, grid: 5 })).data.error === 'INVALID');
     ok('invalid grid size rejected', (await user('/games/mines/start', { bet: 1000, mines: 3, grid: 4 })).data.error === 'INVALID');

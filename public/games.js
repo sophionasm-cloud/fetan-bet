@@ -5,6 +5,23 @@ window.Games = (function () {
   let C; // context: { api, t, esc, fmt, setBalance, fail, limits, roadState, minesState, reload }
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const $ = (id) => document.getElementById(id);
+  const payoutPreview = (stakeCents, multiplier) => {
+    const match = String(multiplier).match(/^(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
+    if (!match || !Number.isSafeInteger(stakeCents)) return 0;
+    const fractional = match[2] || '', exponent = Number(match[3] || 0);
+    let numerator = BigInt(match[1] + fractional), scale = fractional.length - exponent;
+    if (scale < 0) { numerator *= 10n ** BigInt(-scale); scale = 0; }
+    return Number((BigInt(stakeCents) * numerator) / (10n ** BigInt(scale)));
+  };
+  const grossNetText = (grossCents, stakeCents) =>
+    `Gross payout ${C.fmt(grossCents)} · Net ${C.fmt(grossCents - stakeCents)}`;
+  function combBigIntClient(n, r) {
+    if (r < 0 || r > n) return 0n;
+    const take = Math.min(r, n - r);
+    let value = 1n;
+    for (let i = 1; i <= take; i++) value = (value * BigInt(n - take + i)) / BigInt(i);
+    return value;
+  }
   const GAME_POSTERS = {
     road: '/img/road-dash.webp.jpg',
     mines: '/img/mines.webp.jpg',
@@ -356,6 +373,8 @@ window.Games = (function () {
     let mineCount = 5;
     let isCustomMines = false;
     let gameActive = false, busy = false;
+    let minesPayoutVersion = 2;
+    let minesActiveBetCents = 1000;
     let revealed = [];
     let currentMult = 1, currentPotential = 0;
     let nextMults = [];
@@ -523,7 +542,7 @@ window.Games = (function () {
                 <span class="stat-val gold" id="mmult">×1.00</span>
               </div>
               <div class="stat-item">
-                <span class="stat-title">${esc(t('potential_win'))}</span>
+                <span class="stat-title">Gross potential</span>
                 <span class="stat-val" id="mpotential">—</span>
               </div>
               <div class="stat-item">
@@ -601,26 +620,27 @@ window.Games = (function () {
         if (dCash) {
           dCash.style.display = 'block';
           dCash.disabled = !canCashout;
-          dCash.textContent = canCashout ? `${esc(t('cashout'))} +${payoutText}` : esc(t('cashout'));
+          dCash.textContent = canCashout ? `${esc(t('cashout'))} · Gross ${payoutText}` : esc(t('cashout'));
         }
         if (mStart) { mStart.style.display = 'none'; }
         if (mCash) {
           mCash.style.display = 'block';
           mCash.disabled = !canCashout;
-          mCash.textContent = canCashout ? `${esc(t('cashout'))} +${payoutText}` : esc(t('cashout'));
+          mCash.textContent = canCashout ? `${esc(t('cashout'))} · Gross ${payoutText}` : esc(t('cashout'));
         }
       }
     }
 
     // Modal Payout Pop
-    function showCashoutModal(mult, payout) {
+    function showCashoutModal(mult, payout, stake) {
       const slot = $('mmodal-slot');
       if (!slot) return;
       slot.innerHTML = `
         <div class="mines-modal">
           <h1 class="mines-modal-mult">×${Number(mult).toFixed(2)}</h1>
           <div class="mines-modal-divider"></div>
-          <p class="mines-modal-win">+${C.fmt(payout)}</p>
+          <p class="mines-modal-win">Gross ${C.fmt(payout)}</p>
+          <p class="mines-modal-win">Net ${C.fmt(payout - stake)}</p>
         </div>`;
       setTimeout(() => { if (slot) slot.innerHTML = ''; }, 3200);
     }
@@ -730,11 +750,17 @@ window.Games = (function () {
     // Preview Multipliers on Setting Changes
     function calculateUpcomingMultipliers() {
       const list = [];
-      let p = 1;
       const N = totalCells, M = mineCount;
       for (let k = 1; k <= Math.min(4, N - M); k++) {
-        p *= (N - (k - 1)) / (N - M - (k - 1));
-        const mult = Math.max(1.01, Math.floor(0.99 * p * 100) / 100);
+        let multCents;
+        if (minesPayoutVersion >= 2) {
+          multCents = (92n * combBigIntClient(N, k)) / combBigIntClient(N - M, k);
+        } else {
+          let product = 1;
+          for (let i = 0; i < k; i++) product *= (N - i) / (N - M - i);
+          multCents = BigInt(Math.round(Math.max(1.01, Math.floor(0.99 * product * 100) / 100) * 100));
+        }
+        const mult = Number(multCents) / 100;
         list.push(mult);
       }
       nextMults = list;
@@ -849,7 +875,7 @@ window.Games = (function () {
           }
           sfx.boom();
           sfx.lose();
-          say($('mmsg'), `💥 ${esc(t('crashed'))}`, 'lose');
+          say($('mmsg'), `💥 ${esc(t('crashed'))}: ${grossNetText(r.payout, bet.get())}`, 'lose');
 
           // Reveal all other mines and unpicked gems dimmed
           if (r.mines) {
@@ -874,6 +900,7 @@ window.Games = (function () {
           }
 
           gameActive = false;
+          minesPayoutVersion = 2;
           lockSettings(false);
           updateActionButtons(false, false, '0');
           updateStats(0, 0, 0);
@@ -895,12 +922,12 @@ window.Games = (function () {
 
           if (r.safe_left === 0 || r.finished) {
             // JACKPOT: All safe tiles revealed! Auto Cashout
-            say($('mmsg'), `🏆 ${esc(t('big_win'))} +${C.fmt(r.payout || currentPotential)}!`, 'win');
+            say($('mmsg'), `Round complete · ${grossNetText(r.payout ?? currentPotential, minesActiveBetCents)}`, 'win');
             sfx.win();
             coinRain(stage);
-            showCashoutModal(currentMult, r.payout || currentPotential);
+            showCashoutModal(currentMult, r.payout ?? currentPotential, minesActiveBetCents);
             lastWinAmount = r.payout || currentPotential;
-            $('mlastwin').textContent = `+${C.fmt(lastWinAmount)}`;
+            $('mlastwin').textContent = grossNetText(lastWinAmount, minesActiveBetCents);
 
             // Reveal mine positions dimmed
             if (r.mines) {
@@ -918,6 +945,7 @@ window.Games = (function () {
             }
 
             gameActive = false;
+            minesPayoutVersion = 2;
             lockSettings(false);
             updateActionButtons(false, false, '0');
           } else {
@@ -951,6 +979,8 @@ window.Games = (function () {
 
         C.setBalance(r.balance);
         gameActive = true;
+        minesPayoutVersion = r.payout_version || 2;
+        minesActiveBetCents = r.bet;
         revealed = new Array(totalCells).fill(false);
         activeSeedHash = r.server_seed_hash || '';
         activeClientSeed = r.client_seed || customSeed;
@@ -985,10 +1015,10 @@ window.Games = (function () {
         const r = await C.api('/games/mines/cashout', {});
         C.setBalance(r.balance);
         lastWinAmount = r.payout;
-        $('mlastwin').textContent = `+${C.fmt(lastWinAmount)}`;
-        say($('mmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} 🎉`, 'win');
+        $('mlastwin').textContent = grossNetText(lastWinAmount, minesActiveBetCents);
+        say($('mmsg'), `Cashout · ${grossNetText(r.payout, minesActiveBetCents)} 🎉`, 'win');
         sfx.win();
-        showCashoutModal(r.multiplier || r.mult, r.payout);
+        showCashoutModal(r.multiplier || r.mult, r.payout, minesActiveBetCents);
         if (r.multiplier >= 2 || r.mult >= 2) coinRain(stage);
 
         // Reveal mines dimmed
@@ -1014,6 +1044,7 @@ window.Games = (function () {
         }
 
         gameActive = false;
+        minesPayoutVersion = 2;
         lockSettings(false);
         updateActionButtons(false, false, '0');
         updateStats(null, null, null);
@@ -1039,6 +1070,8 @@ window.Games = (function () {
 
         if (st && st.active) {
           gameActive = true;
+          minesPayoutVersion = st.payout_version || 1;
+          minesActiveBetCents = st.bet;
           curGrid = st.grid || 5;
           totalCells = curGrid * curGrid;
           mineCount = st.mines || 5;
@@ -1087,7 +1120,7 @@ window.Games = (function () {
   // =========================================================
   // PLINKO (Stake Reference / Multi-Ball / Auto Mode / Provably Fair)
   // =========================================================
-  const PLINKO_TABLES = {
+  const PLINKO_BASE_TABLES = {
     8: {
       low: [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
       medium: [13, 3.0, 1.3, 0.7, 0.4, 0.7, 1.3, 3.0, 13],
@@ -1135,10 +1168,30 @@ window.Games = (function () {
     }
   };
 
-  // Format multiplier label: plain number without 'x', 1 decimal under 10, integer >= 10
+  function plinkoTargetTables(baseTables) {
+    const result = {};
+    const asCents = (value) => BigInt(Math.round(Number(value) * 100));
+    for (const [rowText, risks] of Object.entries(baseTables)) {
+      const rows = Number(rowText), weights = [1n];
+      for (let i = 0; i < rows; i++) {
+        const next = Array(weights.length + 1).fill(0n);
+        weights.forEach((weight, index) => { next[index] += weight; next[index + 1] += weight; });
+        weights.splice(0, weights.length, ...next);
+      }
+      result[rows] = {};
+      for (const [risk, multipliers] of Object.entries(risks)) {
+        const cents = multipliers.map(asCents);
+        const weightedTotal = cents.reduce((sum, value, index) => sum + value * weights[index], 0n);
+        result[rows][risk] = cents.map((value) => Number((92n * value * (1n << BigInt(rows))) / weightedTotal) / 100);
+      }
+    }
+    return result;
+  }
+  const PLINKO_TABLES = plinkoTargetTables(PLINKO_BASE_TABLES);
+
+  // Show the complete configured santim multiplier precision.
   function formatBucketLabel(m) {
-    if (m >= 10) return String(Math.round(m));
-    return Number(m).toFixed(1);
+    return Number(m).toFixed(2);
   }
 
   // Smooth continuous gradient from low multipliers (cool slate/dark) to high (bright gold/orange/red)
@@ -1442,7 +1495,7 @@ window.Games = (function () {
       const el = $('p-recent');
       if (!el) return;
       el.innerHTML = recentWins.slice(-10).map((item) => `
-        <span class="plinko-pill" style="background:${item.color}">${item.mult >= 10 ? Math.round(item.mult) : item.mult.toFixed(1)}</span>
+        <span class="plinko-pill" style="background:${item.color}">${Number(item.mult).toFixed(2)}</span>
       `).join('');
     }
 
@@ -1461,7 +1514,7 @@ window.Games = (function () {
       const targetX = padX + bucketIdx * colSpacing;
       const notice = document.createElement('div');
       notice.className = 'plinko-floating-win';
-      notice.textContent = `+${C.fmt(payout)}`;
+      notice.textContent = `Gross ${C.fmt(payout)}`;
       notice.style.left = `${(targetX / W) * 100}%`;
       notice.style.bottom = '46px';
       wrap.appendChild(notice);
@@ -2138,7 +2191,7 @@ window.Games = (function () {
 
   function road(body, stage) {
     const { t, esc } = C;
-    let st = C.roadState || { active: false, balance: 100000, difficulty: 'easy', ladder: [], maxSteps: 24, next: 1.01, next_crash_chance: 1.8 };
+    let st = C.roadState || { active: false, balance: 100000, difficulty: 'easy', ladder: [], maxSteps: 24, next: 1.00, next_crash_chance: 1.8 };
     let curDiff = st.difficulty || 'easy';
     let busy = false;
     let currentBetCents = 1000; // 10 credits default
@@ -2712,8 +2765,8 @@ window.Games = (function () {
         cashoutBtn.style.display = 'inline-flex';
         if (st.step >= 1) {
           cashoutBtn.disabled = false;
-          const payoutAmt = Math.floor(st.bet * st.mult);
-          cashoutLabel.textContent = `${esc(t('cashout'))} +${C.fmt(payoutAmt)}`;
+          const payoutAmt = payoutPreview(st.bet, st.mult);
+          cashoutLabel.textContent = `${esc(t('cashout'))} · Gross ${C.fmt(payoutAmt)}`;
         } else {
           cashoutBtn.disabled = true;
           cashoutLabel.textContent = esc(t('cashout'));
@@ -3067,7 +3120,7 @@ window.Games = (function () {
             chicken.classList.add('is-dead');
           }
           spawnFeathers(laneEl);
-          say($('rmsg'), `💥 ${esc(t('crashed'))} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'lose');
+          say($('rmsg'), `💥 ${esc(t('crashed'))}: ${grossNetText(r.payout, st.bet)} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'lose');
           sfx.lose();
           await sleep(1400);
 
@@ -3078,7 +3131,7 @@ window.Games = (function () {
             difficulty: curDiff,
             ladder: r.ladder || st.ladder,
             maxSteps: r.maxSteps || st.maxSteps,
-            next: (r.ladder && r.ladder[0]) || 1.01,
+            next: (r.ladder && r.ladder[0]) || 1.00,
             next_crash_chance: 1.8
           };
           renderScene(true); // Full reset for upcoming round
@@ -3096,9 +3149,8 @@ window.Games = (function () {
             chicken.classList.add('is-win');
           }
           sfx.coin();
-          sfx.win();
-          coinRain(stage);
-          say($('rmsg'), `🏆 ${esc(t('big_win'))} +${C.fmt(r.payout)}! (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, 'win');
+          if (r.net > 0) { sfx.win(); coinRain(stage); }
+          say($('rmsg'), `${r.net === 0 ? 'Stake returned' : 'Round complete'} · ${grossNetText(r.payout, st.bet)} (${esc(t('server_seed'))}: ${esc(r.server_seed.slice(0, 16))}...)`, r.net > 0 ? 'win' : '');
           await sleep(1400);
 
           st = {
@@ -3107,7 +3159,7 @@ window.Games = (function () {
             difficulty: curDiff,
             ladder: r.ladder || st.ladder,
             maxSteps: r.maxSteps || st.maxSteps,
-            next: (r.ladder && r.ladder[0]) || 1.01,
+            next: (r.ladder && r.ladder[0]) || 1.00,
             next_crash_chance: 1.8
           };
           renderScene(true); // Reset for new round
@@ -3147,9 +3199,8 @@ window.Games = (function () {
           chicken.classList.remove('is-hopping', 'is-dead');
           chicken.classList.add('is-win');
         }
-        sfx.win();
-        coinRain(stage);
-        say($('rmsg'), `🎉 ${esc(t('win'))} +${C.fmt(r.payout)} (×${r.mult})!`, 'win');
+        if (r.net > 0) { sfx.win(); coinRain(stage); }
+        say($('rmsg'), `${r.net === 0 ? 'Stake returned' : 'Cashout'} · ${grossNetText(r.payout, st.bet)} (×${r.mult})`, r.net > 0 ? 'win' : '');
         await sleep(1200);
 
         st = {
@@ -3158,7 +3209,7 @@ window.Games = (function () {
           difficulty: curDiff,
           ladder: r.ladder || st.ladder,
           maxSteps: r.maxSteps || st.maxSteps,
-          next: (r.ladder && r.ladder[0]) || 1.01,
+          next: (r.ladder && r.ladder[0]) || 1.00,
           next_crash_chance: 1.8
         };
         renderScene(true); // Reset for new round!
@@ -3235,6 +3286,7 @@ window.Games = (function () {
           <div class="history" id="hist" aria-label="Recent roulette results"></div>
         </section>
         <section class="roulette-bet-panel" aria-label="Roulette betting table">
+          <p class="roulette-payout-guide">Gross payout: straight-up 34.04× · even-money 1.89×</p>
           <div class="rtable-wrap"><div class="rtable" id="rtab"></div></div>
           <div class="outside" id="rout"></div>
           <div class="pick" id="rpick">${esc(t('pick_prompt'))}</div>
@@ -3264,7 +3316,7 @@ window.Games = (function () {
       body.querySelectorAll('[data-k]').forEach((x) => x.classList.remove('sel'));
       b.classList.add('sel');
       sel = { kind: b.dataset.k, value: b.dataset.k === 'number' ? Number(b.dataset.v) : b.dataset.v };
-      $('rpick').textContent = `${t('picked')}: ${b.textContent}  (x${sel.kind === 'number' ? 36 : 2})`;
+      $('rpick').textContent = `${t('picked')}: ${b.textContent}  (gross ×${sel.kind === 'number' ? '34.04' : '1.89'})`;
       sfx.tick();
     }));
 
@@ -3408,10 +3460,10 @@ window.Games = (function () {
         const r = await C.api('/games/roulette', { bet: bet.get(), kind: sel.kind, value: sel.value });
         await animate(r.n); history.push(r.n); paintHistory(); C.setBalance(r.balance);
         if (r.payout) {
-          say($('rmsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} 🎉`, 'win'); sfx.win();
+          say($('rmsg'), `Result: ${grossNetText(r.payout, bet.get())} 🎉`, 'win'); sfx.win();
           if (r.payout >= bet.get() * 5) coinRain(stage);
         } else {
-          say($('rmsg'), `${r.n} · ${esc(t('lose'))}`, 'lose'); sfx.lose();
+          say($('rmsg'), `${r.n} · ${esc(t('lose'))}: ${grossNetText(r.payout, bet.get())}`, 'lose'); sfx.lose();
         }
       } catch (e) { C.fail(e); }
       spinning = false; $('rgo').disabled = false; bet.lock(false);
@@ -3436,7 +3488,7 @@ window.Games = (function () {
           ${[0,1,2].map((i) => `<div class="reelwin" id="rw${i}"><div class="strip" id="st${i}"></div></div>`).join('')}
           <div class="payline"></div>
         </div>
-        <div class="paytable">🍒🍒🍒 ×5 &nbsp;|&nbsp; 🍋 ×8 &nbsp;|&nbsp; 🔔 ×12 &nbsp;|&nbsp; ⭐ ×25 &nbsp;|&nbsp; 7️⃣ ×50 &nbsp;|&nbsp; 🌟=wild</div>
+        <div class="paytable">🍒🍒🍒 ×3.30 &nbsp;|&nbsp; 🍋🍋🍋 ×5.28 &nbsp;|&nbsp; 🔔🔔🔔 ×7.92 &nbsp;|&nbsp; ⭐⭐⭐ ×16.50 &nbsp;|&nbsp; 7️⃣7️⃣7️⃣/🌟🌟🌟 ×33.00 &nbsp;|&nbsp; other 2+ 🍒/🌟 combinations ×1.00 (stake returned)</div>
       </div>
       <div id="sbet"></div>
       <button class="bigbtn" id="sgo">${esc(t('spin'))}</button>
@@ -3490,11 +3542,14 @@ window.Games = (function () {
         clearInterval(spinTick); C.setBalance(r.balance);
         if (r.payout) {
           await sleep(100);
-          body.querySelector('.slot')?.classList.add('is-win');
-          [0, 1, 2].forEach((i) => $('rw' + i).classList.add('win'));
-          say($('smsg'), `${esc(t('win'))}: +${C.fmt(r.payout)} (×${r.mult}) 🎉`, 'win'); sfx.win();
-          if (r.mult >= 5) { coinRain(stage); say($('smsg'), `${esc(t('big_win'))} +${C.fmt(r.payout)} (×${r.mult})`, 'win'); }
-        } else { say($('smsg'), esc(t('lose')), 'lose'); sfx.lose(); }
+          if (r.net > 0) {
+            body.querySelector('.slot')?.classList.add('is-win');
+            [0, 1, 2].forEach((i) => $('rw' + i).classList.add('win'));
+          }
+          say($('smsg'), `${r.net === 0 ? 'Stake returned' : 'Result'} · ${grossNetText(r.payout, bet.get())} (×${r.mult}) 🎉`, r.net > 0 ? 'win' : '');
+          if (r.net > 0) sfx.win();
+          if (r.net > 0 && r.mult >= 5) { coinRain(stage); say($('smsg'), `${esc(t('big_win'))}: ${grossNetText(r.payout, bet.get())} (×${r.mult})`, 'win'); }
+        } else { say($('smsg'), `${esc(t('lose'))} · ${grossNetText(r.payout, bet.get())}`, 'lose'); sfx.lose(); }
       } catch (e) { C.fail(e); }
       body.querySelector('.slot')?.classList.remove('is-spinning');
       busy = false; $('sgo').disabled = false; bet.lock(false);
@@ -3506,16 +3561,16 @@ window.Games = (function () {
   // =========================================================
   // Payout table frontend mirror (for live display before draw)
   const KENO_PAY_DISPLAY = {
-    1:  { 1: '3.8×' },
-    2:  { 2: '12×' },
-    3:  { 2: '2×', 3: '40×' },
-    4:  { 2: '1.5×', 3: '5×', 4: '100×' },
-    5:  { 3: '3×', 4: '20×', 5: '420×' },
-    6:  { 3: '2×', 4: '8×', 5: '80×', 6: '1600×' },
-    7:  { 3: '1.5×', 4: '5×', 5: '25×', 6: '320×', 7: '7000×' },
-    8:  { 4: '3.5×', 5: '12×', 6: '100×', 7: '1700×', 8: '10000×' },
-    9:  { 4: '2.5×', 5: '7×', 6: '50×', 7: '500×', 8: '4000×', 9: '30000×' },
-    10: { 5: '5×', 6: '25×', 7: '250×', 8: '2000×', 9: '10000×', 10: '100000×' },
+    1:  { 1: '3.68×' },
+    2:  { 2: '15.30×' },
+    3:  { 2: '2.21×', 3: '44.20×' },
+    4:  { 2: '1.63×', 3: '5.46×', 4: '109.32×' },
+    5:  { 3: '3.61×', 4: '24.06×', 5: '505.41×' },
+    6:  { 3: '1.95×', 4: '7.81×', 5: '78.13×', 6: '1562.68×' },
+    7:  { 3: '1.20×', 4: '4.01×', 5: '20.09×', 6: '257.23×', 7: '5626.96×' },
+    8:  { 4: '3.04×', 5: '10.43×', 6: '86.97×', 7: '1478.54×', 8: '8697.33×' },
+    9:  { 4: '1.84×', 5: '5.16×', 6: '36.87×', 7: '368.77×', 8: '2950.16×', 9: '22126.22×' },
+    10: { 5: '3.56×', 6: '17.82×', 7: '178.27×', 8: '1426.16×', 9: '7130.81×', 10: '71308.13×' },
   };
 
   function keno(body, stage) {
@@ -3641,13 +3696,13 @@ window.Games = (function () {
         await sleep(300);
         if (r.payout > 0) {
           say($('kmsg'),
-            `🎉 ${esc(t('keno_matched'))} ${r.matched} ${esc(t('keno_of'))} ${picks.size}! +${C.fmt(r.payout)} (×${r.mult})`,
-            'win');
-          sfx.win();
-          if (r.matched >= 4) coinRain(stage);
+            `${esc(t('keno_matched'))} ${r.matched} ${esc(t('keno_of'))} ${picks.size}! ${grossNetText(r.payout, bet.get())} (×${r.mult})`,
+            r.net > 0 ? 'win' : '');
+          if (r.net > 0) sfx.win();
+          if (r.net > 0 && r.matched >= 4) coinRain(stage);
         } else {
           say($('kmsg'),
-            `${esc(t('keno_matched'))} ${r.matched} ${esc(t('keno_of'))} ${picks.size}. ${esc(t('lose'))}`,
+            `${esc(t('keno_matched'))} ${r.matched} ${esc(t('keno_of'))} ${picks.size}. ${esc(t('lose'))} · ${grossNetText(r.payout, bet.get())}`,
             'lose');
           sfx.lose();
         }
@@ -3704,11 +3759,13 @@ window.Games = (function () {
         <div class="bingo-right">
           <div class="bingo-multiplier-table">
             <div class="bingo-pay-title">🏆 Payout Guide</div>
-            <div class="bingo-pay-row"><span>≤20 draws</span><span class="bingo-pay-mult">×15</span></div>
-            <div class="bingo-pay-row"><span>≤30 draws</span><span class="bingo-pay-mult">×8</span></div>
-            <div class="bingo-pay-row"><span>≤40 draws</span><span class="bingo-pay-mult">×4</span></div>
-            <div class="bingo-pay-row"><span>≤50 draws</span><span class="bingo-pay-mult">×2.5</span></div>
-            <div class="bingo-pay-row"><span>51+ draws</span><span class="bingo-pay-mult">×1.5</span></div>
+            <div id="bpay-rows">
+              <div class="bingo-pay-row"><span>≤20 draws</span><span class="bingo-pay-mult">×3.71</span></div>
+              <div class="bingo-pay-row"><span>21–30 draws</span><span class="bingo-pay-mult">×1.98</span></div>
+              <div class="bingo-pay-row"><span>31–40 draws</span><span class="bingo-pay-mult">×0.99</span></div>
+              <div class="bingo-pay-row"><span>41–50 draws</span><span class="bingo-pay-mult">×0.62</span></div>
+              <div class="bingo-pay-row"><span>51–75 draws</span><span class="bingo-pay-mult">×0.37</span></div>
+            </div>
           </div>
           <div class="bingo-draw-count" id="bdrawcount">Draws: 0</div>
           <div class="bingo-last-ball" id="blastball">—</div>
@@ -3722,6 +3779,14 @@ window.Games = (function () {
       <div class="msg" id="bmsg"></div>`;
 
     const bet = betBar($('bbet'));
+
+    function renderBingoPaytable(version = 2) {
+      const rows = version >= 2
+        ? [['≤20 draws', '3.71'], ['21–30 draws', '1.98'], ['31–40 draws', '0.99'], ['41–50 draws', '0.62'], ['51–75 draws', '0.37']]
+        : [['≤20 draws', '15.00'], ['21–30 draws', '8.00'], ['31–40 draws', '4.00'], ['41–50 draws', '2.50'], ['51–75 draws', '1.50']];
+      $('bpay-rows').innerHTML = rows.map(([range, mult]) => `<div class="bingo-pay-row"><span>${range}</span><span class="bingo-pay-mult">×${mult}</span></div>`).join('');
+    }
+    renderBingoPaytable();
 
     function buildGrid() {
       const grid = $('bgrid');
@@ -3784,6 +3849,8 @@ window.Games = (function () {
       try {
         const st = await C.api('/games/bingo');
         if (st && st.active) {
+          renderBingoPaytable(st.payout_version || 1);
+          currentBet = st.bet;
           card = st.card;
           drawn = st.drawn || [];
           marked = st.marked || new Array(25).fill(false);
@@ -3808,6 +3875,8 @@ window.Games = (function () {
           gameActive = false;
         }
         const r = await C.api('/games/bingo/start', { bet: bet.get() });
+        renderBingoPaytable(r.payout_version || 2);
+        currentBet = bet.get();
         C.setBalance(r.balance);
         card = r.card;
         drawn = [];
@@ -3850,9 +3919,10 @@ window.Games = (function () {
 
         if (r.won) {
           stopAutoCall();
-          say($('bmsg'), `${esc(t('bingo_win'))} +${C.fmt(r.payout)} (×${r.mult}) 🎊`, 'win');
-          sfx.win(); coinRain(stage);
+          say($('bmsg'), `Bingo result: ${grossNetText(r.payout, currentBet)} (×${r.mult}) 🎊`, r.net > 0 ? 'win' : '');
+          if (r.net > 0) { sfx.win(); coinRain(stage); }
           gameActive = false;
+          renderBingoPaytable(2);
           $('bcall').disabled = true;
           $('bnew').textContent = esc(t('bingo_new_card'));
           bet.lock(false);

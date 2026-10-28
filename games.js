@@ -2,9 +2,11 @@
 // Randomness comes from the server (crypto), never the browser.
 const crypto = require('crypto');
 const { query, withTx, postLedger } = require('./db');
+const { decimalFraction, grossPayoutCents, grossPayoutFromMultiplierCents, netWinningsCents } = require('./payout');
 
 const MIN_BET = 100;      // 1 credit
 const MAX_BET = 100000;   // 1000 credits
+const PAYOUT_RULE_VERSION = 2;
 const rnd = (n) => crypto.randomInt(0, n);
 
 function checkBet(bet) {
@@ -33,6 +35,7 @@ function comb(n, r) {
 
 // ---------- Roulette (single zero, 37 pockets) ----------
 const REDS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+const ROULETTE_MULTIPLIERS = { number: 34.04, outside: 1.89 };
 async function roulette(userId, bet, kind, value) {
   checkBet(bet);
   let valid = false;
@@ -47,17 +50,18 @@ async function roulette(userId, bet, kind, value) {
     const n = rnd(37);
     const color = n === 0 ? 'green' : REDS.has(n) ? 'red' : 'black';
     let mult = 0;
-    if (kind === 'number' && value === n) mult = 36;                         // pays 35:1
-    if (kind === 'color' && value === color) mult = 2;                        // pays 1:1
-    if (kind === 'parity' && n !== 0 && value === (n % 2 ? 'odd' : 'even')) mult = 2;
-    const payout = bet * mult;
+    if (kind === 'number' && value === n) mult = ROULETTE_MULTIPLIERS.number;
+    if (kind === 'color' && value === color) mult = ROULETTE_MULTIPLIERS.outside;
+    if (kind === 'parity' && n !== 0 && value === (n % 2 ? 'odd' : 'even')) mult = ROULETTE_MULTIPLIERS.outside;
+    const payout = grossPayoutCents(bet, mult);
+    const net = netWinningsCents(payout, bet);
     if (payout > 0) {
       await postLedger({ client, userId, delta: payout, type: 'win', refType: 'round', refId: roundId });
     }
     await client.query('UPDATE game_rounds SET payout=$1, detail=$2 WHERE id=$3', [payout, JSON.stringify({ kind, value, n, color }), roundId]);
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
     const balance = Number(wRes.rows[0].balance);
-    return { n, color, payout, balance };
+    return { n, color, mult, payout, net, balance };
   });
 }
 
@@ -66,7 +70,8 @@ const SYMBOLS = [
   ['cherry', '🍒', 30], ['lemon', '🍋', 25], ['bell', '🔔', 20],
   ['star', '⭐', 12], ['seven', '7️⃣', 6], ['wild', '🌟', 7],
 ];
-const PAY3 = { cherry: 5, lemon: 8, bell: 12, star: 25, seven: 50, wild: 50 };
+const PAY3 = { cherry: 3.3, lemon: 5.28, bell: 7.92, star: 16.5, seven: 33, wild: 33 };
+const STAR_REFUND_MULTIPLIER = 1;
 function pickSymbol() {
   let r = rnd(100);
   for (const s of SYMBOLS) { if (r < s[2]) return s; r -= s[2]; }
@@ -83,21 +88,22 @@ async function starSpin(userId, bet) {
     let mult = 0;
     if (normal.length === 0) mult = PAY3.wild;
     else if (normal.every((n) => n === normal[0])) mult = PAY3[normal[0]];     // wild substitutes
-    else if (names.filter((n) => n === 'cherry' || n === 'wild').length >= 2) mult = 1; // two cherries: bet back
-    const payout = bet * mult;
+    else if (names.filter((n) => n === 'cherry' || n === 'wild').length >= 2) mult = STAR_REFUND_MULTIPLIER;
+    const payout = grossPayoutCents(bet, mult);
+    const net = netWinningsCents(payout, bet);
     if (payout > 0) {
       await postLedger({ client, userId, delta: payout, type: 'win', refType: 'round', refId: roundId });
     }
     await client.query('UPDATE game_rounds SET payout=$1, detail=$2 WHERE id=$3', [payout, JSON.stringify({ names }), roundId]);
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
     const balance = Number(wRes.rows[0].balance);
-    return { reels: reels.map((s) => s[1]), mult, payout, balance };
+    return { reels: reels.map((s) => s[1]), mult, payout, net, balance };
   });
 }
 
 // ---------- Road Dash (Chicken Crossing - 4 Difficulties, Provably Fair) ----------
 const ROAD_CONFIG = {
-  rtp: 0.98,
+  rtp: 0.92,
   difficulties: {
     easy:     { lanes: 24, p0: 0.033, step: 0.0050 },
     medium:   { lanes: 22, p0: 0.075, step: 0.0085 },
@@ -113,15 +119,38 @@ function getLaneCrashChance(difficulty, lane) {
 
 function getLadder(difficulty) {
   const cfg = ROAD_CONFIG.difficulties[difficulty] || ROAD_CONFIG.difficulties.easy;
-  let prod = 1;
+  const scale = 10000n;
+  let safeNumerator = 1n;
+  let safeDenominator = 1n;
   const ladder = [];
   for (let i = 1; i <= cfg.lanes; i++) {
-    const pi = getLaneCrashChance(difficulty, i);
-    prod *= (1 - pi);
-    const m = Math.max(1.01, Math.floor((ROAD_CONFIG.rtp / prod) * 100) / 100);
-    ladder.push(m);
+    const crashBasis = Math.round(getLaneCrashChance(difficulty, i) * Number(scale));
+    safeNumerator *= scale - BigInt(crashBasis);
+    safeDenominator *= scale;
+    const multiplierCents = (92n * safeDenominator) / safeNumerator;
+    ladder.push(Number(multiplierCents < 100n ? 100n : multiplierCents) / 100);
   }
   return ladder;
+}
+
+function getLegacyRoadLadder(difficulty) {
+  const cfg = ROAD_CONFIG.difficulties[difficulty] || ROAD_CONFIG.difficulties.easy;
+  let survival = 1;
+  const ladder = [];
+  for (let lane = 1; lane <= cfg.lanes; lane++) {
+    survival *= 1 - getLaneCrashChance(difficulty, lane);
+    ladder.push(Math.max(1.01, Math.floor((0.98 / survival) * 100) / 100));
+  }
+  return ladder;
+}
+
+function getRoadLadderForVersion(difficulty, version) {
+  return version >= PAYOUT_RULE_VERSION ? getLadder(difficulty) : getLegacyRoadLadder(difficulty);
+}
+
+function getRoadMultiplierForVersion(difficulty, step, version) {
+  const ladder = getRoadLadderForVersion(difficulty, version);
+  return step <= 0 ? 0 : ladder[Math.min(step, ladder.length) - 1];
 }
 
 function getMultiplier(difficulty, step) {
@@ -151,7 +180,8 @@ async function roadState(userId, difficulty = 'easy') {
   const wRes = await query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
   const balance = Number(wRes.rows[0].balance);
   const activeDiff = r ? (r.difficulty || 'easy') : diff;
-  const ladder = getLadder(activeDiff);
+  const payoutVersion = r ? (JSON.parse(r.detail || '{}').payoutVersion || 1) : PAYOUT_RULE_VERSION;
+  const ladder = getRoadLadderForVersion(activeDiff, payoutVersion);
   const maxSteps = ROAD_CONFIG.difficulties[activeDiff].lanes;
 
   if (!r) {
@@ -169,9 +199,9 @@ async function roadState(userId, difficulty = 'easy') {
 
   const curDiff = r.difficulty || 'easy';
   const nextStep = r.step + 1;
-  const nextMult = nextStep <= maxSteps ? getMultiplier(curDiff, nextStep) : 0;
+  const nextMult = nextStep <= maxSteps ? getRoadMultiplierForVersion(curDiff, nextStep, payoutVersion) : 0;
   const nextChance = nextStep <= maxSteps ? Number((getLaneCrashChance(curDiff, nextStep) * 100).toFixed(2)) : 0;
-  const curMult = r.step > 0 ? getMultiplier(curDiff, r.step) : 0;
+  const curMult = r.step > 0 ? getRoadMultiplierForVersion(curDiff, r.step, payoutVersion) : 0;
 
   return {
     active: true,
@@ -184,6 +214,7 @@ async function roadState(userId, difficulty = 'easy') {
     balance,
     maxSteps,
     ladder,
+    payout_version: payoutVersion,
     server_seed_hash: r.server_seed_hash,
     client_seed: r.client_seed
   };
@@ -200,9 +231,9 @@ async function roadStart(userId, bet, difficulty = 'easy', clientSeed = '') {
     const sHash = crypto.createHash('sha256').update(sSeed).digest('hex');
     const cSeed = String(clientSeed || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || crypto.randomBytes(16).toString('hex');
 
-    const id = await saveRound(client, userId, 'road', bet, 0, {}, 'active', 0, sSeed, cSeed, sHash, diff);
+    const id = await saveRound(client, userId, 'road', bet, 0, { payoutVersion: PAYOUT_RULE_VERSION }, 'active', 0, sSeed, cSeed, sHash, diff);
     await postLedger({ client, userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
-    const ladder = getLadder(diff);
+    const ladder = getRoadLadderForVersion(diff, PAYOUT_RULE_VERSION);
     const maxSteps = ROAD_CONFIG.difficulties[diff].lanes;
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
     const balance = Number(wRes.rows[0].balance);
@@ -218,6 +249,7 @@ async function roadStart(userId, bet, difficulty = 'easy', clientSeed = '') {
       balance,
       maxSteps,
       ladder,
+      payout_version: PAYOUT_RULE_VERSION,
       server_seed_hash: sHash,
       client_seed: cSeed
     };
@@ -230,6 +262,7 @@ async function roadStep(userId) {
     const r = rRes.rows[0];
     if (!r) throw new Error('NOT_FOUND');
     const diff = r.difficulty || 'easy';
+    const payoutVersion = JSON.parse(r.detail || '{}').payoutVersion || 1;
     const maxSteps = ROAD_CONFIG.difficulties[diff].lanes;
     const nextLane = r.step + 1;
 
@@ -247,21 +280,23 @@ async function roadStep(userId) {
         step: nextLane,
         multiplier: 0,
         payout: 0,
+        net: -Number(r.bet),
         balance,
         active: false,
         server_seed: r.server_seed,
         server_seed_hash: r.server_seed_hash,
         client_seed: r.client_seed,
-        ladder: getLadder(diff),
+        ladder: getRoadLadderForVersion(diff, payoutVersion),
         maxSteps
       };
     }
 
     const newStep = nextLane;
-    const curMult = getMultiplier(diff, newStep);
+    const curMult = getRoadMultiplierForVersion(diff, newStep, payoutVersion);
 
     if (newStep >= maxSteps) {
-      const payout = Math.floor(Number(r.bet) * curMult);
+      const payout = grossPayoutCents(Number(r.bet), curMult);
+      const net = netWinningsCents(payout, Number(r.bet));
       const upd = await client.query("UPDATE game_rounds SET status='done', step=$1, payout=$2 WHERE id=$3 AND status='active'", [newStep, payout, r.id]);
       if (upd.rowCount === 0) throw new Error('INVALID');
       await postLedger({ client, userId, delta: payout, type: 'win', refType: 'round', refId: r.id });
@@ -276,12 +311,13 @@ async function roadStep(userId) {
         multiplier: curMult,
         mult: curMult,
         payout,
+        net,
         balance,
         active: false,
         server_seed: r.server_seed,
         server_seed_hash: r.server_seed_hash,
         client_seed: r.client_seed,
-        ladder: getLadder(diff),
+        ladder: getRoadLadderForVersion(diff, payoutVersion),
         maxSteps
       };
     }
@@ -290,7 +326,7 @@ async function roadStep(userId) {
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
     const balance = Number(wRes.rows[0].balance);
     const nextChance = Number((getLaneCrashChance(diff, newStep + 1) * 100).toFixed(2));
-    const nextMult = getMultiplier(diff, newStep + 1);
+    const nextMult = getRoadMultiplierForVersion(diff, newStep + 1, payoutVersion);
 
     return {
       result: 'safe',
@@ -308,7 +344,8 @@ async function roadStep(userId) {
       balance,
       active: true,
       maxSteps,
-      ladder: getLadder(diff),
+      ladder: getRoadLadderForVersion(diff, payoutVersion),
+      payout_version: payoutVersion,
       server_seed_hash: r.server_seed_hash,
       client_seed: r.client_seed
     };
@@ -321,8 +358,10 @@ async function roadCashout(userId) {
     const r = rRes.rows[0];
     if (!r || r.step < 1) throw new Error('INVALID');
     const diff = r.difficulty || 'easy';
-    const mult = getMultiplier(diff, r.step);
-    const payout = Math.floor(Number(r.bet) * mult);
+    const payoutVersion = JSON.parse(r.detail || '{}').payoutVersion || 1;
+    const mult = getRoadMultiplierForVersion(diff, r.step, payoutVersion);
+    const payout = grossPayoutCents(Number(r.bet), mult);
+    const net = netWinningsCents(payout, Number(r.bet));
 
     const upd = await client.query("UPDATE game_rounds SET status='done', payout=$1 WHERE id=$2 AND status='active'", [payout, r.id]);
     if (upd.rowCount === 0) throw new Error('INVALID');
@@ -332,6 +371,7 @@ async function roadCashout(userId) {
 
     return {
       payout,
+      net,
       multiplier: mult,
       mult,
       finished: true,
@@ -340,7 +380,7 @@ async function roadCashout(userId) {
       server_seed: r.server_seed,
       server_seed_hash: r.server_seed_hash,
       client_seed: r.client_seed,
-      ladder: getLadder(diff),
+      ladder: getRoadLadderForVersion(diff, payoutVersion),
       maxSteps: ROAD_CONFIG.difficulties[diff].lanes
     };
   });
@@ -348,7 +388,7 @@ async function roadCashout(userId) {
 
 async function roadHistory(userId) {
   const res = await query(
-    `SELECT id, bet, payout, step, difficulty, status, server_seed, client_seed, server_seed_hash, created_at
+    `SELECT id, bet, payout, step, difficulty, status, detail, server_seed, client_seed, server_seed_hash, created_at
      FROM game_rounds
      WHERE user_id=$1 AND game='road'
      ORDER BY id DESC LIMIT 20`,
@@ -359,7 +399,8 @@ async function roadHistory(userId) {
     const diff = r.difficulty || 'easy';
     const bet = Number(r.bet);
     const payout = Number(r.payout);
-    const mult = payout > 0 ? Number((payout / bet).toFixed(2)) : (r.step > 0 ? getMultiplier(diff, r.step) : 0);
+    const payoutVersion = JSON.parse(r.detail || '{}').payoutVersion || 1;
+    const mult = payout > 0 ? Number((payout / bet).toFixed(2)) : (r.step > 0 ? getRoadMultiplierForVersion(diff, r.step, payoutVersion) : 0);
     return {
       id: Number(r.id),
       bet,
@@ -406,25 +447,54 @@ function roadVerify({ server_seed, client_seed, lane, difficulty = 'easy' }) {
 // ---------- Mines (Configurable Grid: 3x3, 5x5, 7x7, 9x9 with Provably Fair RNG) ----------
 const MINES_GRIDS = [3, 5, 7, 9];
 const MINES_DEFAULT_GRID = 5;
-const MINES_HOUSE_EDGE = 0.01; // 1% house edge => 0.99 RTP factor
+const MINES_HOUSE_EDGE = 0.08; // 8% target house edge before the retained payout cap
 const MINES_MAX_WIN = 100000000; // Cap potential win at 1,000,000 credits (100,000,000 cents)
 
-function getMinesMultiplier(N, M, k, houseEdge = MINES_HOUSE_EDGE) {
-  if (k <= 0) return 1;
-  if (k > N - M) return 0;
-  let prod = 1;
-  for (let i = 0; i < k; i++) {
-    prod *= (N - i) / (N - M - i);
-  }
-  const mult = Math.floor((1 - houseEdge) * prod * 100) / 100;
-  return Math.max(1.01, mult);
+function combBigInt(n, r) {
+  if (!Number.isInteger(n) || !Number.isInteger(r) || r < 0 || r > n) return 0n;
+  const take = Math.min(r, n - r);
+  let value = 1n;
+  for (let i = 1; i <= take; i++) value = (value * BigInt(n - take + i)) / BigInt(i);
+  return value;
 }
 
-function getMinesNextMultipliers(N, M, k, count = 4, houseEdge = MINES_HOUSE_EDGE) {
+function getMinesMultiplierCents(N, M, k, houseEdge = MINES_HOUSE_EDGE) {
+  if (k <= 0) return 100n;
+  if (k > N - M) return 0n;
+  const targetMultiplierCents = BigInt(Math.floor((1 - houseEdge) * 100 + 1e-10));
+  return (targetMultiplierCents * combBigInt(N, k)) / combBigInt(N - M, k);
+}
+
+function getLegacyMinesMultiplierCents(N, M, k) {
+  if (k <= 0) return 100n;
+  if (k > N - M) return 0n;
+  let product = 1;
+  for (let i = 0; i < k; i++) product *= (N - i) / (N - M - i);
+  const multiplier = Math.max(1.01, Math.floor(0.99 * product * 100) / 100);
+  return BigInt(Math.round(multiplier * 100));
+}
+
+function getMinesMultiplierCentsForVersion(N, M, k, version) {
+  return version >= PAYOUT_RULE_VERSION
+    ? getMinesMultiplierCents(N, M, k)
+    : getLegacyMinesMultiplierCents(N, M, k);
+}
+
+function getMinesMultiplierForVersion(N, M, k, version) {
+  return Number(getMinesMultiplierCentsForVersion(N, M, k, version)) / 100;
+}
+
+function getMinesMultiplier(N, M, k, houseEdge = MINES_HOUSE_EDGE) {
+  return Number(getMinesMultiplierCents(N, M, k, houseEdge)) / 100;
+}
+
+function getMinesNextMultipliers(N, M, k, count = 4, houseEdge = MINES_HOUSE_EDGE, version = PAYOUT_RULE_VERSION) {
   const list = [];
   const maxSafe = N - M;
   for (let step = k + 1; step <= Math.min(maxSafe, k + count); step++) {
-    list.push(getMinesMultiplier(N, M, step, houseEdge));
+    list.push(version >= PAYOUT_RULE_VERSION
+      ? getMinesMultiplier(N, M, step, houseEdge)
+      : getMinesMultiplierForVersion(N, M, step, version));
   }
   return list;
 }
@@ -464,11 +534,12 @@ async function minesState(userId) {
   const N = g * g;
   const m = detail.minesCount;
   const k = detail.revealed.length;
-  const mult = k > 0 ? getMinesMultiplier(N, m, k) : 1;
+  const payoutVersion = detail.payoutVersion || 1;
+  const mult = k > 0 ? getMinesMultiplierForVersion(N, m, k, payoutVersion) : 1;
   const safeLeft = N - m - k;
   const bet = Number(r.bet);
-  const potential = Math.min(MINES_MAX_WIN, Math.floor(bet * mult));
-  const nextList = getMinesNextMultipliers(N, m, k, 4);
+  const potential = grossPayoutFromMultiplierCents(bet, getMinesMultiplierCentsForVersion(N, m, k, payoutVersion), MINES_MAX_WIN);
+  const nextList = getMinesNextMultipliers(N, m, k, 4, MINES_HOUSE_EDGE, payoutVersion);
 
   return {
     active: true,
@@ -481,6 +552,7 @@ async function minesState(userId) {
     revealed: detail.revealed,
     safe_left: safeLeft,
     mult,
+    payout_version: payoutVersion,
     potential,
     next_multipliers: nextList,
     server_seed_hash: r.server_seed_hash,
@@ -515,12 +587,12 @@ async function minesStart(userId, bet, minesCount = 5, gridSize = 5, clientSeed 
     const nonce = 1;
 
     const mines = generateMinesLayout(sSeed, cSeed, nonce, N, m);
-    const detail = { grid: g, totalCells: N, mines, revealed: [], minesCount: m, nonce };
+    const detail = { grid: g, totalCells: N, mines, revealed: [], minesCount: m, nonce, payoutVersion: PAYOUT_RULE_VERSION };
     const id = await saveRound(client, userId, 'mines', bet, 0, detail, 'active', 0, sSeed, cSeed, sHash);
     await postLedger({ client, userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
     const balance = Number(wRes.rows[0].balance);
-    const nextList = getMinesNextMultipliers(N, m, 0, 4);
+    const nextList = getMinesNextMultipliers(N, m, 0, 4, MINES_HOUSE_EDGE, PAYOUT_RULE_VERSION);
 
     return {
       active: true,
@@ -550,6 +622,7 @@ async function minesStep(userId, cell) {
     const detail = JSON.parse(r.detail);
     const g = detail.grid || MINES_DEFAULT_GRID;
     const N = g * g;
+    const payoutVersion = detail.payoutVersion || 1;
     if (!Number.isInteger(c) || c < 0 || c >= N) throw new Error('INVALID');
     if (detail.revealed.includes(c)) throw new Error('INVALID');
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
@@ -569,6 +642,7 @@ async function minesStep(userId, cell) {
         multiplier: 0,
         mult: 0,
         payout: 0,
+        net: -Number(r.bet),
         balance,
         server_seed: r.server_seed,
         server_seed_hash: r.server_seed_hash,
@@ -580,10 +654,12 @@ async function minesStep(userId, cell) {
     detail.revealed.push(c);
     const k = detail.revealed.length;
     const m = detail.minesCount;
-    const mult = getMinesMultiplier(N, m, k);
+    const mult = getMinesMultiplierForVersion(N, m, k, payoutVersion);
     const safeLeft = N - m - k;
-    const potential = Math.min(MINES_MAX_WIN, Math.floor(bet * mult));
-    const nextList = getMinesNextMultipliers(N, m, k, 4);
+    const multCents = getMinesMultiplierCentsForVersion(N, m, k, payoutVersion);
+    const potential = grossPayoutFromMultiplierCents(bet, multCents, MINES_MAX_WIN);
+    const net = netWinningsCents(potential, bet);
+    const nextList = getMinesNextMultipliers(N, m, k, 4, MINES_HOUSE_EDGE, payoutVersion);
 
     if (safeLeft === 0) {
       const upd = await client.query("UPDATE game_rounds SET status='done', payout=$1, step=$2, detail=$3 WHERE id=$4 AND status='active'", [potential, k, JSON.stringify(detail), r.id]);
@@ -600,6 +676,7 @@ async function minesStep(userId, cell) {
         multiplier: mult,
         mult,
         payout: potential,
+        net,
         potential,
         balance: newBal,
         mines: detail.mines,
@@ -636,12 +713,14 @@ async function minesCashout(userId) {
     const detail = JSON.parse(r.detail);
     const g = detail.grid || MINES_DEFAULT_GRID;
     const N = g * g;
+    const payoutVersion = detail.payoutVersion || 1;
     const k = detail.revealed.length;
     if (k < 1) throw new Error('INVALID');
     const m = detail.minesCount;
-    const mult = getMinesMultiplier(N, m, k);
+    const mult = getMinesMultiplierForVersion(N, m, k, payoutVersion);
     const bet = Number(r.bet);
-    const payout = Math.min(MINES_MAX_WIN, Math.floor(bet * mult));
+    const payout = grossPayoutFromMultiplierCents(bet, getMinesMultiplierCentsForVersion(N, m, k, payoutVersion), MINES_MAX_WIN);
+    const net = netWinningsCents(payout, bet);
 
     const upd = await client.query("UPDATE game_rounds SET status='done', payout=$1 WHERE id=$2 AND status='active'", [payout, r.id]);
     if (upd.rowCount === 0) throw new Error('INVALID');
@@ -651,6 +730,7 @@ async function minesCashout(userId) {
     return {
       finished: true,
       payout,
+      net,
       multiplier: mult,
       mult,
       balance,
@@ -683,7 +763,7 @@ function minesVerify({ server_seed, client_seed, nonce = 1, grid = 5, mines = 5 
 }
 
 // ---------- Plinko (Stake reference: 8-16 rows, Low/Medium/High risk) ----------
-const PLINKO_PAYOUTS = {
+const PLINKO_BASE_PAYOUTS = {
   8: {
     low: [5.6, 2.1, 1.1, 1, 0.5, 1, 1.1, 2.1, 5.6],
     medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
@@ -731,6 +811,41 @@ const PLINKO_PAYOUTS = {
   },
 };
 
+function multiplierCents(multiplier) {
+  const { numerator, denominator } = decimalFraction(multiplier);
+  return (numerator * 100n) / denominator;
+}
+
+function binomialWeights(rows) {
+  const weights = [1n];
+  for (let i = 0; i < rows; i++) {
+    const next = Array(weights.length + 1).fill(0n);
+    for (let j = 0; j < weights.length; j++) {
+      next[j] += weights[j];
+      next[j + 1] += weights[j];
+    }
+    weights.splice(0, weights.length, ...next);
+  }
+  return weights;
+}
+
+function makePlinkoTargetTable(baseTable) {
+  const result = {};
+  for (const [rowText, risks] of Object.entries(baseTable)) {
+    const rows = Number(rowText);
+    const weights = binomialWeights(rows);
+    result[rows] = {};
+    for (const [risk, sourceMultipliers] of Object.entries(risks)) {
+      const sourceCents = sourceMultipliers.map(multiplierCents);
+      const weightedTotal = sourceCents.reduce((sum, cents, index) => sum + cents * weights[index], 0n);
+      result[rows][risk] = sourceCents.map((cents) => Number((92n * cents * (1n << BigInt(rows))) / weightedTotal) / 100);
+    }
+  }
+  return result;
+}
+
+const PLINKO_PAYOUTS = makePlinkoTargetTable(PLINKO_BASE_PAYOUTS);
+
 function generatePlinkoPath(serverSeed, clientSeed, nonce, rowCount) {
   const path = [];
   let bucket = 0;
@@ -762,7 +877,8 @@ async function plinko(userId, bet, rows = 10, risk = 'medium', clientSeed = '', 
 
   const { path, bucket } = generatePlinkoPath(sSeed, cSeed, nNonce, rowCount);
   const mult = table[bucket] !== undefined ? table[bucket] : 1;
-  const payout = Math.floor(bet * mult);
+  const payout = grossPayoutCents(bet, mult);
+  const net = netWinningsCents(payout, bet);
 
   return withTx(async (client) => {
     const detail = {
@@ -789,6 +905,7 @@ async function plinko(userId, bet, rows = 10, risk = 'medium', clientSeed = '', 
       multiplier: mult,
       mult,
       payout,
+      net,
       balance,
       rows: rowCount,
       risk: riskLevel,
@@ -830,17 +947,44 @@ function plinkoVerify({ server_seed, client_seed, nonce = 1, rows = 10, risk = '
 
 // ---------- Keno (1-80, pick 1-10 spots, draw 20) ----------
 const KENO_PAY = {
-  1:  { 1: 3.8 },
-  2:  { 2: 12 },
-  3:  { 2: 2, 3: 40 },
-  4:  { 2: 1.5, 3: 5, 4: 100 },
-  5:  { 3: 3, 4: 20, 5: 420 },
-  6:  { 3: 2, 4: 8, 5: 80, 6: 1600 },
-  7:  { 3: 1.5, 4: 5, 5: 25, 6: 320, 7: 7000 },
-  8:  { 4: 3.5, 5: 12, 6: 100, 7: 1700, 8: 10000 },
-  9:  { 4: 2.5, 5: 7, 6: 50, 7: 500, 8: 4000, 9: 30000 },
-  10: { 5: 5, 6: 25, 7: 250, 8: 2000, 9: 10000, 10: 100000 },
+  1:  { 1: 3.68 },
+  2:  { 2: 15.30 },
+  3:  { 2: 2.21, 3: 44.20 },
+  4:  { 2: 1.63, 3: 5.46, 4: 109.32 },
+  5:  { 3: 3.61, 4: 24.06, 5: 505.41 },
+  6:  { 3: 1.95, 4: 7.81, 5: 78.13, 6: 1562.68 },
+  7:  { 3: 1.20, 4: 4.01, 5: 20.09, 6: 257.23, 7: 5626.96 },
+  8:  { 4: 3.04, 5: 10.43, 6: 86.97, 7: 1478.54, 8: 8697.33 },
+  9:  { 4: 1.84, 5: 5.16, 6: 36.87, 7: 368.77, 8: 2950.16, 9: 22126.22 },
+  10: { 5: 3.56, 6: 17.82, 7: 178.27, 8: 1426.16, 9: 7130.81, 10: 71308.13 },
 };
+
+const BINGO_PAYOUT_TIERS = [
+  { maxDraw: 20, multiplier: 3.71 },
+  { maxDraw: 30, multiplier: 1.98 },
+  { maxDraw: 40, multiplier: 0.99 },
+  { maxDraw: 50, multiplier: 0.62 },
+  { maxDraw: 75, multiplier: 0.37 },
+];
+
+function getBingoMultiplier(drawCount) {
+  return BINGO_PAYOUT_TIERS.find((tier) => drawCount <= tier.maxDraw)?.multiplier || 0;
+}
+
+function getLegacyBingoMultiplier(drawCount) {
+  if (drawCount <= 20) return 15;
+  if (drawCount <= 30) return 8;
+  if (drawCount <= 40) return 4;
+  if (drawCount <= 50) return 2.5;
+  if (drawCount <= 75) return 1.5;
+  return 0;
+}
+
+function getBingoMultiplierForVersion(drawCount, version) {
+  return version >= PAYOUT_RULE_VERSION
+    ? getBingoMultiplier(drawCount)
+    : getLegacyBingoMultiplier(drawCount);
+}
 
 async function keno(userId, bet, picks) {
   checkBet(bet);
@@ -863,7 +1007,8 @@ async function keno(userId, bet, picks) {
     const matched = picksArr.filter((p) => drawn.includes(p)).length;
     const payRow = KENO_PAY[picksArr.length] || {};
     const mult = payRow[matched] || 0;
-    const payout = Math.floor(bet * mult);
+    const payout = grossPayoutCents(bet, mult);
+    const net = netWinningsCents(payout, bet);
 
     if (payout > 0) {
       await postLedger({ client, userId, delta: payout, type: 'win', refType: 'round', refId: roundId });
@@ -871,7 +1016,7 @@ async function keno(userId, bet, picks) {
     await client.query('UPDATE game_rounds SET payout=$1, detail=$2 WHERE id=$3', [payout, JSON.stringify({ picks: picksArr, drawn, matched, mult }), roundId]);
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
     const balance = Number(wRes.rows[0].balance);
-    return { drawn, matched, mult, payout, balance };
+    return { drawn, matched, mult, payout, net, balance };
   });
 }
 
@@ -919,12 +1064,12 @@ async function bingoStart(userId, bet) {
       await client.query("UPDATE game_rounds SET status='done' WHERE id=$1", [existing.rows[0].id]);
     }
     const card = generateBingoCard();
-    const detail = { card, drawn: [], marked: new Array(25).fill(false) };
+    const detail = { card, drawn: [], marked: new Array(25).fill(false), payoutVersion: PAYOUT_RULE_VERSION };
     const id = await saveRound(client, userId, 'bingo', bet, 0, detail, 'active', 0);
     await postLedger({ client, userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
     const wRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
     const balance = Number(wRes.rows[0].balance);
-    return { id, card, drawn: [], balance };
+    return { id, card, drawn: [], balance, payout_version: PAYOUT_RULE_VERSION };
   });
 }
 
@@ -935,7 +1080,7 @@ async function bingoState(userId) {
   const balance = Number(wRes.rows[0].balance);
   if (!r) return { active: false, balance };
   const detail = JSON.parse(r.detail);
-  return { active: true, id: Number(r.id), card: detail.card, drawn: detail.drawn, marked: detail.marked, bet: Number(r.bet), balance };
+  return { active: true, id: Number(r.id), card: detail.card, drawn: detail.drawn, marked: detail.marked, bet: Number(r.bet), balance, payout_version: detail.payoutVersion || 1 };
 }
 
 async function bingoCall(userId) {
@@ -969,13 +1114,14 @@ async function bingoCall(userId) {
 
     if (won) {
       const drawCount = detail.drawn.length;
-      const mult = drawCount <= 20 ? 15 : drawCount <= 30 ? 8 : drawCount <= 40 ? 4 : drawCount <= 50 ? 2.5 : 1.5;
-      const payout = Math.floor(Number(r.bet) * mult);
+      const mult = getBingoMultiplierForVersion(drawCount, detail.payoutVersion || 1);
+      const payout = grossPayoutCents(Number(r.bet), mult);
+      const net = netWinningsCents(payout, Number(r.bet));
       await postLedger({ client, userId, delta: payout, type: 'win', refType: 'round', refId: Number(r.id) });
       await client.query("UPDATE game_rounds SET status='done', payout=$1, detail=$2 WHERE id=$3", [payout, JSON.stringify(detail), r.id]);
       const newBalRes = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
       const newBal = Number(newBalRes.rows[0].balance);
-      return { called, drawn: detail.drawn, marked: detail.marked, won: true, payout, mult, balance: newBal };
+      return { called, drawn: detail.drawn, marked: detail.marked, won: true, payout, net, mult, balance: newBal };
     }
 
     await client.query("UPDATE game_rounds SET step=step+1, detail=$1 WHERE id=$2", [JSON.stringify(detail), r.id]);
@@ -997,7 +1143,11 @@ async function bingoAbandon(userId) {
 
 module.exports = {
   roulette,
+  ROULETTE_MULTIPLIERS,
   starSpin,
+  SYMBOLS,
+  PAY3,
+  STAR_REFUND_MULTIPLIER,
   roadState,
   roadStart,
   roadStep,
@@ -1005,6 +1155,8 @@ module.exports = {
   roadHistory,
   roadVerify,
   ROAD_CONFIG,
+  getLadder,
+  getMultiplier,
   minesState,
   minesStart,
   minesStep,
@@ -1012,6 +1164,9 @@ module.exports = {
   minesVerify,
   MINES_GRIDS,
   getMinesMultiplier,
+  getMinesMultiplierCents,
+  getMinesMultiplierCentsForVersion,
+  getMinesMultiplierForVersion,
   getMinesNextMultipliers,
   generateMinesLayout,
   plinko,
@@ -1025,5 +1180,10 @@ module.exports = {
   bingoAbandon,
   MIN_BET,
   MAX_BET,
+  MINES_MAX_WIN,
   KENO_PAY,
+  BINGO_PAYOUT_TIERS,
+  getBingoMultiplier,
+  getLegacyBingoMultiplier,
+  getBingoMultiplierForVersion,
 };

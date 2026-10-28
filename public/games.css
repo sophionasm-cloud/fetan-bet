@@ -3930,6 +3930,7 @@ body.game-open.game-landscape .mobile-game-shell[data-game="keno"] .keno-control
   background: linear-gradient(155deg, #121923, #0D1118);
 }
 .roulette-bet-panel .rtable-wrap { width: 100%; min-width: 0; }
+.roulette-payout-guide { margin: 0; color: var(--text-secondary); font-size: 12px; text-align: center; }
 .roulette-bet-panel .rtable {
   width: 100%;
   min-width: 0;

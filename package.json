@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node --no-warnings server.js",
-    "test": "node --no-warnings test.js"
+    "test": "node --no-warnings test.js",
+    "test:payout": "node --no-warnings payout.test.js && node --no-warnings payout-rules.test.js"
   },
   "engines": {
     "node": ">=22.13"
