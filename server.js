@@ -242,11 +242,19 @@ app.post('/api/deposits', auth, wrap(async (req) => {
       await audit(req.user.id, 'deposit.create', { id: newId, amount, has_receipt: Boolean(receiptKey) }, client);
       return newId;
     });
-    return { id };
+    return { id, existing: false };
   } catch (e) {
     if (receiptKey) await fsp.unlink(path.join(receiptDir, receiptKey)).catch(() => {});
-    if (String(e.message).includes('UNIQUE') || String(e.message).includes('duplicate key')) {
-      throw new Error('DUP_REF');
+    if (e.code === '23505') {
+      const duplicate = await query(
+        'SELECT id, user_id, status FROM deposits WHERE provider_id=$1 AND tx_ref=$2',
+        [provider.id, tx_ref]
+      );
+      const existing = duplicate.rows[0];
+      if (existing && Number(existing.user_id) === req.user.id) {
+        return { id: Number(existing.id), existing: true, status: existing.status };
+      }
+      if (existing) throw new Error('DUP_REF');
     }
     throw e;
   }

@@ -930,8 +930,8 @@ async function depositView(app) {
     try {
       const request = Object.fromEntries(new FormData(ev.target));
       if (receiptData) request.receipt_data = receiptData;
-      await api('/deposits', request);
-      success(t('deposit_created'));
+      const result = await api('/deposits', request);
+      success(result.existing ? t('deposit_existing') : t('deposit_created'));
       tab = 'wallet';
       render();
     } catch (e) {

@@ -49,6 +49,7 @@
   "type": "Type",
   "reason": "Reason",
   "deposit_created": "Request sent. An agent will verify it.",
+  "deposit_existing": "This reference already has a request. Your deposit history has been refreshed.",
   "approve": "Approve",
   "reject": "Reject",
   "reject_reason": "Reason for rejection:",

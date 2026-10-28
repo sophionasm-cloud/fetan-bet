@@ -122,12 +122,21 @@ const server = app.listen(0, async () => {
     const receiptPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j5YkAAAAASUVORK5CYII=';
     const dep = await user('/deposits', { provider_id: fixtures.providerA, amount: 50, tx_ref: txRef1, receipt_data: receiptPng });
     ok('deposit request created', dep.status === 200);
+    const pendingAgentDeposits = await agent('/agent/deposits?status=pending');
+    ok('new deposit appears in authorized agent pending queue',
+      pendingAgentDeposits.status === 200 && pendingAgentDeposits.data.deposits.some((item) => item.id === dep.data.id && item.status === 'pending'));
+    const retryDeposit = await user('/deposits', { provider_id: fixtures.providerA, amount: 50, tx_ref: txRef1 });
+    ok('same-customer duplicate submission returns the existing pending request',
+      retryDeposit.status === 200 && retryDeposit.data.id === dep.data.id && retryDeposit.data.existing === true && retryDeposit.data.status === 'pending');
+    const customerDeposits = await user('/deposits');
+    ok('idempotent retry creates no second deposit row', customerDeposits.data.deposits.filter((item) => item.tx_ref === txRef1).length === 1);
+    const crossCustomerDuplicate = await agent('/deposits', { provider_id: fixtures.providerA, amount: 50, tx_ref: txRef1 });
+    ok('another customer cannot reuse the transaction reference', crossCustomerDuplicate.status === 400 && crossCustomerDuplicate.data.error === 'DUP_REF');
     ok('receipt remains pending and does not credit the wallet', (await user('/me')).data.balance === 100000);
     ok('customer can view their protected receipt', (await user(`/deposits/${dep.data.id}/receipt`)).status === 200);
     ok('agent can view a receipt for review', (await agent(`/deposits/${dep.data.id}/receipt`)).status === 200);
     ok('anonymous cannot view a receipt', (await anon(`/deposits/${dep.data.id}/receipt`)).status === 401);
     ok('malformed image content is rejected', (await user('/deposits', { provider_id: fixtures.providerA, amount: 10, tx_ref: 'BADFILE-' + Date.now(), receipt_data: 'data:image/png;base64,PHN2Zy8+' })).status === 400);
-    ok('duplicate tx reference rejected', (await user('/deposits', { provider_id: fixtures.providerA, amount: 50, tx_ref: txRef1 })).data.error === 'DUP_REF');
     ok('negative amount rejected', (await user('/deposits', { provider_id: fixtures.providerA, amount: -5, tx_ref: 'DEMO-NEG-' + Date.now() })).data.error === 'INVALID');
     ok('balance unchanged while pending', (await user('/me')).data.balance === 100000);
     ok('user cannot approve own deposit', (await user(`/agent/deposits/${dep.data.id}/decide`, { action: 'approve' })).status === 403);
