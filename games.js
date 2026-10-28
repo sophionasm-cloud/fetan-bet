@@ -834,11 +834,20 @@ function makePlinkoTargetTable(baseTable) {
   for (const [rowText, risks] of Object.entries(baseTable)) {
     const rows = Number(rowText);
     const weights = binomialWeights(rows);
+    const centerBuckets = rows % 2 === 0
+      ? [rows / 2]
+      : [Math.floor(rows / 2), Math.ceil(rows / 2)];
+    const reservedWeight = centerBuckets.reduce((sum, bucket) => sum + weights[bucket], 0n);
+    const targetWeightedCents = 92n * (1n << BigInt(rows));
+    const remainingTarget = targetWeightedCents - 100n * reservedWeight;
     result[rows] = {};
     for (const [risk, sourceMultipliers] of Object.entries(risks)) {
       const sourceCents = sourceMultipliers.map(multiplierCents);
-      const weightedTotal = sourceCents.reduce((sum, cents, index) => sum + cents * weights[index], 0n);
-      result[rows][risk] = sourceCents.map((cents) => Number((92n * cents * (1n << BigInt(rows))) / weightedTotal) / 100);
+      const weightedTotal = sourceCents.reduce((sum, cents, index) =>
+        centerBuckets.includes(index) ? sum : sum + cents * weights[index], 0n);
+      result[rows][risk] = sourceCents.map((cents, index) => centerBuckets.includes(index)
+        ? 1
+        : Number((cents * remainingTarget) / weightedTotal) / 100);
     }
   }
   return result;
@@ -1174,6 +1183,7 @@ module.exports = {
   plinko,
   plinkoVerify,
   generatePlinkoPath,
+  PLINKO_BASE_PAYOUTS,
   PLINKO_PAYOUTS,
   keno,
   bingoStart,

@@ -1178,11 +1178,19 @@ window.Games = (function () {
         weights.forEach((weight, index) => { next[index] += weight; next[index + 1] += weight; });
         weights.splice(0, weights.length, ...next);
       }
+      const centerBuckets = rows % 2 === 0
+        ? [rows / 2]
+        : [Math.floor(rows / 2), Math.ceil(rows / 2)];
+      const reservedWeight = centerBuckets.reduce((sum, bucket) => sum + weights[bucket], 0n);
+      const remainingTarget = 92n * (1n << BigInt(rows)) - 100n * reservedWeight;
       result[rows] = {};
       for (const [risk, multipliers] of Object.entries(risks)) {
         const cents = multipliers.map(asCents);
-        const weightedTotal = cents.reduce((sum, value, index) => sum + value * weights[index], 0n);
-        result[rows][risk] = cents.map((value) => Number((92n * value * (1n << BigInt(rows))) / weightedTotal) / 100);
+        const weightedTotal = cents.reduce((sum, value, index) =>
+          centerBuckets.includes(index) ? sum : sum + value * weights[index], 0n);
+        result[rows][risk] = cents.map((value, index) => centerBuckets.includes(index)
+          ? 1
+          : Number((value * remainingTarget) / weightedTotal) / 100);
       }
     }
     return result;
@@ -1233,6 +1241,7 @@ window.Games = (function () {
     // Multi-ball active simulation state
     let activeBalls = [];
     let animFrameId = null;
+    let plinkoAlive = true;
     let roundNonceSeq = 0;
     let activeClientSeed = 'client_' + Math.random().toString(36).slice(2, 10);
     let lastServerSeed = '', lastSeedHash = '', nextServerSeedHash = '';
@@ -1409,17 +1418,29 @@ window.Games = (function () {
     const cv = $('plinko-canvas');
     const ctx = cv.getContext('2d');
     const resizePlinkoCanvas = () => {
+      if (!plinkoAlive) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const width = Math.round(W * dpr), height = Math.round(H * dpr);
       if (cv.width !== width || cv.height !== height) {
         cv.width = width; cv.height = height;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Resizing a canvas clears its bitmap. Schedule a fresh static-board draw
+      // so the pegs and background are present before the first ball is dropped.
+      startAnimLoopIfNeeded();
     };
     const canvasResizeObserver = new ResizeObserver(resizePlinkoCanvas);
     canvasResizeObserver.observe($('pboard-wrap'));
     window.addEventListener('orientationchange', resizePlinkoCanvas, { passive: true });
-    stopFns.push(() => { canvasResizeObserver.disconnect(); window.removeEventListener('orientationchange', resizePlinkoCanvas); });
+    stopFns.push(() => {
+      plinkoAlive = false;
+      canvasResizeObserver.disconnect();
+      window.removeEventListener('orientationchange', resizePlinkoCanvas);
+      if (animFrameId !== null) cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+      if (autoTimer) clearTimeout(autoTimer);
+      autoRunning = false;
+    });
     let pegRows = [];
     let bucketsCount = selectedRows + 1;
     let colSpacing = 0, rowSpacing = 0;
@@ -1523,6 +1544,7 @@ window.Games = (function () {
 
     // Master Animation Loop (Supports Multiple Balls Concurrently)
     function animLoop() {
+      if (!plinkoAlive) { animFrameId = null; return; }
       ctx.clearRect(0, 0, W, H);
 
       // Background Gradient

@@ -3,6 +3,7 @@
 // Pure, database-free payout and RTP checks. Run with: node payout-rules.test.js
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const vm = require('node:vm');
 const games = require('./games');
 const { grossPayoutCents, grossPayoutFromMultiplierCents, netWinningsCents } = require('./payout');
 
@@ -71,12 +72,37 @@ for (const grid of games.MINES_GRIDS) {
 assert.equal(minesCapAtMin, 1545);
 assert.equal(minesCapAtMax, 2556);
 
-// Plinko: every supported vector uses exact binomial bucket weights and stays under 92%.
+// Plinko: center refund slot, exact binomial RTP, server/client table agreement,
+// and deterministic verification all use the same landing bucket multiplier.
+const plinkoClientSource = fs.readFileSync('public/games.js', 'utf8');
+const baseMatch = plinkoClientSource.match(/const PLINKO_BASE_TABLES = (\{[\s\S]*?\n  \});\n\n  function plinkoTargetTables/);
+assert.ok(baseMatch, 'frontend Plinko base payout table is present');
+const frontendBaseTables = vm.runInNewContext(`(${baseMatch[1]})`);
+assert.equal(JSON.stringify(frontendBaseTables), JSON.stringify(games.PLINKO_BASE_PAYOUTS),
+  'frontend and backend start from the same Plinko payout vectors');
+const targetMatch = plinkoClientSource.match(/function plinkoTargetTables\(baseTables\) \{[\s\S]*?\n  \}\n  const PLINKO_TABLES/);
+assert.ok(targetMatch, 'frontend Plinko target payout calculation is present');
+const frontendTargetTables = vm.runInNewContext(`${targetMatch[0].replace(/\n  const PLINKO_TABLES$/, '')}; plinkoTargetTables`);
+assert.equal(JSON.stringify(frontendTargetTables(frontendBaseTables)), JSON.stringify(games.PLINKO_PAYOUTS),
+  'displayed Plinko multipliers match authoritative backend payout tables');
+
+// Board initialization and resize redraw are part of the game-open lifecycle,
+// so navigating away and reopening mounts a fresh, immediately rendered board.
+assert.match(plinkoClientSource, /\$\('pdrop'\)\.onclick = handleDrop;[\s\S]*?buildGeometry\(\);\s*startAnimLoopIfNeeded\(\);\s*\n\s*\}/,
+  'Plinko builds geometry and renders its board on every mount');
+assert.match(plinkoClientSource, /ctx\.setTransform\(dpr, 0, 0, dpr, 0, 0\);[\s\S]*startAnimLoopIfNeeded\(\);/,
+  'canvas resize redraws the static board after its bitmap is cleared');
+assert.match(plinkoClientSource, /cancelAnimationFrame\(animFrameId\)/,
+  'Plinko animation is cleaned up when navigating away');
+
 let plinkoVectorCount = 0;
 for (const [rowsText, risks] of Object.entries(games.PLINKO_PAYOUTS)) {
   const rows = Number(rowsText), denominator = 2 ** rows;
   for (const [risk, multipliers] of Object.entries(risks)) {
     assert.equal(multipliers.length, rows + 1);
+    const centerBuckets = rows % 2 === 0 ? [rows / 2] : [Math.floor(rows / 2), Math.ceil(rows / 2)];
+    for (const bucket of centerBuckets) assert.equal(multipliers[bucket], 1,
+      `Plinko ${rows}/${risk} center bucket returns 1.00x`);
     let rtp = 0;
     for (let bucket = 0; bucket <= rows; bucket++) {
       rtp += Number(choose(rows, bucket)) / denominator * multipliers[bucket];
@@ -86,10 +112,18 @@ for (const [rowsText, risks] of Object.entries(games.PLINKO_PAYOUTS)) {
       }
     }
     assert.ok(rtp <= 0.92 && rtp > 0.91, `Plinko ${rows}/${risk} RTP ${rtp}`);
+    assert.ok(multipliers.some((multiplier) => multiplier < 1),
+      `Plinko ${rows}/${risk} retains loss outcomes below 1.00x`);
     plinkoVectorCount++;
   }
 }
 assert.equal(plinkoVectorCount, 27);
+assert.equal(grossPayoutCents(101, 1), 101, 'Plinko 1.00x gross payout returns the stake');
+assert.equal(netWinningsCents(grossPayoutCents(101, 1), 101), 0,
+  'Plinko 1.00x result has zero net winnings');
+assert.equal(grossPayoutCents(101, 0.5), 50, 'Plinko sub-1.00x payout remains a loss');
+assert.equal(netWinningsCents(grossPayoutCents(101, 0.5), 101), -51,
+  'Plinko sub-1.00x result reports the correct net loss');
 
 // Keno: exact hypergeometric probabilities for each pick count.
 for (let picks = 1; picks <= 10; picks++) {
