@@ -135,12 +135,12 @@ async function postLedger({ userId, delta, type, refType = null, refId = null, b
 }
 
 // Create a new user with wallet and optional welcome bonus
-async function createUser({ name, phone, password, role = 'user', lang = 'am', bonus = true, client = null }) {
+async function createUser({ name, phone, password, role = 'user', lang = 'am', bonus = true, referredByAgentId = null, client = null }) {
   const execute = async (c) => {
     const hash = bcrypt.hashSync(password, 10);
     const r = await c.query(
-      'INSERT INTO users (name, phone, password_hash, role, lang) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [name, phone, hash, role, lang]
+      'INSERT INTO users (name, phone, password_hash, role, lang, referred_by_agent_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [name, phone, hash, role, lang, referredByAgentId]
     );
     const id = Number(r.rows[0].id);
     await c.query('INSERT INTO wallets (user_id, balance) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING', [id]);
@@ -182,11 +182,11 @@ async function seed() {
 
     const annCount = await query('SELECT COUNT(*) c FROM announcements');
     if (parseInt(annCount.rows[0].c, 10) === 0) {
-      const admin = await query("SELECT id FROM users WHERE role='admin' LIMIT 1");
+      const admin = await query("SELECT id FROM users WHERE role IN ('admin','superadmin') ORDER BY CASE role WHEN 'superadmin' THEN 0 ELSE 1 END LIMIT 1");
       if (admin.rows.length > 0) {
         await query(
           `INSERT INTO announcements (author_id, target_role, title, content)
-           VALUES ($1, 'agent', 'Welcome to Fetan Bet Operations', 'Welcome to the Agent Portal. Please verify all customer deposits promptly and check transaction references carefully.')`,
+           VALUES ($1, 'agent', 'Welcome to Fetan Bet Operations', 'Welcome to the Fetan Bet referral portal. Share your referral code, support your referred users, and review your activity and compensation.')`,
           [admin.rows[0].id]
         );
       }

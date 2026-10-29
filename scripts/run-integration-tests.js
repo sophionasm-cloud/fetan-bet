@@ -21,7 +21,7 @@ async function verifyTestDatabase(testUrl, expectedIdentity) {
 
     const migrationsTable = await client.query("SELECT to_regclass('public.schema_migrations') IS NOT NULL AS exists");
     const migrations = migrationsTable.rows[0].exists
-      ? await client.query("SELECT name FROM public.schema_migrations WHERE name = ANY($1::text[])", [['001_initial_schema.sql', '002_deposit_receipts_and_reviews.sql']])
+      ? await client.query("SELECT name FROM public.schema_migrations WHERE name = ANY($1::text[])", [['001_initial_schema.sql', '002_deposit_receipts_and_reviews.sql', '003_agent_referrals_superadmin_settlements.sql']])
       : { rows: [] };
     const applied = new Set(migrations.rows.map((row) => row.name));
     const objects = await client.query(`
@@ -40,10 +40,26 @@ async function verifyTestDatabase(testUrl, expectedIdentity) {
         to_regclass('public.system_settings') IS NOT NULL AS system_settings,
         to_regclass('public.audit_logs') IS NOT NULL AS audit_logs,
         to_regclass('public.agent_funding_requests') IS NOT NULL AS agent_funding_requests,
+        to_regclass('public.agent_profiles') IS NOT NULL AS agent_profiles,
+        to_regclass('public.staff_action_history') IS NOT NULL AS staff_action_history,
+        to_regclass('public.withdrawal_reviews') IS NOT NULL AS withdrawal_reviews,
+        to_regclass('public.agent_payout_requests') IS NOT NULL AS agent_payout_requests,
+        to_regclass('public.agent_weekly_settlements') IS NOT NULL AS agent_weekly_settlements,
+        to_regclass('public.agent_settlement_payments') IS NOT NULL AS agent_settlement_payments,
+        to_regclass('public.agent_weekly_settlement_status') IS NOT NULL AS agent_weekly_settlement_status,
         EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='deposits' AND column_name='receipt_key') AS receipt_key
+        , EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='referred_by_agent_id') AS referral_column
+        , EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='audit_logs' AND column_name='actor_ip') AS audit_actor_ip
+        , EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='audit_logs' AND column_name='before_value') AS audit_before_after
+        , EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='uq_agent_profiles_promo_code_ci') AS unique_promo_index
+        , EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid=to_regclass('public.users') AND conname='users_role_check' AND pg_get_constraintdef(oid) LIKE '%superadmin%') AS superadmin_role_constraint
+        , EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid=to_regclass('public.support_messages') AND conname='support_messages_sender_role_check' AND pg_get_constraintdef(oid) LIKE '%superadmin%') AS superadmin_support_role_constraint
         , EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='uq_ledger_ref') AS ledger_ref_index
         , EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_ledger_immutable' AND NOT tgisinternal AND tgenabled <> 'D') AS ledger_immutable_trigger
         , EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_deposit_reviews_immutable' AND NOT tgisinternal AND tgenabled <> 'D') AS deposit_review_immutable_trigger
+        , EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_staff_action_history_immutable' AND NOT tgisinternal AND tgenabled <> 'D') AS staff_action_immutable_trigger
+        , EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_agent_weekly_settlements_immutable' AND NOT tgisinternal AND tgenabled <> 'D') AS settlement_immutable_trigger
+        , EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='trg_agent_settlement_payments_immutable' AND NOT tgisinternal AND tgenabled <> 'D') AS settlement_payment_immutable_trigger
     `);
     const missingObjects = Object.entries(objects.rows[0]).filter(([, present]) => !present).map(([name]) => name);
     let businessDataEmpty = null;
@@ -63,7 +79,13 @@ async function verifyTestDatabase(testUrl, expectedIdentity) {
           NOT EXISTS (SELECT 1 FROM system_settings) AS system_settings,
           NOT EXISTS (SELECT 1 FROM audit_logs) AS audit_logs,
           NOT EXISTS (SELECT 1 FROM agent_funding_requests) AS agent_funding_requests,
-          NOT EXISTS (SELECT 1 FROM deposit_reviews) AS deposit_reviews
+          NOT EXISTS (SELECT 1 FROM deposit_reviews) AS deposit_reviews,
+          NOT EXISTS (SELECT 1 FROM agent_profiles) AS agent_profiles,
+          NOT EXISTS (SELECT 1 FROM staff_action_history) AS staff_action_history,
+          NOT EXISTS (SELECT 1 FROM withdrawal_reviews) AS withdrawal_reviews,
+          NOT EXISTS (SELECT 1 FROM agent_payout_requests) AS agent_payout_requests,
+          NOT EXISTS (SELECT 1 FROM agent_weekly_settlements) AS agent_weekly_settlements,
+          NOT EXISTS (SELECT 1 FROM agent_settlement_payments) AS agent_settlement_payments
       `);
       businessDataEmpty = Object.values(empty.rows[0]).every(Boolean);
     }
@@ -104,7 +126,7 @@ async function main() {
     return;
   }
 
-  const requiredMigrations = ['001_initial_schema.sql', '002_deposit_receipts_and_reviews.sql'];
+  const requiredMigrations = ['001_initial_schema.sql', '002_deposit_receipts_and_reviews.sql', '003_agent_referrals_superadmin_settlements.sql'];
   const missing = requiredMigrations.filter((name) => !verified.applied.has(name));
   if (missing.length || verified.missingObjects.length || verified.businessDataEmpty !== true) {
     await verified.client.end();

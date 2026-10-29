@@ -936,6 +936,12 @@ tr:hover td {
   border: 1px solid var(--green-border);
 }
 
+.tag.paid {
+  background: var(--green-bg);
+  color: var(--green-bright);
+  border: 1px solid var(--green-border);
+}
+
 .tag.rejected {
   background: var(--red-bg);
   color: var(--red-bright);
@@ -1078,6 +1084,21 @@ tr:hover td {
   color: var(--text-muted);
   font-weight: 700;
 }
+
+.admin-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0 16px;
+}
+.admin-filters input,
+.admin-filters select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+}
+.admin-filters button { min-height: 38px; }
 
 /* Guest landing and accessible authentication dialog */
 .auth-overlay {
