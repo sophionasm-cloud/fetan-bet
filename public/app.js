@@ -1,6 +1,6 @@
 // ፍጣን ቤት front-end — Stake-inspired professional UI, no build step.
 'use strict';
-let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0,
+let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0, promoCredits = 0,
     limits = { min: 100, max: 100000 }, tab = 'games', agentSubtab = 'deposits';
 
 const $ = (id) => document.getElementById(id);
@@ -49,11 +49,11 @@ function renderMobileHeaderMenu() {
 }
 
 // ---------- API ----------
-async function api(path, body) {
-  const opt = body === undefined ? {} : {
-    method: 'POST',
+async function api(path, body, method = body === undefined ? 'GET' : 'POST') {
+  const opt = method === 'GET' ? {} : {
+    method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
   };
   let r;
   try {
@@ -166,7 +166,7 @@ async function loadLang(l) {
 async function refreshMe() {
   try {
     const d = await api('/me');
-    me = d.user; balance = d.balance; limits = d.limits;
+    me = d.user; balance = d.balance; promoCredits = Number(d.promo_credits || 0); limits = d.limits;
   } catch { me = null; }
 
   // Header controls synchronization
@@ -243,6 +243,7 @@ function nav() {
   }
 
   const n = $('nav');
+  if (me && me.role !== 'user') { n.hidden = true; return; }
   n.hidden = false;
   n.className = mobileUserTabs ? 'tabs app-bottom-tabs' : 'tabs';
   document.body.classList.toggle('has-app-nav', mobileUserTabs);
@@ -255,6 +256,9 @@ function nav() {
 async function render(subMode = '') {
   const gameRoute = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
   await refreshMe();
+  if ((!me || !['agent', 'superadmin'].includes(me.role)) && window.FetanWorkspace) {
+    window.FetanWorkspace.cleanup();
+  }
   const app = $('app');
   if (!gameRoute || !me || me.role !== 'user' || !matchMedia('(max-width: 1024px)').matches) document.body.classList.remove('game-open');
   if (!me) {
@@ -268,18 +272,18 @@ async function render(subMode = '') {
 
   if (gameRoute && me.role === 'user') tab = 'games';
 
-  // Restrict each authenticated role to its own page set. In particular, do
-  // not allow staff to land on the customer transaction-history renderer.
-  if (me.role === 'agent' && tab !== 'agent') tab = 'agent';
-  if ((me.role === 'admin' || me.role === 'superadmin') && tab !== 'admin') tab = 'admin';
-  if (me.role === 'user' && ['agent', 'admin'].includes(tab)) tab = 'games';
-  if (me.role !== 'user' && ['games', 'deposit', 'withdraw', 'wallet', 'support', 'profile', 'history'].includes(tab)) {
-    tab = (me.role === 'admin' || me.role === 'superadmin') ? 'admin' : 'agent';
-    toast(t('admin_game_blocked'), 'err');
+  // Staff roles use the dedicated premium workspace; they never render
+  // customer wallet/deposit/game views.
+  if (me.role === 'agent' || me.role === 'superadmin') {
+    tab = 'workspace';
+  } else if (me.role === 'admin') {
+    // The legacy admin console remains available for existing admin accounts.
+    tab = 'admin';
+  } else if (['agent', 'admin', 'workspace'].includes(tab)) {
+    tab = 'games';
   }
 
-  nav();
-  $('nav').hidden = Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches);
+  $('nav').hidden = me.role !== 'user' || Boolean(gameRoute && matchMedia('(max-width: 1024px)').matches);
   syncTelegramShell(Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches));
   const views = {
     games: (root) => gamesView(root, gameRoute),
@@ -291,6 +295,7 @@ async function render(subMode = '') {
     profile: profileView,
     agent: renderAgentReferralDashboard,
     admin: adminView,
+    workspace: (root) => renderWorkspace(root)
   };
   try {
     const fn = views[tab] || (['admin','superadmin'].includes(me.role) ? adminView : me.role === 'agent' ? renderAgentReferralDashboard : gamesView);
@@ -451,6 +456,14 @@ function authView(app, initialMode = 'login') {
                 <button type="button" class="pass-toggle-btn" id="l-pass-toggle" title="Show/Hide Password">👁</button>
               </div>
 
+              <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text-secondary);cursor:pointer">
+                <input id="l-remember" type="checkbox" checked style="accent-color:var(--gold-bright)">
+                <span>${esc(t('remember_me'))}</span>
+              </label>
+              <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--text-muted)">
+                <a href="#" id="forgot-password" style="color:var(--gold-bright);font-weight:700">${esc(t('forgot_password'))}</a>
+              </p>
+
               <button type="submit" class="btn btn-gold" style="margin-top:16px">${esc(t('login'))}</button>
             </form>
             <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-muted)">
@@ -466,6 +479,12 @@ function authView(app, initialMode = 'login') {
               
               <label for="r-phone" style="margin-top:10px">${esc(t('phone'))}</label>
               <input id="r-phone" name="phone" type="tel" inputmode="tel" placeholder="${esc(t('phone_hint'))}" autocomplete="tel" required>
+
+              <label for="r-username" style="margin-top:10px">${lang === 'am' ? 'የተጠቃሚ ስም' : 'Username'} <span class="muted">(${esc(t('optional'))})</span></label>
+              <input id="r-username" name="username" type="text" maxlength="30" autocomplete="username" placeholder="${lang === 'am' ? 'ለምሳሌ፡ fetan_user' : 'e.g. fetan_user'}">
+
+              <label for="r-email" style="margin-top:10px">${lang === 'am' ? 'ኢሜይል' : 'Email'} <span class="muted">(${esc(t('optional'))})</span></label>
+              <input id="r-email" name="email" type="email" maxlength="160" autocomplete="email" placeholder="${lang === 'am' ? 'ኢሜይልዎን ያስገቡ' : 'you@example.com'}">
 
               <label for="r-promo" style="margin-top:10px">${esc(t('promo_code'))} <span class="muted">(${esc(t('optional'))})</span></label>
               <input id="r-promo" name="promo_code" type="text" maxlength="20" autocomplete="off">
@@ -486,6 +505,19 @@ function authView(app, initialMode = 'login') {
       </div>
     </div>`;
   document.body.appendChild(modal);
+
+  const urlPromo = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code');
+  if (urlPromo) $('r-promo').value = urlPromo;
+
+  $('forgot-password')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const identifier = prompt('Enter your phone, username or email to request a password reset:');
+    if (!identifier) return;
+    try {
+      await api('/password-reset-request', { identifier });
+      toast('If an account matches, a reset request has been opened for review.', 'ok');
+    } catch (e) { fail(e); }
+  });
 
   const opener = document.activeElement;
   const closeModal = () => {
@@ -573,9 +605,9 @@ function authView(app, initialMode = 'login') {
     const btn = ev.target.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = '...';
     try {
-      await api('/login', { phone, password });
+      await api('/login', { phone, password, remember: $('l-remember')?.checked !== false });
       if (!await refreshMe()) throw new Error('SESSION');
-      tab = (me && me.role !== 'user') ? me.role : 'games';
+      tab = (me && me.role !== 'user') ? 'workspace' : 'games';
       closeModal();
       await render();
     } catch (e) {
@@ -592,6 +624,8 @@ function authView(app, initialMode = 'login') {
     const name = String(data.name || '').trim();
     const phone = String(data.phone || '').trim();
     const password = String(data.password || '');
+    const username = String(data.username || '').trim();
+    const email = String(data.email || '').trim();
 
     if (name.length < 2) {
       showAuthError(new Error('INVALID_NAME'));
@@ -612,7 +646,12 @@ function authView(app, initialMode = 'login') {
     const btn = ev.target.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = '...';
     try {
-      await api('/register', { name, phone, password, lang, promo_code: $('r-promo')?.value.trim() || '' });
+      await api('/register', {
+        name, phone, password, lang,
+        username: username || undefined,
+        email: email || undefined,
+        promo_code: $('r-promo')?.value.trim() || ''
+      });
       if (!await refreshMe()) throw new Error('REGISTERED_SESSION');
       tab = 'games'; // Customer sees games immediately upon register!
       closeModal();
@@ -632,6 +671,26 @@ function guestView(app) {
     minesState: { active: false, mines: 5 }, guest: true,
     onLogin: () => authView(app, 'login'),
   });
+
+  const urlPromo = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code');
+
+  const banner = document.createElement('section');
+  banner.className = 'guest-promo-banner';
+  banner.innerHTML = `
+    <div class="guest-promo-inner">
+      <div class="guest-promo-copy">
+        <span class="guest-promo-kicker">FETCH YOUR AGENT BONUS</span>
+        <h2 class="guest-promo-title">${lang === 'am' ? 'የአጀንት ፕሮሞ ኮድ ይጠቀሙ' : 'Use an Agent Promo Code'}</h2>
+        <p class="guest-promo-text">${lang === 'am' ? '2,000 ነፃ ክሬዲት ያግኙ!' : 'Get 2,000 Free Credits!'}</p>
+        <div class="guest-promo-gift">${iconGift()}</div>
+      </div>
+      <div class="guest-promo-actions">
+        <input type="text" id="guest-promo-code" placeholder="${lang === 'am' ? 'የፕሮሞ ኮድ ያስገቡ' : 'Enter promo code'}" maxlength="20" value="${esc(urlPromo || '')}">
+        <button type="button" class="btn btn-gold" id="guest-promo-register">${lang === 'am' ? 'አሁን ይመዝገቡ' : 'Register Now'}</button>
+      </div>
+    </div>`;
+  app.prepend(banner);
+
   const hero = app.querySelector('.lobby-hero-content');
   if (hero) {
     const actions = document.createElement('div');
@@ -641,6 +700,16 @@ function guestView(app) {
     $('guest-register').onclick = () => authView(app, 'register');
     $('guest-login').onclick = () => authView(app, 'login');
   }
+
+  $('guest-promo-register')?.addEventListener('click', () => {
+    const promo = String($('guest-promo-code')?.value || '').trim();
+    authView(app, 'register');
+    window.setTimeout(() => { if (promo) $('r-promo').value = promo; }, 50);
+  });
+}
+
+function iconGift() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:42px;height:42px"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13"/><path d="M12 8H7.5A2.5 2.5 0 1 1 10 5.5zM12 8h4.5A2.5 2.5 0 1 0 14 5.5z"/></svg>';
 }
 
 // =====================================================
@@ -695,6 +764,11 @@ async function walletView(app) {
           <b style="color:var(--gold-bright);font-size:32px;letter-spacing:0.5px">🪙 ${fmt(balance)}</b>
           <div class="muted">${esc(t('credits'))}</div>
         </div>
+        ${promoCredits > 0 ? `<div class="stat">
+          <div class="stat-label">Promotional credits</div>
+          <b style="color:var(--ws-success);font-size:26px">🎁 ${fmt(promoCredits)}</b>
+          <div class="muted">Welcome bonus · not withdrawable</div>
+        </div>` : ''}
         <div class="stat">
           <div class="stat-label">${esc(t('status_pending'))}</div>
           <b style="font-size:26px">${pendingDep + pendingWith}</b>
@@ -1273,6 +1347,29 @@ let agentReportStart = '';
 let agentReportEnd = '';
 let adminTransactionFilters = {};
 const settlementDefaultDate = (()=>{const d=new Date();d.setUTCHours(0,0,0,0);d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7)-7);return d.toISOString().slice(0,10);})();
+
+async function renderWorkspace(app) {
+  if (!window.FetanWorkspace) {
+    app.innerHTML = '<div class="card">Workspace shell is loading…</div>';
+    return;
+  }
+  try {
+    await window.FetanWorkspace.mount(app, {
+      api, t, esc, fail, success, me,
+      onLogout: async () => {
+        window.FetanWorkspace.cleanup();
+        await api('/logout', {});
+        me = null;
+        tab = 'games';
+        await render();
+      }
+    });
+  } catch (e) {
+    fail(e);
+    app.innerHTML = `<div class="card agent-api-error" role="alert"><div><b>Workspace could not start.</b><p>${esc(getErrMsg(e))}</p></div><button type="button" class="btn btn-outline" id="ws-retry">Retry</button></div>`;
+    document.getElementById('ws-retry')?.addEventListener('click', () => render());
+  }
+}
 
 async function adminView(app) {
   const isSuperAdmin = me.role === 'superadmin';

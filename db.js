@@ -135,12 +135,13 @@ async function postLedger({ userId, delta, type, refType = null, refId = null, b
 }
 
 // Create a new user with wallet and optional welcome bonus
-async function createUser({ name, phone, password, role = 'user', lang = 'am', bonus = true, referredByAgentId = null, client = null }) {
+async function createUser({ name, phone, password, role = 'user', lang = 'am', bonus = true, referredByAgentId = null, email = null, username = null, client = null }) {
   const execute = async (c) => {
     const hash = bcrypt.hashSync(password, 10);
     const r = await c.query(
-      'INSERT INTO users (name, phone, password_hash, role, lang, referred_by_agent_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [name, phone, hash, role, lang, referredByAgentId]
+      `INSERT INTO users (name, phone, password_hash, role, lang, referred_by_agent_id, email, username)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+      [name, phone, hash, role, lang, referredByAgentId, email, username]
     );
     const id = Number(r.rows[0].id);
     await c.query('INSERT INTO wallets (user_id, balance) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING', [id]);

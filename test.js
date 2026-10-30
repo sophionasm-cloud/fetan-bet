@@ -9,6 +9,7 @@ require('./scripts/test-db-safety').assertSeparateTestDatabase(process.env);
 const app = require('./server');
 const games = require('./games');
 const { query, pool, withTx, createUser, postLedger } = require('./db');
+const { utcWeekBounds } = require('./agent-finance');
 
 async function prepareSyntheticFixtures() {
   const digits = () => String(crypto.randomInt(10000000, 99999999));
@@ -18,12 +19,9 @@ async function prepareSyntheticFixtures() {
     fixtures.agentId = await createUser({ name: 'Synthetic Test Agent', phone: fixtures.agentPhone, password: fixtures.agentPassword, role: 'agent', bonus: false, client: dbClient });
     fixtures.adminId = await createUser({ name: 'Synthetic Test Admin', phone: fixtures.adminPhone, password: fixtures.adminPassword, role: 'admin', bonus: false, client: dbClient });
     fixtures.superId = await createUser({ name: 'Synthetic Test Super Admin', phone: fixtures.superPhone, password: fixtures.superPassword, role: 'superadmin', bonus: false, client: dbClient });
-    await dbClient.query('INSERT INTO agent_profiles(agent_id,promo_code,weekly_fee_santim,commission_bps) VALUES($1,$2,25000,1000)', [fixtures.agentId, fixtures.agentPromo]);
-    const currentWeek = new Date();
-    currentWeek.setUTCHours(0, 0, 0, 0);
-    currentWeek.setUTCDate(currentWeek.getUTCDate() - ((currentWeek.getUTCDay() + 6) % 7));
-    const priorWeekStart = new Date(currentWeek);
-    priorWeekStart.setUTCDate(priorWeekStart.getUTCDate() - 7);
+    await dbClient.query('INSERT INTO agent_profiles(agent_id,promo_code,weekly_fee_santim,commission_bps) VALUES($1,$2,25000,2500)', [fixtures.agentId, fixtures.agentPromo]);
+    const currentWeek = utcWeekBounds(new Date());
+    const priorWeekStart = new Date(Date.parse(currentWeek.start) - 7 * 24 * 60 * 60 * 1000);
     fixtures.settlementWeekStart = priorWeekStart.toISOString().slice(0, 10);
     await dbClient.query('UPDATE agent_profiles SET created_at=$1 WHERE agent_id=$2', [priorWeekStart, fixtures.agentId]);
     fixtures.agentBPhone = '09' + digits();
