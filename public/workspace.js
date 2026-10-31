@@ -328,15 +328,16 @@
   function topbarMarkup() {
     const [title, subtitle] = metaFor(state.page);
     return `<header class="ws-topbar">
-      <button type="button" class="ws-menu-btn" id="ws-menu" aria-label="Open menu">${icon('menu')}</button>
+      <button type="button" class="ws-menu-btn" id="ws-menu" aria-label="Open menu" aria-expanded="false" aria-controls="ws-sidebar">${icon('menu')}<span class="ws-menu-text">Menu</span></button>
       <div class="ws-title-block"><span class="ws-eyebrow">${ctx.me.role === 'agent' ? 'AGENT PORTAL' : 'SUPER ADMIN'}</span><h1>${esc(title)}</h1><p>${esc(subtitle)}</p></div>
       <div class="ws-top-actions">
-        <button type="button" class="ws-refresh-btn" id="ws-refresh">${icon('refresh')}<span>Refresh</span></button>
+        <button type="button" class="ws-refresh-btn" id="ws-refresh" title="Refresh dashboard" aria-label="Refresh dashboard">${icon('refresh')}<span>Refresh</span></button>
         <div class="ws-notif-wrap">
           <button type="button" class="ws-icon-btn ws-bell" id="ws-bell" aria-label="Notifications">${icon('bell')}<span class="ws-bell-badge" id="ws-bell-badge" ${state.notificationUnread ? '' : 'hidden'}>${state.notificationUnread > 9 ? '9+' : state.notificationUnread}</span></button>
           <div class="ws-notif-panel" id="ws-notif-panel" hidden></div>
         </div>
-        <button type="button" class="ws-top-avatar" id="ws-top-avatar" title="${esc(ctx.me.name)}">${avatar(ctx.me.name)}<span class="ws-top-avatar-dot"></span></button>
+        <button type="button" class="ws-top-avatar" id="ws-top-avatar" title="${esc(ctx.me.name)}" aria-label="Open profile">${avatar(ctx.me.name)}<span class="ws-top-avatar-dot"></span></button>
+        <button type="button" class="ws-logout-btn" id="ws-logout-top" title="Logout" aria-label="Logout">${icon('logout')}<span>Logout</span></button>
       </div>
     </header>`;
   }
@@ -349,6 +350,7 @@
 
   function bindShell() {
     document.getElementById('ws-logout')?.addEventListener('click', () => ctx.onLogout());
+    document.getElementById('ws-logout-top')?.addEventListener('click', () => ctx.onLogout());
     document.querySelectorAll('.ws-nav-item[data-page]').forEach((button) => {
       button.addEventListener('click', () => navigate(button.dataset.page));
     });
@@ -358,9 +360,10 @@
     });
     document.getElementById('ws-refresh')?.addEventListener('click', () => renderPage(true));
     document.getElementById('ws-top-avatar')?.addEventListener('click', () => navigate(ctx.me.role === 'agent' ? 'profile' : 'settings'));
-    document.getElementById('ws-menu')?.addEventListener('click', () => setSidebar(true));
+    document.getElementById('ws-menu')?.addEventListener('click', () => setSidebar(!state.sidebarOpen));
     document.getElementById('ws-sidebar-close')?.addEventListener('click', () => setSidebar(false));
     document.getElementById('ws-scrim')?.addEventListener('click', () => setSidebar(false));
+    document.addEventListener('keydown', closeSidebarOnEscape);
     document.getElementById('ws-bell')?.addEventListener('click', (event) => {
       event.stopPropagation();
       notificationOpen = !notificationOpen;
@@ -374,6 +377,10 @@
     }, 45000);
   }
 
+  function closeSidebarOnEscape(event) {
+    if (event.key === 'Escape') setSidebar(false);
+  }
+
   function closeNotificationsOnOutside(event) {
     if (!notificationOpen) return;
     if (event.target.closest('.ws-notif-wrap')) return;
@@ -383,10 +390,13 @@
   }
 
   function setSidebar(open) {
-    state.sidebarOpen = open;
-    document.getElementById('ws-sidebar')?.classList.toggle('open', open);
+    state.sidebarOpen = Boolean(open);
+    document.getElementById('ws-sidebar')?.classList.toggle('open', state.sidebarOpen);
     const scrim = document.getElementById('ws-scrim');
-    if (scrim) scrim.hidden = !open;
+    if (scrim) scrim.hidden = !state.sidebarOpen;
+    const menu = document.getElementById('ws-menu');
+    if (menu) menu.setAttribute('aria-expanded', String(state.sidebarOpen));
+    document.body.classList.toggle('ws-nav-open', state.sidebarOpen);
   }
 
   function navigate(page) {
@@ -413,7 +423,8 @@
     cleanupPage();
     if (notificationTimer) { clearInterval(notificationTimer); notificationTimer = null; }
     document.removeEventListener('click', closeNotificationsOnOutside);
-    document.body.classList.remove('workspace-mode', 'ws-agent', 'ws-superadmin', 'ws-modal-open');
+    document.removeEventListener('keydown', closeSidebarOnEscape);
+    document.body.classList.remove('workspace-mode', 'ws-agent', 'ws-superadmin', 'ws-modal-open', 'ws-nav-open');
     document.querySelectorAll('.ws-modal-backdrop').forEach((modal) => modal.remove());
     state.notifications = [];
     state.notificationUnread = 0;
@@ -1154,9 +1165,9 @@
     const report = await ctx.api(`/superadmin/reports?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`).catch(() => ({ summary: {}, daily: [], games: [], agents: [], commission: {} }));
     state.reportData = report;
     const s = report.summary || {};
-    return `<div class="ws-page-head"><div><span class="ws-kicker">REPORTING</span><h2>Reports</h2><p>Financial performance and agent overview for a custom period.</p></div><div class="ws-head-actions"><form id="super-report-filter" style="display:flex;gap:8px;align-items:end">
-      <label style="margin:0"><span>From</span><input name="start" type="date" value="${esc(state.reportStart)}"></label>
-      <label style="margin:0"><span>To</span><input name="end" type="date" value="${esc(state.reportEnd)}"></label>
+    return `<div class="ws-page-head"><div><span class="ws-kicker">REPORTING</span><h2>Reports</h2><p>Financial performance and agent overview for a custom period.</p></div><div class="ws-head-actions"><form id="super-report-filter" class="ws-report-filter">
+      <label class="ws-report-field"><span>From</span><input name="start" type="date" value="${esc(state.reportStart)}"></label>
+      <label class="ws-report-field"><span>To</span><input name="end" type="date" value="${esc(state.reportEnd)}"></label>
       <button type="submit" class="ws-btn primary">Apply</button>
       <button type="button" class="ws-btn dark" id="super-report-csv">📥 Export CSV</button>
     </form></div></div>

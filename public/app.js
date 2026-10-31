@@ -1391,7 +1391,7 @@ async function renderWorkspace(app) {
         await api('/logout', {});
         me = null;
         tab = 'games';
-        await render();
+        await render('login');
       }
     });
   } catch (e) {

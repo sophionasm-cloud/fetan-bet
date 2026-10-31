@@ -2017,7 +2017,8 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
   // The Agent P&L chart is always an eight-week series, independent of the
   // stat-card range, so its buckets must align with EAT week starts.
   const trendBounds = utcWeekBounds();
-  const trendStart = new Date(trendBounds.start.getTime() - 7 * 7 * DAY_MS);
+  const trendWeekStart = new Date(trendBounds.start);
+  const trendStart = new Date(trendWeekStart.getTime() - 7 * 7 * DAY_MS);
   const [users, deposits, withdrawals, pendingDep, pendingWith, agentStats, commissionRows, previousCommissionRows, weeklyCut, agentBars, trendRows, pendingDeposits, pendingWithdrawals, notifications, support] = await Promise.all([
     query(
       `SELECT COUNT(*)::bigint AS total,
@@ -2028,12 +2029,14 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
     query(
       `SELECT COUNT(*)::bigint AS c, COALESCE(SUM(d.amount),0)::bigint AS total
        FROM deposits d WHERE d.status='approved'
-         AND COALESCE(d.reviewed_at,d.created_at) >= $1 AND COALESCE(d.reviewed_at,d.created_at) < $2`, params
+         AND COALESCE(d.reviewed_at,d.created_at) >= $1 AND COALESCE(d.reviewed_at,d.created_at) < $2`,
+      [bounds.start, bounds.end]
     ),
     query(
       `SELECT COUNT(*)::bigint AS c, COALESCE(SUM(w.amount),0)::bigint AS total
        FROM withdrawals w WHERE w.status IN ('approved','paid')
-         AND COALESCE(w.reviewed_at,w.created_at) >= $1 AND COALESCE(w.reviewed_at,w.created_at) < $2`, params
+         AND COALESCE(w.reviewed_at,w.created_at) >= $1 AND COALESCE(w.reviewed_at,w.created_at) < $2`,
+      [bounds.start, bounds.end]
     ),
     query(`SELECT COUNT(*)::bigint AS c, COALESCE(SUM(amount),0)::bigint AS total FROM deposits WHERE status='pending'`),
     query(`SELECT COUNT(*)::bigint AS c, COALESCE(SUM(amount),0)::bigint AS total FROM withdrawals WHERE status='pending'`),
@@ -2053,18 +2056,20 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
        )
        SELECT COALESCE(SUM(n.ngr),0)::bigint AS ngr,
               COALESCE(SUM(CASE WHEN n.ngr>0 THEN (n.ngr*p.commission_bps/10000)::bigint ELSE 0 END),0)::bigint AS commission
-       FROM ngr n JOIN agent_profiles p ON p.agent_id=n.agent_id`, params
+       FROM ngr n JOIN agent_profiles p ON p.agent_id=n.agent_id`,
+      [bounds.start, bounds.end]
     ),
     query(
       `WITH settled AS (${SETTLED_ROUND_SOURCE}),
        ngr AS (
          SELECT u.referred_by_agent_id AS agent_id, COALESCE(SUM(r.bet-r.payout),0)::bigint AS ngr
          FROM settled r JOIN users u ON u.id=r.user_id
-         WHERE u.referred_by_agent_id IS NOT NULL AND r.settled_at >= $3 AND r.settled_at < $4
+         WHERE u.referred_by_agent_id IS NOT NULL AND r.settled_at >= $1 AND r.settled_at < $2
          GROUP BY 1
        )
        SELECT COALESCE(SUM(CASE WHEN n.ngr>0 THEN (n.ngr*p.commission_bps/10000)::bigint ELSE 0 END),0)::bigint AS commission
-       FROM ngr n JOIN agent_profiles p ON p.agent_id=n.agent_id`, params
+       FROM ngr n JOIN agent_profiles p ON p.agent_id=n.agent_id`,
+      [bounds.prevStart, bounds.prevEnd]
     ),
     query(
       `WITH settled AS (${SETTLED_ROUND_SOURCE}),
@@ -2093,7 +2098,8 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
        FROM users u JOIN agent_profiles p ON p.agent_id=u.id
        LEFT JOIN ngr n ON n.agent_id=u.id
        WHERE u.role='agent'
-       ORDER BY ngr DESC,u.id LIMIT 10`, params
+       ORDER BY ngr DESC,u.id LIMIT 10`,
+      [bounds.start, bounds.end]
     ),
     query(
       `WITH settled AS (${SETTLED_ROUND_SOURCE})
@@ -2134,7 +2140,7 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
   const previousCommission = Number(previousCommissionRows.rows[0]?.commission || 0);
   const currentNgr = Number(commissionRows.rows[0]?.ngr || 0);
   const weeklyLabels = [];
-  for (let i = 7; i >= 0; i -= 1) weeklyLabels.push(eatDateLabel(new Date(trendBounds.start.getTime() - i * 7 * DAY_MS)));
+  for (let i = 7; i >= 0; i -= 1) weeklyLabels.push(eatDateLabel(new Date(trendWeekStart.getTime() - i * 7 * DAY_MS)));
   const weeklyMap = new Map(trendRows.rows.map((row) => [row.bucket, Number(row.ngr)]));
   return {
     range,

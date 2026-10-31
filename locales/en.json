@@ -149,6 +149,8 @@
   "err_DUP_REF": "This reference is already linked to a deposit. No new request was created. Check My deposit requests, or use the unique reference from a different transfer.",
   "err_SELF": "You cannot do this on your own account.",
   "err_SETTLEMENT_GAP": "A previous commission week is missing. Close weeks in order.",
+  "err_SCHEMA_NOT_READY": "The database is not ready yet. Apply the pending migrations, then try again.",
+  "err_SERVICE_UNAVAILABLE": "The service is temporarily unavailable. Please try again shortly.",
   "err_FORBIDDEN": "You do not have permission.",
   "err_SUSPENDED": "This account is suspended.",
   "err_RATE": "Too many attempts. Please wait a few minutes.",
