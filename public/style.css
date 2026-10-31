@@ -1988,6 +1988,7 @@ body.customer-theme #app .lobby-hero { padding: 18px 22px; margin-bottom: 18px; 
 body.customer-theme #app .lobby-hero::before { opacity: .35; }
 body.customer-theme #app .lobby-hero-badge { color: var(--gold-bright); background: var(--gold-bg); border-color: var(--gold-border); }
 body.customer-theme #app .lobby-hero-title { margin: 5px 0; font-size: clamp(25px,3vw,34px); letter-spacing: -.7px; line-height: 1.15; text-transform: none; text-shadow: none; }
+body.customer-theme[data-customer-theme="light"] #app .lobby-hero-title { color: var(--text); }
 body.customer-theme #app .lobby-hero-sub { max-width: 620px; margin: 0; font-size: 14px; }
 body.customer-theme #app .lobby-hero-pills { gap: 8px; margin-top: 10px; }
 body.customer-theme #app .hero-pill { padding: 5px 10px; font-size: 11px; }
