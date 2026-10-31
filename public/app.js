@@ -28,8 +28,10 @@ const initials = (name) => String(name || '?').trim().charAt(0).toUpperCase();
 function renderMobileHeaderMenu() {
   const panel = $('mobileMenuPanel');
   if (!panel) return;
-  const links = me
-    ? [['support', '💬', t('support')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ'], ['logout', '↪', t('logout')]]
+  const links = me?.role === 'user'
+    ? [['withdraw', '⬆', t('withdraw')], ['history', '📋', t('history')], ['support', '💬', t('support')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ'], ['logout', '↪', t('logout')]]
+    : me
+      ? [['support', '💬', t('support')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ'], ['logout', '↪', t('logout')]]
     : [['login', '↪', t('login')], ['register', '＋', t('register')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ']];
   panel.innerHTML = links.map(([action, icon, label]) =>
     `<button type="button" data-mobile-action="${action}"><span aria-hidden="true">${icon}</span>${esc(label)}</button>`
@@ -39,6 +41,7 @@ function renderMobileHeaderMenu() {
       const action = button.dataset.mobileAction;
       panel.hidden = true;
       $('mobileHeaderMenu').setAttribute('aria-expanded', 'false');
+      if (action === 'withdraw' || action === 'history') { tab = action; render(); }
       if (action === 'support') { tab = 'support'; render(); }
       if (action === 'language') $('langBtn').click();
       if (action === 'login') $('headerLoginBtn').click();
@@ -231,7 +234,6 @@ function nav() {
       tabs.push(['games', '🎰', t('games')]);
       tabs.push(['wallet', '💳', t('wallet')]);
       tabs.push(['deposit', '⬇', t('deposit')]);
-      tabs.push(['withdraw', '⬆', t('withdraw')]);
       tabs.push(['profile', '👤', lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
     } else {
       tabs.push(['games', '🎰', 'games']);
