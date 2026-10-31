@@ -1884,6 +1884,141 @@ body.mobile-app:not(.game-open) .gcard-badge { top: 5px; right: 7px; padding: 2p
 .profile-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 18px; }
 .profile-actions button { min-height: 48px; margin: 0; }
 
+/* Guest/customer template system. Scoped so staff workspaces keep their styling. */
+body.customer-theme {
+  --bg: #090B0D;
+  --bg-secondary: #101318;
+  --surface-panel: #171A1F;
+  --surface-card: #171A1F;
+  --surface-hover: #20242A;
+  --surface-active: #F5C928;
+  --surface: #171A1F;
+  --surface2: #20242A;
+  --gold: #F5C928;
+  --gold-bright: #F5C928;
+  --gold-muted: #D9AD32;
+  --gold-border: rgba(245, 201, 40, .35);
+  --gold-bg: rgba(245, 201, 40, .12);
+  --text: #FFFFFF;
+  --text-secondary: #AEB4BF;
+  --text-muted: #777F8B;
+  --border: rgba(255,255,255,.10);
+  --border-soft: rgba(255,255,255,.07);
+  --border-subtle: rgba(255,255,255,.15);
+  --border-gold: rgba(245,201,40,.46);
+  --font: 'Inter', 'Noto Sans Ethiopic', system-ui, sans-serif;
+  --font-heading: 'Manrope', 'Inter', 'Noto Sans Ethiopic', sans-serif;
+  background: #090B0D;
+  color: var(--text);
+  color-scheme: dark;
+}
+body.customer-theme[data-customer-theme="light"] {
+  --bg: #F4F5F7;
+  --bg-secondary: #FFFFFF;
+  --surface-panel: #FFFFFF;
+  --surface-card: #FFFFFF;
+  --surface-hover: #F4F5F7;
+  --surface-active: #EFC52C;
+  --surface: #FFFFFF;
+  --surface2: #FFFFFF;
+  --gold: #EFC52C;
+  --gold-bright: #B89427;
+  --gold-muted: #B89427;
+  --gold-border: rgba(184,148,39,.35);
+  --gold-bg: rgba(239,197,44,.16);
+  --text: #17191D;
+  --text-secondary: #626976;
+  --text-muted: #858C97;
+  --border: #E3E5E9;
+  --border-soft: #E6E8EC;
+  --border-subtle: #D7DAE0;
+  --border-gold: rgba(184,148,39,.45);
+  background: #F4F5F7;
+  color: var(--text);
+  color-scheme: light;
+}
+body.customer-theme:not(.game-open) { background: var(--bg); }
+body.customer-theme:not(.game-open) > .top {
+  background: color-mix(in srgb, var(--bg-secondary) 94%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+body.customer-theme .tabs { background: var(--bg-secondary); border-color: var(--border); }
+body.customer-theme .tabs button.on { color: var(--text); background: var(--gold-bg); border-bottom-color: var(--gold); }
+body.customer-theme .customer-theme-toggle { min-width: 42px; font-size: 19px; color: var(--gold-bright); }
+body.customer-theme[data-customer-theme="light"] .balance,
+body.customer-theme[data-customer-theme="light"] .chip:not(.chip-gold),
+body.customer-theme[data-customer-theme="light"] .tabs button { color: var(--text-secondary); }
+body.customer-theme #app .card,
+body.customer-theme #app .stat,
+body.customer-theme #app .notice,
+body.customer-theme #app .deposit-card,
+body.customer-theme #app .withdraw-card,
+body.customer-theme #app .support-chat,
+body.customer-theme #app .profile-details > div {
+  background-color: var(--surface-panel);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+body.customer-theme[data-customer-theme="light"] #app .muted,
+body.customer-theme[data-customer-theme="light"] #app .profile-phone,
+body.customer-theme[data-customer-theme="light"] #app .stat-label { color: var(--text-secondary); }
+body.customer-theme[data-customer-theme="light"] #app input,
+body.customer-theme[data-customer-theme="light"] #app select,
+body.customer-theme[data-customer-theme="light"] #app textarea {
+  background: #FFFFFF; color: var(--text); border-color: var(--border);
+}
+body.customer-theme #app .guest-promo-banner {
+  display: flex; align-items: center; min-height: 82px; margin: 0 0 18px;
+  padding: 12px 16px; border: 1px solid var(--gold-border); border-radius: 16px;
+  background: linear-gradient(110deg, var(--gold-bg), var(--surface-panel) 48%);
+  box-shadow: 0 8px 24px rgba(0,0,0,.10);
+}
+body.customer-theme #app .guest-promo-inner { display: flex; align-items: center; gap: 14px; width: 100%; }
+body.customer-theme #app .guest-promo-gift { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; color: var(--gold-bright); }
+body.customer-theme #app .guest-promo-gift svg { width: 36px !important; height: 36px !important; }
+body.customer-theme #app .guest-promo-copy { flex: 1; min-width: 140px; }
+body.customer-theme #app .guest-promo-title { margin: 0 0 3px; color: var(--text); font-size: 16px; font-weight: 800; }
+body.customer-theme #app .guest-promo-text { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
+body.customer-theme #app .guest-promo-actions { display: flex; align-items: center; gap: 8px; flex: 0 1 360px; min-width: 200px; }
+body.customer-theme #app .guest-promo-actions input { min-width: 0; height: 42px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-secondary); color: var(--text); }
+body.customer-theme #app .guest-promo-actions .btn { min-height: 42px; height: 42px; padding: 0 18px; margin: 0; }
+body.customer-theme #app .lobby-hero { padding: 18px 22px; margin-bottom: 18px; border-color: var(--border); border-radius: 16px; background: linear-gradient(120deg,var(--surface-hover),var(--surface-panel)); box-shadow: 0 8px 24px rgba(0,0,0,.10); }
+body.customer-theme #app .lobby-hero::before { opacity: .35; }
+body.customer-theme #app .lobby-hero-badge { color: var(--gold-bright); background: var(--gold-bg); border-color: var(--gold-border); }
+body.customer-theme #app .lobby-hero-title { margin: 5px 0; font-size: clamp(25px,3vw,34px); letter-spacing: -.7px; line-height: 1.15; text-transform: none; text-shadow: none; }
+body.customer-theme #app .lobby-hero-sub { max-width: 620px; margin: 0; font-size: 14px; }
+body.customer-theme #app .lobby-hero-pills { gap: 8px; margin-top: 10px; }
+body.customer-theme #app .hero-pill { padding: 5px 10px; font-size: 11px; }
+body.customer-theme #app .lobby-nav-bar { margin-bottom: 14px; }
+body.customer-theme #app .lobby { grid-template-columns: repeat(auto-fill,minmax(min(100%,220px),1fr)); gap: 14px; }
+body.customer-theme #app .gcard { border: 1px solid var(--border); border-radius: 15px; background: var(--surface-panel); color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,.14); }
+body.customer-theme #app .gcard h3 { padding: 12px 12px 0; color: var(--text); font-family: var(--font-heading); font-size: 16px; font-weight: 700; letter-spacing: 0; }
+body.customer-theme #app .gcard .gcard-action { display: block; min-height: 42px; margin: auto 12px 12px; padding: 10px 12px; border-radius: 9px; text-align: center; background: var(--gold); color: #17191D; font-size: 13px; font-weight: 800; }
+body.customer-theme #app .gcard-badge { top: 9px; right: 9px; }
+body.customer-theme #app .gfilter { min-height: 40px; padding: 7px 13px; border-color: var(--border); background: var(--surface-panel); color: var(--text-secondary); }
+body.customer-theme #app .gfilter.on { background: var(--gold); border-color: var(--gold); color: #17191D; }
+body.customer-theme #app .btn-gold { background: var(--gold); border-color: var(--gold); color: #17191D; }
+body.customer-theme #app .btn-outline { border-color: var(--border); color: var(--text); }
+body.customer-theme #app :where(button,a,input,select,textarea):focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 2px; }
+@media (max-width: 700px) {
+  body.customer-theme #app .guest-promo-banner { padding: 11px; }
+  body.customer-theme #app .guest-promo-inner { gap: 9px; flex-wrap: wrap; }
+  body.customer-theme #app .guest-promo-copy { flex-basis: calc(100% - 60px); }
+  body.customer-theme #app .guest-promo-actions { flex: 1 1 100%; min-width: 0; }
+  body.customer-theme #app .guest-promo-actions input { flex: 1; }
+  body.customer-theme #app .lobby { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  body.customer-theme #app .gcard-icon-wrap { aspect-ratio: 1 / 1; }
+  body.customer-theme #app .gcard h3 { padding: 10px 10px 8px; }
+  body.customer-theme #app .gcard .gcard-action { margin: auto 10px 10px; }
+}
+@media (max-width: 360px) {
+  body.customer-theme #app .lobby { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  body.customer-theme #app .gcard h3 { font-size: 14px; }
+  body.customer-theme #app .gcard .gcard-action { padding: 9px 5px; font-size: 12px; }
+}
+
 /* Private deposit receipt upload and staff review */
 .receipt-upload-label { display: block; margin-top: 16px; margin-bottom: 7px; font-weight: 700; }
 .receipt-upload-label .muted { font-weight: 500; font-size: 12px; }

@@ -25,6 +25,42 @@ const fmt = (n) => (n / 100).toLocaleString('en-US', { minimumFractionDigits: 0,
 const rel = (cents) => (cents >= 0 ? '+' : '') + fmt(cents);
 const initials = (name) => String(name || '?').trim().charAt(0).toUpperCase();
 
+function applyCustomerTheme(theme = localStorage.getItem('fetan-theme') || 'dark') {
+  const light = theme === 'light';
+  document.body.classList.add('customer-theme');
+  document.body.dataset.customerTheme = light ? 'light' : 'dark';
+  const toggle = $('customerThemeToggle');
+  if (toggle) {
+    toggle.textContent = light ? '☾' : '☼';
+    toggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+    toggle.title = light ? 'Switch to dark theme' : 'Switch to light theme';
+  }
+}
+
+function syncCustomerThemeControl(enabled) {
+  const topRight = document.querySelector('.top-right');
+  let toggle = $('customerThemeToggle');
+  if (!enabled) {
+    toggle?.remove();
+    document.body.classList.remove('customer-theme');
+    delete document.body.dataset.customerTheme;
+    return;
+  }
+  if (!toggle && topRight) {
+    toggle = document.createElement('button');
+    toggle.id = 'customerThemeToggle';
+    toggle.className = 'chip customer-theme-toggle';
+    toggle.type = 'button';
+    topRight.insertBefore(toggle, $('langBtn'));
+    toggle.addEventListener('click', () => {
+      const next = document.body.dataset.customerTheme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('fetan-theme', next);
+      applyCustomerTheme(next);
+    });
+  }
+  applyCustomerTheme();
+}
+
 function renderMobileHeaderMenu() {
   const panel = $('mobileMenuPanel');
   if (!panel) return;
@@ -174,6 +210,7 @@ async function refreshMe() {
 
   // Header controls synchronization
   const isLogged = Boolean(me);
+  syncCustomerThemeControl(!me || me.role === 'user');
   $('balanceBox').hidden = !isLogged;
   $('quickDepositBtn').hidden = !isLogged;
   $('logoutBtn').hidden = !isLogged;
@@ -716,15 +753,14 @@ function guestView(app) {
   banner.className = 'guest-promo-banner';
   banner.innerHTML = `
     <div class="guest-promo-inner">
+      <div class="guest-promo-gift" aria-hidden="true">${iconGift()}</div>
       <div class="guest-promo-copy">
-        <span class="guest-promo-kicker">FETCH YOUR AGENT BONUS</span>
-        <h2 class="guest-promo-title">${lang === 'am' ? 'የአጀንት ፕሮሞ ኮድ ይጠቀሙ' : 'Use an Agent Promo Code'}</h2>
-        <p class="guest-promo-text">${lang === 'am' ? '2,000 ነፃ ክሬዲት ያግኙ!' : 'Get 2,000 Free Credits!'}</p>
-        <div class="guest-promo-gift">${iconGift()}</div>
+        <h2 class="guest-promo-title">${lang === 'am' ? 'የፕሮሞ ኮድ አለዎት?' : 'Got a promo code?'}</h2>
+        <p class="guest-promo-text">${lang === 'am' ? 'ሲመዘገቡ ኮዱን ያስገቡ።' : 'Enter it during registration to link your account to its agent.'}</p>
       </div>
       <div class="guest-promo-actions">
         <input type="text" id="guest-promo-code" placeholder="${lang === 'am' ? 'የፕሮሞ ኮድ ያስገቡ' : 'Enter promo code'}" maxlength="20" value="${esc(urlPromo || '')}">
-        <button type="button" class="btn btn-gold" id="guest-promo-register">${lang === 'am' ? 'አሁን ይመዝገቡ' : 'Register Now'}</button>
+        <button type="button" class="btn btn-gold" id="guest-promo-register">${lang === 'am' ? 'ይቀጥሉ' : 'Claim'}</button>
       </div>
     </div>`;
   app.prepend(banner);

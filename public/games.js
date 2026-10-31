@@ -146,13 +146,12 @@ window.Games = (function () {
       <!-- FETAN BET HERO BANNER -->
       <div class="lobby-hero">
         <div class="lobby-hero-content">
-          <div class="lobby-hero-badge">⚡ FETAN BET CASINO ARENA</div>
-          <h1 class="lobby-hero-title">${esc(t('hero_headline'))}</h1>
-          <p class="lobby-hero-sub">${esc(t('hero_sub'))}</p>
+          <div class="lobby-hero-badge">WELCOME TO FETAN BET</div>
+          <h1 class="lobby-hero-title">${lang === 'am' ? 'የእርስዎ ጨዋታ። የእርስዎ ቅጽበት።' : 'Your game. Your moment.'}</h1>
+          <p class="lobby-hero-sub">${lang === 'am' ? 'ጨዋታዎቹን ይመልከቱና የሚወዱትን ይምረጡ።' : 'Explore the games and discover your next favourite.'}</p>
           <div class="lobby-hero-pills">
-            <span class="hero-pill">🛡️ ${lang === 'am' ? 'ፍትሃዊ የጨዋታ ውጤቶች' : 'Provably Fair RNG'}</span>
-            <span class="hero-pill">⚡ ${lang === 'am' ? 'ፈጣን የክሬዲት ዝውውር' : 'Instant Agent Cash'}</span>
-            <span class="hero-pill">🪙 ${lang === 'am' ? '1,000 ነፃ የሙከራ ክሬዲት' : '1,000 Free Credits'}</span>
+            <span class="hero-pill">🎮 ${lang === 'am' ? 'ኦሪጅናል ጨዋታዎች' : 'Original games'}</span>
+            <span class="hero-pill">🛡️ ${lang === 'am' ? 'ፍትሃዊ ውጤቶች' : 'Provably fair'}</span>
           </div>
         </div>
       </div>
@@ -175,8 +174,6 @@ window.Games = (function () {
           <span class="gcard-badge hot">HOT</span>
           ${posterMarkup('road', t('road_title'), 'eager')}
           <h3 id="gtitle-road">${esc(t('road_title'))}</h3>
-          <p>${esc(t('road_desc'))}</p>
-          <div class="gcard-meta"><span>Up to ×1000</span></div>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -185,8 +182,6 @@ window.Games = (function () {
           <span class="gcard-badge original">ORIGINAL</span>
           ${posterMarkup('mines', t('mines_title'), 'eager')}
           <h3 id="gtitle-mines">${esc(t('mines_title'))}</h3>
-          <p>${esc(t('mines_desc'))}</p>
-          <div class="gcard-meta"><span>1–24 Mines · Pick & Win</span></div>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -195,8 +190,6 @@ window.Games = (function () {
           <span class="gcard-badge original">ORIGINAL</span>
           ${posterMarkup('plinko', t('plinko_title'))}
           <h3 id="gtitle-plinko">${esc(t('plinko_title'))}</h3>
-          <p>${esc(t('plinko_desc'))}</p>
-          <div class="gcard-meta"><span>8–16 Rows · 3 Risk Levels</span></div>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -205,8 +198,6 @@ window.Games = (function () {
           <span class="gcard-badge popular">POPULAR</span>
           ${posterMarkup('keno', t('keno_title'))}
           <h3 id="gtitle-keno">${esc(t('keno_title'))}</h3>
-          <p>${esc(t('keno_desc'))}</p>
-          <div class="gcard-meta"><span>Pick 1–10 of 80 · 20 Drawn</span></div>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -215,8 +206,6 @@ window.Games = (function () {
           <span class="gcard-badge ethiopia">🇪🇹 ቢንጎ</span>
           ${posterMarkup('bingo', t('bingo_title'))}
           <h3 id="gtitle-bingo">${esc(t('bingo_title'))}</h3>
-          <p>${esc(t('bingo_desc'))}</p>
-          <div class="gcard-meta"><span>Traditional 5×5 · Auto Call</span></div>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -225,8 +214,6 @@ window.Games = (function () {
           <span class="gcard-badge classic">CLASSIC</span>
           ${posterMarkup('roulette', t('roulette_title'))}
           <h3 id="gtitle-roulette">${esc(t('roulette_title'))}</h3>
-          <p>${esc(t('roulette_desc'))}</p>
-          <div class="gcard-meta"><span>European 37-Pocket Wheel</span></div>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -235,8 +222,6 @@ window.Games = (function () {
           <span class="gcard-badge classic">SLOT</span>
           ${posterMarkup('star', t('star_title'))}
           <h3 id="gtitle-star">${esc(t('star_title'))}</h3>
-          <p>${esc(t('star_desc'))}</p>
-          <div class="gcard-meta"><span>3-Reel Slots · Wild Star</span></div>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
       </div>`;
