@@ -287,6 +287,9 @@ async function render(subMode = '') {
     tab = 'games';
   }
 
+  // Rebuild role-aware navigation on every render so tab contents, active state,
+  // and responsive classes stay in sync after login, route changes, and resize.
+  nav();
   $('nav').hidden = me.role !== 'user' || Boolean(gameRoute && matchMedia('(max-width: 1024px)').matches);
   syncTelegramShell(Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches));
   const views = {
