@@ -59,12 +59,62 @@ Frontend:
   - Super Admin: Dashboard, Users, Agents, Deposit Requests, Withdrawal Requests, Agent Management, Reports, Support, Settings, Logout
 - Wired into `public/index.html`; staff roles mount `FetanWorkspace` instead of customer views.
 
+## Commission rules (25%, Africa/Addis_Ababa)
+
+Commission is calculated only from **settled rounds** (`game_rounds.status = 'done'`), never from open rounds, cancelled rounds, refunds, deposits or withdrawals:
+
+```
+net gaming revenue (NGR) = settled stakes − gross gaming payouts
+commission              = max(NGR, 0) × 25%
+```
+
+- Weekly periods use the fixed **UTC+3 (Africa/Addis_Ababa)** boundary. Weeks start Monday 00:00 EAT and end Sunday 23:59:59.999 EAT; the same boundaries are used by agent earnings, Super Admin dashboards and reports.
+- Per-round attribution uses the immutable settlement records, so a round is counted once even if a payout is retried or reviewed later.
+- Stages: `estimated` (current open week), `accrued` (closed week not yet approved), `approved`, `paid`.
+- Only **Super Admin** can approve or mark commission as paid. Agents can view stages and submit a weekly payout request; they cannot alter amounts or statuses.
+- Commission default is `2500` bps (25%). Migration 004 upgrades existing `1000` bps profiles; Super Admin can set a different rate per agent in Agent Management.
+
+## Permissions and reauthentication
+
+- `money.decide` (deposit/withdrawal approve/reject, transfer completion) is **exclusive to Super Admin**. Agents receive `403` from these routes and have no UI action to change money status.
+- Agents can see only their own referred users, transactions, earnings and assigned support tickets.
+- Sensitive Super Admin actions require the acting admin's password again via the in-app reauth modal (`reauth_password`): deposit/withdrawal decisions, commission approve/pay, user suspend/reactivate, agent suspend/reactivate, support assignment changes, and settings updates.
+- Support tickets from referred customers route to their agent. Unassigned or escalated customers route to Super Admin. Replies create notifications and unread badges for the correct audience.
+
+## Promotional credits
+
+- Registration accepts an optional promo code (`?promo=` links prefill it). A valid, active code permanently attributes the customer to that agent and awards **2,000 promotional credits exactly once**.
+- Registering without a promo code creates no attribution and no bonus. Inactive codes are rejected rather than silently ignored.
+- Promotional credits are stored in `wallets.promo_balance` and are **separate from the withdrawable `wallets.balance`**. They are displayed in the customer wallet as non-withdrawable promotional credits and are not written to the ledger.
+- Current behavior: promo credits are display-only; they do **not** fund game stakes. The game wallet debit flow is unchanged. If promo credits should become playable, that requires a separate product decision and a scoped wallet change.
+
 ## Testing
 
-Static tests: `npm run test:static` (pure unit checks; no production DB). Integration tests require `TEST_DATABASE_URL` and are not runnable in this environment.
+```bash
+# Fast static/unit checks (no database required)
+npm run test:static
 
-Deployment steps:
-1. Apply migration 004 to a reviewed staging database.
-2. Deploy code; existing `server.js` mounts all new routes automatically.
-3. Create the first Super Admin via existing bootstrap/seed process; create agents through Super Admin > Agent Management.
-4. Agents share promo links; customers registering with a promo code receive exactly one 2,000-credit promotional balance, separate from withdrawable funds.
+# Integration suite against an isolated, disposable database only
+# Requires TEST_DATABASE_URL; never point this at production.
+npm run test:integration:check   # validates DB safety and configuration
+npm test                         # runs the isolated integration suite
+```
+
+Static tests currently cover payout/RTP invariants, responsive Road Dash UI, DB safety guards, permissions, 25% commission math, EAT week boundaries and migration invariants.
+
+## Deployment steps
+
+1. Back up the target database and apply migration `004` to a reviewed **staging** database first:
+   ```bash
+   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/004_agent_dashboard_referral_notifications.sql
+   ```
+2. Deploy the code. Existing `server.js` mounts all new routes automatically; no separate service is required.
+3. Create the first Super Admin through the existing bootstrap/seed process, then create agents via **Super Admin → Agent Management**.
+4. Existing `admin` accounts continue to use the legacy admin view. `agent` and `superadmin` accounts use the new workspace.
+5. Smoke test: agent login and referral link, promo registration (bonus appears once), deposit/withdrawal approval with reauth, weekly commission stages, support routing, and notification unread badges.
+
+## Rollback notes
+
+- Code rollback is safe: all new tables/columns are additive and unused by legacy paths.
+- Do not drop the new tables/columns in production without a backup. If a full schema rollback is required, reverse migration 004 only after confirming no new data must be retained.
+- Game odds, RTP, payout logic, wallet balances and ledger flows were not changed by this work.

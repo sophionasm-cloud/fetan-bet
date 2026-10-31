@@ -18,6 +18,10 @@
   --ws-danger: #EF4444;
   --ws-info: #38BDF8;
   --ws-ink: #05080D;
+  --ws-border-subtle: #2A3A4C;
+  --ws-gold-border: rgba(255,210,31,0.28);
+  --ws-text-muted: #9AA9BA;
+  --ws-text-secondary: #6B7A8C;
 }
 
 body.workspace-mode {

@@ -382,7 +382,7 @@ window.addEventListener('popstate', () => { Games.cleanupCurrent(); render(); })
 // AUTH VIEW — Stake-style Login & Registration
 // Reference: Dark green-black & antique-gold split card
 // =====================================================
-function authView(app, initialMode = 'login') {
+function authView(app, initialMode = 'login', promoPrefill = '') {
   const existing = $('auth-modal');
   if (existing) existing.remove();
   const modal = document.createElement('div');
@@ -466,6 +466,14 @@ function authView(app, initialMode = 'login') {
 
               <button type="submit" class="btn btn-gold" style="margin-top:16px">${esc(t('login'))}</button>
             </form>
+            <form id="forgot-form" hidden style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
+              <label for="forgot-identifier">${lang === 'am' ? 'ስልክ፣ የተጠቃሚ ስም ወይም ኢሜይል' : 'Phone, username or email'}</label>
+              <input id="forgot-identifier" name="identifier" type="text" autocomplete="username" required>
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <button type="submit" class="btn btn-gold" style="flex:1">${lang === 'am' ? 'የይለፍ ቃል ጥያቄ ላክ' : 'Send reset request'}</button>
+                <button type="button" class="btn btn-outline" id="forgot-cancel">${lang === 'am' ? 'ሰርዝ' : 'Cancel'}</button>
+              </div>
+            </form>
             <p style="text-align:center;margin-top:18px;font-size:13px;color:var(--text-muted)">
               ${esc(t('no_account'))} <a href="#" id="switch-to-reg" style="color:var(--gold-bright);font-weight:700">${esc(t('register'))}</a>
             </p>
@@ -487,7 +495,7 @@ function authView(app, initialMode = 'login') {
               <input id="r-email" name="email" type="email" maxlength="160" autocomplete="email" placeholder="${lang === 'am' ? 'ኢሜይልዎን ያስገቡ' : 'you@example.com'}">
 
               <label for="r-promo" style="margin-top:10px">${esc(t('promo_code'))} <span class="muted">(${esc(t('optional'))})</span></label>
-              <input id="r-promo" name="promo_code" type="text" maxlength="20" autocomplete="off">
+              <input id="r-promo" name="promo_code" type="text" maxlength="20" autocomplete="off" value="${esc(promoPrefill)}">
               
               <label for="r-pass" style="margin-top:10px">${esc(t('password'))}</label>
               <div class="input-wrap-pass">
@@ -507,16 +515,37 @@ function authView(app, initialMode = 'login') {
   document.body.appendChild(modal);
 
   const urlPromo = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code');
-  if (urlPromo) $('r-promo').value = urlPromo;
+  if (urlPromo && $('r-promo') && !$('r-promo').value) $('r-promo').value = urlPromo;
 
-  $('forgot-password')?.addEventListener('click', async (e) => {
+  $('forgot-password')?.addEventListener('click', (e) => {
     e.preventDefault();
-    const identifier = prompt('Enter your phone, username or email to request a password reset:');
-    if (!identifier) return;
+    const form = $('forgot-form');
+    if (!form) return;
+    form.hidden = false;
+    const input = $('forgot-identifier');
+    input.value = String($('l-phone')?.value || '').trim();
+    input.focus();
+  });
+  $('forgot-cancel')?.addEventListener('click', () => {
+    const form = $('forgot-form');
+    if (form) { form.hidden = true; form.reset(); }
+  });
+  $('forgot-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const identifier = String($('forgot-identifier')?.value || '').trim();
+    if (!identifier) { $('forgot-identifier')?.focus(); return; }
+    const button = e.target.querySelector('button[type=submit]');
+    if (button) button.disabled = true;
     try {
       await api('/password-reset-request', { identifier });
       toast('If an account matches, a reset request has been opened for review.', 'ok');
-    } catch (e) { fail(e); }
+      e.target.reset();
+      e.target.hidden = true;
+    } catch (error) {
+      fail(error);
+    } finally {
+      if (button) button.disabled = false;
+    }
   });
 
   const opener = document.activeElement;
@@ -567,6 +596,7 @@ function authView(app, initialMode = 'login') {
   function showLogin() {
     clearAuthError();
     $('auth-login').hidden = false; $('auth-register').hidden = true;
+    const forgot = $('forgot-form'); if (forgot) { forgot.hidden = true; forgot.reset(); }
     $('atb-login').classList.add('active'); $('atb-register').classList.remove('active');
     $('auth-modal-title').textContent = t('login');
     $('l-phone').focus();
@@ -574,6 +604,7 @@ function authView(app, initialMode = 'login') {
   function showRegister() {
     clearAuthError();
     $('auth-login').hidden = true; $('auth-register').hidden = false;
+    const forgot = $('forgot-form'); if (forgot) { forgot.hidden = true; forgot.reset(); }
     $('atb-login').classList.remove('active'); $('atb-register').classList.add('active');
     $('auth-modal-title').textContent = t('register');
     $('r-name').focus();
@@ -703,8 +734,7 @@ function guestView(app) {
 
   $('guest-promo-register')?.addEventListener('click', () => {
     const promo = String($('guest-promo-code')?.value || '').trim();
-    authView(app, 'register');
-    window.setTimeout(() => { if (promo) $('r-promo').value = promo; }, 50);
+    authView(app, 'register', promo);
   });
 }
 

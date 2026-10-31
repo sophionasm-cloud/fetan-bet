@@ -1122,8 +1122,21 @@ app.post('/api/support/ticket/:id/escalate', auth, need('support.own', 'support.
       link: 'support',
       relatedUserId: Number(ticket.user_id)
     };
-    if (assignee) await insertNotifications(client, [assignee], payload);
-    else await notifySuperadmins(payload, client);
+    if (req.user.role === 'agent') {
+      // An agent escalating pushes the ticket to the Super Admin desk so it
+      // can be handled at platform level; the agent keeps visibility.
+      await notifySuperadmins({
+        type: 'support_escalated',
+        title: 'Escalated by an agent',
+        message: `Agent ${req.user.name} escalated ticket #${ticketId} for ${ticket.user_name}: ${reason}`,
+        link: 'support',
+        relatedUserId: Number(ticket.user_id)
+      }, client);
+    } else if (assignee) {
+      await insertNotifications(client, [assignee], payload);
+    } else {
+      await notifySuperadmins(payload, client);
+    }
     await auditSensitive(req, client, 'support.escalate', 'support_ticket', ticketId,
       { status: ticket.status }, { status: 'escalated', assigned_agent_id: assignee == null ? null : Number(assignee) }, reason);
     return { ok: true, status: 'escalated' };
@@ -1243,7 +1256,8 @@ app.post('/api/support/ticket/:id/status', auth, need('support.assigned', 'suppo
     );
     const ticket = tRes.rows[0];
     if (!ticket) throw new Error('NOT_FOUND');
-    if (req.user.role === 'agent' && Number(ticket.referred_by_agent_id) !== req.user.id) throw new Error('FORBIDDEN');
+    if (req.user.role === 'agent' && Number(ticket.referred_by_agent_id) !== req.user.id
+        && Number(ticket.assigned_agent_id) !== req.user.id) throw new Error('FORBIDDEN');
     let assigned;
     if (req.user.role === 'agent') {
       assigned = req.user.id;
@@ -1296,7 +1310,7 @@ app.get('/api/agent/tickets', auth, need('support.assigned', 'support.all'), wra
   const status = String(req.query.status || 'all');
   const conditions = [];
   const params = [req.user.id];
-  if (req.user.role === 'agent') conditions.push('u.referred_by_agent_id=$1');
+  if (req.user.role === 'agent') conditions.push('(u.referred_by_agent_id=$1 OR t.assigned_agent_id=$1)');
   if (status !== 'all' && ['open','pending','in_progress','escalated','resolved'].includes(status)) {
     params.push(status); conditions.push(`t.status=$${params.length}`);
   }
@@ -1534,10 +1548,10 @@ async function agentChartSeries(agentId, range) {
     windowStart = new Date(Date.UTC(eat.getUTCFullYear(), eat.getUTCMonth() - (count - 1), 1) - EAT_OFFSET_MS);
   }
   const bucketExpr = range === 'daily'
-    ? `to_char((r.settled_at + INTERVAL '3 hours')::date,'YYYY-MM-DD')`
+    ? `to_char((r.settled_at AT TIME ZONE 'Africa/Addis_Ababa')::date,'YYYY-MM-DD')`
     : range === 'weekly'
-      ? `to_char(date_trunc('week',(r.settled_at + INTERVAL '3 hours')),'YYYY-MM-DD')`
-      : `to_char(date_trunc('month',(r.settled_at + INTERVAL '3 hours')),'YYYY-MM')`;
+      ? `to_char(date_trunc('week',(r.settled_at AT TIME ZONE 'Africa/Addis_Ababa')),'YYYY-MM-DD')`
+      : `to_char(date_trunc('month',(r.settled_at AT TIME ZONE 'Africa/Addis_Ababa')),'YYYY-MM')`;
   const rows = await query(
     `WITH settled AS (${SETTLED_ROUND_SOURCE})
      SELECT ${bucketExpr} AS bucket, COALESCE(SUM(r.bet-r.payout),0)::bigint AS ngr
@@ -1596,7 +1610,7 @@ app.get('/api/agent/dashboard', auth, need('agent.workspace'), wrap(async (req) 
                   AND m.created_at > COALESCE(rd.last_read_at,'epoch'::timestamptz))),0)::bigint AS unread_count
        FROM support_tickets t JOIN users u ON u.id=t.user_id
        LEFT JOIN support_ticket_reads rd ON rd.ticket_id=t.id AND rd.user_id=$1
-       WHERE u.referred_by_agent_id=$1`, [req.user.id]
+       WHERE (u.referred_by_agent_id=$1 OR t.assigned_agent_id=$1)`, [req.user.id]
     ),
     query(
       `SELECT s.id,s.week_start,s.week_end,s.profit_santim,s.commission_santim,
@@ -1607,6 +1621,13 @@ app.get('/api/agent/dashboard', auth, need('agent.workspace'), wrap(async (req) 
   ]);
   const commission = metrics.ngr > 0 ? Math.floor((metrics.ngr * bps) / 10000) : 0;
   const previousCommission = previous.ngr > 0 ? Math.floor((previous.ngr * bps) / 10000) : 0;
+  // The donut is explicitly the weekly 25% cut, so it always uses the current
+  // EAT week rather than the stat-card range.
+  const weeklyBounds = range === 'weekly' ? bounds : workspaceRange('weekly');
+  const weeklyNgr = range === 'weekly'
+    ? metrics.ngr
+    : await settledNgrForAgent(req.user.id, weeklyBounds.start, weeklyBounds.end);
+  const weeklyCommission = weeklyNgr > 0 ? Math.floor((weeklyNgr * bps) / 10000) : 0;
   const total = Number(totalUsers.rows[0]?.c || 0);
   const totalBefore = Number(usersAtStart.rows[0]?.c || 0);
   return {
@@ -1632,10 +1653,11 @@ app.get('/api/agent/dashboard', auth, need('agent.workspace'), wrap(async (req) 
     },
     chart,
     donut: {
-      ngr: metrics.ngr,
-      commission,
-      platform_share: Math.max(0, metrics.ngr - commission),
-      rate_bps: bps
+      ngr: weeklyNgr,
+      commission: weeklyCommission,
+      platform_share: Math.max(0, weeklyNgr - weeklyCommission),
+      rate_bps: bps,
+      period: 'weekly'
     },
     recent_users: recentUsers.rows.map((row) => ({ ...row, balance: Number(row.balance), online: isOnline(row.last_seen_at) })),
     support: {
@@ -1751,7 +1773,8 @@ app.get('/api/agent/transactions', auth, need('agent.workspace'), wrap(async (re
     )`;
   const where = `WHERE ($2='all' OR a.type=$2) AND ($3='all' OR a.status=$3)
     AND ($4='%%' OR a.user_name ILIKE $4 OR a.phone ILIKE $4 OR COALESCE(a.reference,'') ILIKE $4)
-    AND ($5='' OR a.created_at >= $5::date) AND ($6='' OR a.created_at < ($6::date + INTERVAL '1 day'))`;
+    AND ($5='' OR a.created_at >= (($5::date)::timestamp AT TIME ZONE 'Africa/Addis_Ababa'))
+    AND ($6='' OR a.created_at < ((($6::date + 1)::timestamp) AT TIME ZONE 'Africa/Addis_Ababa'))`;
   const rows = await query(
     `${base} SELECT a.* FROM activity a ${where} ORDER BY a.created_at DESC,a.id DESC LIMIT $7 OFFSET $8`, params
   );
@@ -1989,12 +2012,13 @@ function roundBps(amount, bps) {
 app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req) => {
   const range = ['daily', 'weekly', 'monthly'].includes(req.query.range) ? req.query.range : 'weekly';
   const bounds = workspaceRange(range);
+  const weeklyBounds = workspaceRange('weekly');
   const params = [bounds.start, bounds.end, bounds.prevStart, bounds.prevEnd];
   // The Agent P&L chart is always an eight-week series, independent of the
   // stat-card range, so its buckets must align with EAT week starts.
   const trendBounds = utcWeekBounds();
   const trendStart = new Date(trendBounds.start.getTime() - 7 * 7 * DAY_MS);
-  const [users, deposits, withdrawals, pendingDep, pendingWith, agentStats, commissionRows, previousCommissionRows, agentBars, trendRows, pendingDeposits, pendingWithdrawals, notifications, support] = await Promise.all([
+  const [users, deposits, withdrawals, pendingDep, pendingWith, agentStats, commissionRows, previousCommissionRows, weeklyCut, agentBars, trendRows, pendingDeposits, pendingWithdrawals, notifications, support] = await Promise.all([
     query(
       `SELECT COUNT(*)::bigint AS total,
               COUNT(*) FILTER (WHERE created_at >= $1 AND created_at < $2)::bigint AS current_new,
@@ -2050,6 +2074,19 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
          WHERE u.referred_by_agent_id IS NOT NULL AND r.settled_at >= $1 AND r.settled_at < $2
          GROUP BY 1
        )
+       SELECT COALESCE(SUM(n.ngr),0)::bigint AS ngr,
+              COALESCE(SUM(CASE WHEN n.ngr>0 THEN (n.ngr*p.commission_bps/10000)::bigint ELSE 0 END),0)::bigint AS commission
+       FROM ngr n JOIN agent_profiles p ON p.agent_id=n.agent_id`,
+      [weeklyBounds.start, weeklyBounds.end]
+    ),
+    query(
+      `WITH settled AS (${SETTLED_ROUND_SOURCE}),
+       ngr AS (
+         SELECT u.referred_by_agent_id AS agent_id, COALESCE(SUM(r.bet-r.payout),0)::bigint AS ngr
+         FROM settled r JOIN users u ON u.id=r.user_id
+         WHERE u.referred_by_agent_id IS NOT NULL AND r.settled_at >= $1 AND r.settled_at < $2
+         GROUP BY 1
+       )
        SELECT u.id,u.name,u.phone,u.status,p.promo_code,p.commission_bps,
               COALESCE(n.ngr,0)::bigint AS ngr,
               COALESCE(CASE WHEN n.ngr>0 THEN (n.ngr*p.commission_bps/10000)::bigint ELSE 0 END,0)::bigint AS commission
@@ -2060,7 +2097,7 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
     ),
     query(
       `WITH settled AS (${SETTLED_ROUND_SOURCE})
-       SELECT to_char(date_trunc('week',(r.settled_at + INTERVAL '3 hours')),'YYYY-MM-DD') AS bucket,
+       SELECT to_char(date_trunc('week',(r.settled_at AT TIME ZONE 'Africa/Addis_Ababa')),'YYYY-MM-DD') AS bucket,
               COALESCE(SUM(r.bet-r.payout),0)::bigint AS ngr
        FROM settled r JOIN users u ON u.id=r.user_id
        WHERE u.referred_by_agent_id IS NOT NULL
@@ -2124,10 +2161,11 @@ app.get('/api/superadmin/dashboard', auth, need('money.decide'), wrap(async (req
       return { bucket: label, ngr, commission: roundBps(ngr, DEFAULT_COMMISSION_BPS) };
     }),
     donut: {
-      ngr: Math.max(0, currentNgr),
-      commission: currentCommission,
-      platform_share: Math.max(0, currentNgr - currentCommission),
-      rate_bps: DEFAULT_COMMISSION_BPS
+      ngr: Math.max(0, Number(weeklyCut.rows[0]?.ngr || 0)),
+      commission: Number(weeklyCut.rows[0]?.commission || 0),
+      platform_share: Math.max(0, Number(weeklyCut.rows[0]?.ngr || 0) - Number(weeklyCut.rows[0]?.commission || 0)),
+      rate_bps: DEFAULT_COMMISSION_BPS,
+      period: 'weekly'
     },
     pending_deposits: pendingDeposits.rows.map((row) => ({ ...row, amount: Number(row.amount) })),
     pending_withdrawals: pendingWithdrawals.rows.map((row) => ({ ...row, amount: Number(row.amount) })),
@@ -2338,17 +2376,17 @@ app.get('/api/superadmin/reports', auth, need('money.decide'), wrap(async (req) 
     query(
       `WITH settled AS (${SETTLED_ROUND_SOURCE}),
        ngr AS (
-         SELECT to_char((r.settled_at + INTERVAL '3 hours')::date,'YYYY-MM-DD') AS bucket,
+         SELECT to_char((r.settled_at AT TIME ZONE 'Africa/Addis_Ababa')::date,'YYYY-MM-DD') AS bucket,
                 COALESCE(SUM(r.bet-r.payout),0)::bigint AS ngr
          FROM settled r WHERE r.settled_at >= $1 AND r.settled_at < $2 GROUP BY 1
        ),
        dep AS (
-         SELECT to_char((COALESCE(d.reviewed_at,d.created_at) + INTERVAL '3 hours')::date,'YYYY-MM-DD') AS bucket,
+         SELECT to_char((COALESCE(d.reviewed_at,d.created_at) AT TIME ZONE 'Africa/Addis_Ababa')::date,'YYYY-MM-DD') AS bucket,
                 COALESCE(SUM(d.amount),0)::bigint AS total
          FROM deposits d WHERE d.status='approved' AND COALESCE(d.reviewed_at,d.created_at) >= $1 AND COALESCE(d.reviewed_at,d.created_at) < $2 GROUP BY 1
        ),
        wd AS (
-         SELECT to_char((COALESCE(w.reviewed_at,w.created_at) + INTERVAL '3 hours')::date,'YYYY-MM-DD') AS bucket,
+         SELECT to_char((COALESCE(w.reviewed_at,w.created_at) AT TIME ZONE 'Africa/Addis_Ababa')::date,'YYYY-MM-DD') AS bucket,
                 COALESCE(SUM(w.amount),0)::bigint AS total
          FROM withdrawals w WHERE w.status IN ('approved','paid') AND COALESCE(w.reviewed_at,w.created_at) >= $1 AND COALESCE(w.reviewed_at,w.created_at) < $2 GROUP BY 1
        )
@@ -2508,7 +2546,9 @@ app.get('/api/superadmin/commissions', auth, need('money.decide'), wrap(async (r
        FROM settled r JOIN users u ON u.id=r.user_id
        WHERE u.referred_by_agent_id IS NOT NULL AND r.settled_at >= $1 AND r.settled_at < $2 GROUP BY 1
      )
-     SELECT u.id AS agent_id,u.name AS agent_name,p.promo_code,p.commission_bps,COALESCE(n.ngr,0)::bigint AS ngr
+     SELECT u.id AS agent_id,u.name AS agent_name,p.promo_code,p.commission_bps,COALESCE(n.ngr,0)::bigint AS ngr,
+            COALESCE((SELECT s2.carried_loss_out_santim FROM agent_weekly_settlements s2
+              WHERE s2.agent_id=u.id AND s2.week_end <= $1 ORDER BY s2.week_end DESC LIMIT 1),0)::bigint AS carried_loss_in_santim
      FROM users u JOIN agent_profiles p ON p.agent_id=u.id LEFT JOIN ngr n ON n.agent_id=u.id
      WHERE u.role='agent' ORDER BY ngr DESC,u.id`,
     [current.start, current.end]
@@ -2541,9 +2581,13 @@ app.get('/api/superadmin/commissions', auth, need('money.decide'), wrap(async (r
     estimated: estimated.rows.map((row) => {
       const ngr = Number(row.ngr);
       const bps = Number(row.commission_bps);
+      const carried = Number(row.carried_loss_in_santim || 0);
+      const calc = commissionForWeek(ngr, carried, bps);
       return {
         agent_id: Number(row.agent_id), agent_name: row.agent_name, promo_code: row.promo_code,
-        commission_bps: bps, ngr, commission_santim: roundBps(ngr, bps), stage: 'estimated'
+        commission_bps: bps, ngr, carried_loss_in_santim: carried,
+        projected_carried_loss_santim: calc.carriedLossSantim,
+        commission_santim: calc.commissionSantim, stage: 'estimated'
       };
     })
   };

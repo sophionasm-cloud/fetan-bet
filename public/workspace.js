@@ -310,7 +310,7 @@
         ${navItems().map(([key, label, iconName], index) => `<button type="button" class="ws-nav-item ${state.page === key ? 'active' : ''}" data-page="${key}">
           <span class="ws-nav-icon">${icon(iconName)}</span><span>${esc(label)}</span>
           ${key === 'support' ? `<em class="ws-nav-badge" id="ws-nav-support-badge" ${state.supportUnread ? '' : 'hidden'}>${state.supportUnread || ''}</em>` : ''}
-          ${ctx.me.role === 'superadmin' && key === 'deposit-requests' && state.pendingApprovals ? `<em class="ws-nav-badge" id="ws-nav-approval-badge">${state.pendingApprovals}</em>` : ''}
+          ${ctx.me.role === 'superadmin' && key === 'deposit-requests' ? `<em class="ws-nav-badge" id="ws-nav-approval-badge" ${state.pendingApprovals ? '' : 'hidden'}>${state.pendingApprovals || ''}</em>` : ''}
           ${state.page === key ? '<span class="ws-nav-active-dot"></span>' : ''}
         </button>`).join('')}
       </nav>
@@ -706,7 +706,7 @@
       state.supportUnread = tickets.reduce((sum, ticket) => sum + Number(ticket.unread_count || 0), 0);
     }
     const selected = detail?.ticket;
-    return `<div class="ws-page-head"><div><span class="ws-kicker">CONVERSATIONS</span><h2>Support Chat</h2><p>Replies from your referred customers arrive here first.</p></div><div class="ws-head-actions"><span class="ws-live-badge"><i></i> Live inbox</span><button type="button" class="ws-btn ghost" id="agent-support-refresh">${icon('refresh')} Refresh</button></div></div>
+    return `<div class="ws-page-head"><div><span class="ws-kicker">CONVERSATIONS</span><h2>Support Chat</h2><p>Replies from your referred and assigned customers arrive here first.</p></div><div class="ws-head-actions"><span class="ws-live-badge"><i></i> Live inbox</span><button type="button" class="ws-btn ghost" id="agent-support-refresh">${icon('refresh')} Refresh</button></div></div>
     <div class="ws-support-shell">
       <section class="ws-card ws-ticket-list">
         <div class="ws-ticket-list-head"><h3>Inbox <span>${tickets.length}</span></h3></div>
@@ -745,7 +745,7 @@
     return `<div class="ws-page-head"><div><span class="ws-kicker">COMPENSATION</span><h2>My Earnings</h2><p>Your 25% share is calculated only on positive settled net gaming revenue.</p></div><div class="ws-head-actions"><span class="ws-rate-chip"><b>${esc(data.profile.commission_percent)}%</b> weekly commission</span></div></div>
     <div class="ws-stats-grid four">
       ${statCard({ label: 'This week NGR', value: `${money(current.profit_santim)} <small>ETB</small>`, iconName: 'trend', tone: 'green', footer: 'Settled stakes minus payouts' })}
-      ${statCard({ label: 'Estimated commission', value: `${money(current.estimated_commission_santim)} <small>ETB</small>`, iconName: 'wallet', tone: 'yellow', footer: `25% of positive NGR` })}
+      ${statCard({ label: 'Estimated commission', value: `${money(current.estimated_commission_santim)} <small>ETB</small>`, iconName: 'wallet', tone: 'yellow', footer: '25% of positive NGR after carry' })}
       ${statCard({ label: 'Commission paid', value: `${money(data.totals.commission_paid_santim)} <small>ETB</small>`, iconName: 'check', tone: 'blue', footer: `${history.length} settled weeks` })}
       ${statCard({ label: 'Pending requests', value: `${money(data.totals.pending_requests_santim)} <small>ETB</small>`, iconName: 'clock', tone: 'gold', footer: `${pending.length} awaiting Super Admin` })}
     </div>
@@ -1068,7 +1068,7 @@
         <button type="submit" class="ws-btn dark">Apply</button>
       </form>
       ${table(['Customer', 'Provider', 'Amount', 'Ref', 'Receipt', 'Status', ''], (data.deposits || []).map((row) => `<tr>
-        <td>${userPill(row)}</td><td><b>${esc(row.provider)}</b></td><td><b>${money(row.amount)} ETB</b></td><td class="ws-mono">${esc(row.tx_ref)}</td><td><span class="ws-cell-badge">${row.has_receipt ? 'Attached' : 'None'}</span></td><td>${pill(row.status)}</td><td><button type="button" class="ws-btn tiny" data-deposit-review="${row.id}">Review</button></td>
+        <td>${userPill(row)}</td><td><b>${esc(row.provider)}</b></td><td><b>${money(row.amount)} ETB</b></td><td class="ws-mono">${esc(row.tx_ref)}</td><td><span class="ws-cell-badge">${row.has_receipt ? 'Attached' : 'None'}</span></td><td>${pill(row.status)}</td><td>${row.status === 'pending' ? `<button type="button" class="ws-btn tiny" data-deposit-review="${row.id}">Review</button>` : ''}</td>
       </tr>`), empty('deposit', 'No deposit requests', 'New customer deposits appear here.'))}
     </section>
     <div class="ws-quick-actions">
@@ -1107,10 +1107,11 @@
       <div class="ws-layout-2-1">
         <section class="ws-card">
           <div class="ws-card-head"><div><h2>This week — estimated commission</h2><p>${esc(commissions.week_start ? dateShort(commissions.week_start) : '—')}</p></div></div>
-          ${table(['Agent', 'Code', 'NGR', 'Commission'], estimated.map((row) => `<tr>
+          ${table(['Agent', 'Code', 'NGR', 'Carry-in', 'Commission'], estimated.map((row) => `<tr>
             <td>${avatar(row.agent_name)}<div><b>${esc(row.agent_name)}</b><div class="ws-cell-sub">#${num(row.agent_id)}</div></div></td>
             <td class="ws-mono">${esc(row.promo_code || '—')}</td>
             <td>${money(row.ngr)} ETB</td>
+            <td class="${Number(row.carried_loss_in_santim) > 0 ? 'ws-negative' : 'ws-muted'}">${money(row.carried_loss_in_santim || 0)} ETB</td>
             <td class="yellow"><b>${money(row.commission_santim)} ETB</b></td>
           </tr>`), empty('wallet', 'No agent activity yet', 'Commission appears once settled weeks close.'))}
         </section>
@@ -1406,7 +1407,7 @@
             promo_code: fd.get('promo_code') || undefined,
             contact_info: fd.get('contact_info') || '',
             weekly_fee_santim: Math.round(Number(fd.get('weekly_fee_etb') || 0) * 100),
-            commission_bps: Math.round(Number(fd.get('commission_percent') || 25) * 100),
+            commission_bps: Math.round(Number(String(fd.get('commission_percent') || '').trim() || 25) * 100),
             email: fd.get('email') || undefined,
             username: fd.get('username') || undefined,
             reauth_password: fd.get('reauth_password')
@@ -1967,7 +1968,7 @@
     root = app;
     document.body.classList.add('workspace-mode', ctx.me.role === 'agent' ? 'ws-agent' : 'ws-superadmin');
     const hash = /^#\/(agent|superadmin)\/([a-z-]+)$/.exec(window.location.hash || '');
-    const requested = hash && hash[2] ? hash[2] : '';
+    const requested = hash && hash[1] === ctx.me.role && hash[2] ? hash[2] : '';
     state.page = allowedPage(requested) ? requested : defaultPage();
     renderShell();
     await loadNotifications(true);
