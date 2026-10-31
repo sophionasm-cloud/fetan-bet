@@ -19,9 +19,11 @@ A full JSON backup was taken, migrations `003` and `004` were applied successful
 
 `npm run test:static` passes. No wallet, ledger, deposit, withdrawal, or game rows were rewritten by the migrations. No code changes were required for the login fix itself.
 
-After the login fix, the workspace was finished locally: Logout is visible in both the topbar and sidebar and returns directly to the login form, Agent and Super Admin pages fit phone/tablet/laptop/desktop widths without page overflow, and three Super Admin dashboard SQL binding/date-bound bugs were fixed. Those changes are currently uncommitted.
+After the login fix, the workspace was finished locally: Logout is visible in both the topbar and sidebar and returns directly to the login form, Agent and Super Admin pages fit phone/tablet/laptop/desktop widths without page overflow, and three Super Admin dashboard SQL binding/date-bound bugs were fixed. Those changes were committed in `da582fe`.
 
-Production is **not fully ready yet**: the Render deployment previously crashed because `JWT_SECRET` was missing or shorter than 32 characters. Render still needs the correct `JWT_SECRET` and `DATABASE_URL`, followed by a redeploy. Nothing was deployed, pushed, or committed during the final fix.
+Super Admin deposit approval was then reported broken on the live site. Root cause: the review modal rendered a `<div class="ws-form-grid">` but bound a `submit` listener to that div. The "Approve and credit" button was a submit button not associated with any form, so clicking it never sent a request. The same pattern affected withdrawal review, withdrawal completion, agent creation/editing, and customer reassignment. Every workspace modal now uses a real `<form>`, includes a submit action where one was missing, disables actions while a request is pending, and shows the actual failure inline. Verification: a mocked browser request contains the five verification checks and closes the modal; an in-memory route test confirms one approval credits exactly once, while a repeat approval, wrong password, or missing check leaves the balance unchanged.
+
+Production is **not fully ready yet**: the Render deployment previously crashed because `JWT_SECRET` was missing or shorter than 32 characters. Render still needs the correct `JWT_SECRET` and `DATABASE_URL`, followed by a redeploy. The deposit-modal fix is **not deployed or pushed** yet.
 
 ---
 
@@ -29,19 +31,14 @@ Production is **not fully ready yet**: the Render deployment previously crashed 
 
 ### 2.1 Git state
 
-- `HEAD` = `3427849` (`GDK`)
-- `origin/main` = `3427849`
+- `HEAD` = `da582fe` (`update on the ui and fitable options`)
+- `origin/main` = `da582fe`
 - Branch is `main`, tracking `origin/main`
-- The workspace and final polish are present in the working tree but **not committed**.
+- The deposit-modal fix is present in the working tree but **not committed**.
 - Uncommitted changes:
-  - `public/workspace.js` - responsive report/chat/stage markup and workspace markup updates
-  - `public/app.js` - staff Logout returns directly to `render('login')`
-  - `public/dashboard.css` - responsive sidebar/topbar/logout, wrapping filters, chat actions, tables, modals, and stage grid
-  - `server.js` - Super Admin dashboard SQL parameter and EAT trend-bound fixes
-  - `public/index.html` - added `mobile-web-app-capable` meta tag
-  - `locales/en.json` - added `err_SCHEMA_NOT_READY` and `err_SERVICE_UNAVAILABLE`
-  - `locales/am.json` - same two keys in Amharic
-  - `README.md` - staged change; Git reports it as a binary diff. Review it before committing.
+  - `public/workspace.js` - all workspace modals use real forms, missing submit actions restored, pending/error states added
+  - `public/dashboard.css` - full-width modal form actions and inline error rows
+  - `operations.test.js` - regression guard against submit handlers on div containers
 - The login fix itself was database-side; the later workspace polish is application-side.
 
 ### 2.2 Database state
@@ -107,6 +104,9 @@ Headless Edge verification completed against the local Express server:
 - Topbar Logout and sidebar Logout both clear the session and open the login form directly.
 - Phone layout keeps the visible "Logout" label, hides the topbar avatar, and avoids horizontal overflow down to `320px`.
 - `node --check` passes for `public/workspace.js`, `public/app.js`, and `server.js`.
+- Deposit review modal verified in headless Edge: the form submits `action`, all five verification flags, the internal note, and the password; success closes the modal, and a rejected password shows an inline error and re-enables the button. Zero console errors.
+- Server route verified with an in-memory DB stub: approval credits the wallet once and writes one deposit review, notification, staff-history row, and audit row. A repeat approval returns `NOT_FOUND` with no second credit; wrong password and missing checks leave the balance unchanged.
+- Deposit `#44` was inspected read-only and remains pending. No production wallet, ledger, deposit, review, or audit rows were changed during verification.
 
 Integration tests were **not** run because `TEST_DATABASE_URL` is not configured. Do not claim full integration coverage.
 

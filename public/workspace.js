@@ -1028,16 +1028,20 @@
 
   async function openSuperReassign(user) {
     const agents = (await ctx.api('/superadmin/agents?limit=100&search=')).agents || [];
-    openModal(`Reassign ${esc(user.name)}`, `<div class="ws-form-grid full-form">
+    openModal(`Reassign ${esc(user.name)}`, `<form class="ws-form-grid full-form">
       <label class="ws-field"><span>Customer</span><b>${esc(user.name)}</b> · #${num(user.id)}</label>
       <label class="ws-field"><span>New agent</span><select name="agent_id"><option value="">Remove attribution</option>${agents.map((agent) => `<option value="${String(agent.id)}">${esc(agent.name)} · ${esc(agent.promo_code)}</option>`).join('')}</select></label>
       <label class="ws-field"><span>Reason</span><input name="reason" minlength="3" maxlength="300" required placeholder="Why is attribution changing?"></label>
       ${passwordField()}
-    </div>`, (modal) => {
+      <div class="ws-form-actions full"><button type="submit" class="ws-btn primary">Update attribution</button></div>
+    </form>`, (modal) => {
       const form = modal.querySelector('.ws-form-grid');
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const data = Object.fromEntries(new FormData(form));
+        const submit = form.querySelector('button[type="submit"]');
+        submit.disabled = true;
+        clearFormError(form);
         try {
           await ctx.api(`/superadmin/users/${user.id}/reassign-agent`, {
             agent_id: data.agent_id || null,
@@ -1048,7 +1052,11 @@
           renderPage();
           modal.remove();
           document.body.classList.remove('ws-modal-open');
-        } catch (error) { ctx.fail(error); }
+        } catch (error) {
+          ctx.fail(error);
+          showFormError(form, error);
+          submit.disabled = false;
+        }
       });
     });
   }
@@ -1282,7 +1290,7 @@
   }
 
   async function openDepositReview(deposit) {
-    const body = `<div class="ws-form-grid full-form">
+    const body = `<form class="ws-form-grid full-form">
       <label class="ws-field"><span>Customer</span>${userPill(deposit)}</label>
       <label class="ws-field"><span>Provider / Amount</span><b>${esc(deposit.provider)}</b> · ${money(deposit.amount)} ETB</label>
       <label class="ws-field"><span>Reference</span><span class="ws-mono">${esc(deposit.tx_ref)}</span></label>
@@ -1297,11 +1305,11 @@
         <label class="ws-check-item"><input type="checkbox" name="check_independently_verified" value="true"> Independently verified</label>
       </div>
       ${passwordField()}
-      <div class="ws-form-actions" style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end">
+      <div class="ws-form-actions full">
         <button type="button" class="ws-btn bad" data-deposit-action="reject">Reject</button>
         <button type="submit" class="ws-btn primary" data-deposit-action="approve">Approve and credit</button>
       </div>
-    </div>`;
+    </form>`;
     openModal(`Review deposit #${deposit.id}`, body, async (modal) => {
       const form = modal.querySelector('.ws-form-grid');
       const buttons = {
@@ -1310,11 +1318,27 @@
       };
       const run = async (action) => {
         if (!buttons[action]) return;
-        buttons[action].disabled = true;
+        if (form.dataset.busy === '1') return;
+        form.dataset.busy = '1';
+        const submitButtons = Object.values(buttons).filter(Boolean);
+        submitButtons.forEach((button) => { button.disabled = true; });
+        const label = buttons[action].textContent;
+        if (action === 'approve') buttons[action].textContent = 'Approving…';
+        clearFormError(form);
         const fd = new FormData(form);
         const checks = {};
         for (const key of ['amount_matches','reference_matches','recipient_matches','date_plausible','independently_verified']) checks[key] = fd.get(`check_${key}`) === 'true';
-        if (action === 'approve' && !Object.values(checks).every(Boolean)) { ctx.fail({ message: 'VERIFICATION_REQUIRED' }); buttons[action].disabled = false; return; }
+        const restore = () => {
+          delete form.dataset.busy;
+          submitButtons.forEach((button) => { button.disabled = false; });
+          buttons[action].textContent = label;
+        };
+        if (action === 'approve' && !Object.values(checks).every(Boolean)) {
+          showFormError(form, { message: 'VERIFICATION_REQUIRED' });
+          ctx.fail({ message: 'VERIFICATION_REQUIRED' });
+          restore();
+          return;
+        }
         try {
           await ctx.api(`/superadmin/deposits/${encodeURIComponent(deposit.id)}/decide`, {
             action,
@@ -1323,10 +1347,14 @@
             verification: checks,
             reauth_password: fd.get('reauth_password')
           });
-          ctx.success(`Deposit ${action === 'approve' ? 'approved' : 'rejected'}.`);
+          ctx.success(`Deposit ${action === 'approve' ? 'approved and credited' : 'rejected'}.`);
           modal.remove(); document.body.classList.remove('ws-modal-open');
           renderPage();
-        } catch (error) { ctx.fail(error); buttons[action].disabled = false; }
+        } catch (error) {
+          ctx.fail(error);
+          showFormError(form, error);
+          restore();
+        }
       };
       form.addEventListener('submit', (event) => { event.preventDefault(); run('approve'); });
       buttons.reject.addEventListener('click', () => run('reject'));
@@ -1334,22 +1362,25 @@
   }
 
   async function openWithdrawalReview(withdrawal) {
-    openModal(`Review withdrawal #${withdrawal.id}`, `<div class="ws-form-grid full-form">
+    openModal(`Review withdrawal #${withdrawal.id}`, `<form class="ws-form-grid full-form">
       <label class="ws-field"><span>Customer</span>${userPill(withdrawal)}</label>
       <label class="ws-field"><span>Provider / Amount</span><b>${esc(withdrawal.provider)}</b> · ${money(withdrawal.amount)} ETB</label>
       <label class="ws-field"><span>Destination</span><span class="ws-mono">${esc(withdrawal.account_number)}</span></label>
       <label class="ws-field"><span>Reason</span><input name="reason" placeholder="Reason (required to reject)"></label>
       <label class="ws-field"><span>Internal note</span><textarea name="internal_note" rows="2" maxlength="500" placeholder="Staff-only note">${esc(withdrawal.internal_note || '')}</textarea></label>
       ${passwordField()}
-      <div class="ws-form-actions" style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end">
+      <div class="ws-form-actions full">
         <button type="button" class="ws-btn bad" data-withdraw-action="reject">Reject</button>
         <button type="submit" class="ws-btn primary" data-withdraw-action="approve">Approve for payout</button>
       </div>
-    </div>`, async (modal) => {
+    </form>`, async (modal) => {
       const form = modal.querySelector('.ws-form-grid');
       const run = async (action) => {
+        if (form.dataset.busy === '1') return;
+        form.dataset.busy = '1';
         const buttons = modal.querySelectorAll('[data-withdraw-action]');
         buttons.forEach((b) => b.disabled = true);
+        clearFormError(form);
         const fd = new FormData(form);
         try {
           await ctx.api(`/superadmin/withdrawals/${encodeURIComponent(withdrawal.id)}/decide`, {
@@ -1358,10 +1389,15 @@
             internal_note: fd.get('internal_note') || '',
             reauth_password: fd.get('reauth_password')
           });
-          ctx.success(`Withdrawal ${action}.`);
+          ctx.success(`Withdrawal ${action === 'approve' ? 'approved for payout' : 'rejected'}.`);
           modal.remove(); document.body.classList.remove('ws-modal-open');
           renderPage();
-        } catch (error) { ctx.fail(error); buttons.forEach((b) => b.disabled = false); }
+        } catch (error) {
+          ctx.fail(error);
+          showFormError(form, error);
+          delete form.dataset.busy;
+          buttons.forEach((b) => b.disabled = false);
+        }
       };
       form.addEventListener('submit', (event) => { event.preventDefault(); run('approve'); });
       modal.querySelector('[data-withdraw-action="reject"]').addEventListener('click', () => run('reject'));
@@ -1369,17 +1405,21 @@
   }
 
   async function openWithdrawalComplete(withdrawal) {
-    openModal(`Confirm payment #${withdrawal.id}`, `<div class="ws-form-grid full-form">
+    openModal(`Confirm payment #${withdrawal.id}`, `<form class="ws-form-grid full-form">
       <label class="ws-field"><span>Customer</span>${userPill(withdrawal)}</label>
       <label class="ws-field"><span>Amount</span><b>${money(withdrawal.amount)} ETB</b></label>
       <label class="ws-field"><span>Destination</span><span class="ws-mono">${esc(withdrawal.account_number)}</span></label>
       <label class="ws-field"><span>External payment reference</span><input name="payment_reference" minlength="4" maxlength="100" required placeholder="Transaction reference"></label>
       ${passwordField()}
-    </div>`, async (modal) => {
+      <div class="ws-form-actions full"><button type="submit" class="ws-btn primary">Mark paid</button></div>
+    </form>`, async (modal) => {
       const form = modal.querySelector('.ws-form-grid');
+      const submit = form.querySelector('button[type="submit"]');
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const fd = new FormData(form);
+        submit.disabled = true;
+        clearFormError(form);
         try {
           await ctx.api(`/superadmin/withdrawals/${encodeURIComponent(withdrawal.id)}/complete`, {
             payment_reference: fd.get('payment_reference'),
@@ -1388,13 +1428,17 @@
           ctx.success('Withdrawal marked paid.');
           modal.remove(); document.body.classList.remove('ws-modal-open');
           renderPage();
-        } catch (error) { ctx.fail(error); }
+        } catch (error) {
+          ctx.fail(error);
+          showFormError(form, error);
+          submit.disabled = false;
+        }
       });
     }, 'ws-modal-wide');
   }
 
   async function openCreateAgent() {
-    openModal(`Register agent`, `<div class="ws-form-grid full-form">
+    openModal(`Register agent`, `<form class="ws-form-grid full-form">
       <label class="ws-field"><span>Full name</span><input name="name" minlength="2" maxlength="60" required></label>
       <label class="ws-field"><span>Phone</span><input name="phone" type="tel" required></label>
       <label class="ws-field"><span>Initial password</span><input name="password" type="password" minlength="12" autocomplete="new-password" required></label>
@@ -1405,11 +1449,15 @@
       <label class="ws-field"><span>Email</span><input name="email" type="email" maxlength="160" placeholder="agent@example.com"></label>
       <label class="ws-field"><span>Username</span><input name="username" maxlength="30" placeholder="agent_handle"></label>
       ${passwordField()}
-    </div>`, async (modal) => {
+      <div class="ws-form-actions full"><button type="submit" class="ws-btn primary">Create agent</button></div>
+    </form>`, async (modal) => {
       const form = modal.querySelector('.ws-form-grid');
+      const submit = form.querySelector('button[type="submit"]');
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const fd = new FormData(form);
+        submit.disabled = true;
+        clearFormError(form);
         try {
           await ctx.api('/superadmin/agents', {
             name: fd.get('name'),
@@ -1426,7 +1474,11 @@
           ctx.success('Agent created.');
           modal.remove(); document.body.classList.remove('ws-modal-open');
           renderPage();
-        } catch (error) { ctx.fail(error); }
+        } catch (error) {
+          ctx.fail(error);
+          showFormError(form, error);
+          submit.disabled = false;
+        }
       });
     }, 'ws-modal-wide');
   }
@@ -1435,7 +1487,7 @@
     const data = await ctx.api(`/superadmin/agents?limit=100&search=`);
     const row = (data.agents || []).find((agent) => num(agent.id) === num(id));
     if (!row) { ctx.fail({ message: 'NOT_FOUND' }); return; }
-    openModal(`Edit ${esc(row.name)}`, `<div class="ws-form-grid full-form">
+    openModal(`Edit ${esc(row.name)}`, `<form class="ws-form-grid full-form">
       <label class="ws-field"><span>Full name</span><input name="name" value="${esc(row.name)}" required></label>
       <label class="ws-field"><span>Phone</span><input name="phone" value="${esc(row.phone)}" required></label>
       <label class="ws-field"><span>Promo code</span><input name="promo_code" value="${esc(row.promo_code)}" required></label>
@@ -1446,11 +1498,15 @@
       <label class="ws-field"><span>Weekly fee (ETB)</span><input name="weekly_fee_etb" type="number" min="0" step="0.01" value="${Number(row.weekly_fee_santim || 0) / 100}"></label>
       <label class="ws-field"><span>Commission %</span><input name="commission_percent" type="number" min="0" max="100" step="0.01" value="${Number(row.commission_bps || 0) / 100}"></label>
       ${passwordField()}
-    </div>`, async (modal) => {
+      <div class="ws-form-actions full"><button type="submit" class="ws-btn primary">Save agent</button></div>
+    </form>`, async (modal) => {
       const form = modal.querySelector('.ws-form-grid');
+      const submit = form.querySelector('button[type="submit"]');
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const fd = new FormData(form);
+        submit.disabled = true;
+        clearFormError(form);
         try {
           await ctx.api(`/superadmin/agents/${id}`, {
             name: fd.get('name'), phone: fd.get('phone'), promo_code: fd.get('promo_code'),
@@ -1463,7 +1519,11 @@
           ctx.success('Agent updated.');
           modal.remove(); document.body.classList.remove('ws-modal-open');
           renderPage();
-        } catch (error) { ctx.fail(error); }
+        } catch (error) {
+          ctx.fail(error);
+          showFormError(form, error);
+          submit.disabled = false;
+        }
       });
     }, 'ws-modal-wide');
   }
@@ -1963,6 +2023,40 @@
     }, undefined, () => {
       if (!completed && onCancel) onCancel();
     }, { stack: true });
+  }
+
+  function failureMessage(error) {
+    const code = String((error && error.message) || 'GENERIC');
+    const messages = {
+      REAUTH_REQUIRED: 'Super Admin password is incorrect. Please re-enter it.',
+      VERIFICATION_REQUIRED: 'Complete all verification checks before approving.',
+      NOT_FOUND: 'This request is no longer pending. Refresh the list and try again.',
+      SELF: 'You cannot approve your own request.',
+      FORBIDDEN: 'You do not have permission for this action.',
+      NETWORK: 'Network error. Check your connection and try again.',
+      RATE: 'Too many attempts. Wait a moment and try again.',
+      SERVICE_UNAVAILABLE: 'The service is temporarily unavailable. Try again shortly.',
+      SCHEMA_NOT_READY: 'The database update is not available yet. Try again shortly.',
+      INVALID: 'Some details are invalid. Check the form and try again.',
+      GENERIC: 'The server could not complete this action. Please try again.'
+    };
+    return messages[code] || 'Something went wrong. Please try again.';
+  }
+
+  function clearFormError(form) {
+    form.querySelector('.ws-inline-error')?.remove();
+  }
+
+  function showFormError(form, error) {
+    let box = form.querySelector('.ws-inline-error');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'ws-inline-error';
+      box.setAttribute('role', 'alert');
+      form.prepend(box);
+    }
+    box.textContent = failureMessage(error);
+    box.hidden = false;
   }
 
   function errorBox(message) {

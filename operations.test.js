@@ -43,4 +43,10 @@ assert.match(migration, /support_messages_sender_role_check[\s\S]*'superadmin'/)
 assert.match(migration, /trg_agent_weekly_settlements_immutable/);
 assert.match(migration, /trg_staff_action_history_immutable/);
 
-console.log('Operations checks passed (permissions, commission, UTC week boundaries, migration invariants).');
+// Workspace modals must use real <form> elements; submit handlers do not fire on divs.
+const workspace = fs.readFileSync(path.join(__dirname, 'public/workspace.js'), 'utf8');
+assert.doesNotMatch(workspace, /<div class="ws-form-grid/);
+assert.match(workspace, /<form class="ws-form-grid full-form">/);
+assert.match(workspace, /data-deposit-action="approve"/);
+
+console.log('Operations checks passed (permissions, commission, UTC week boundaries, migration and workspace form invariants).');

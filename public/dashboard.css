@@ -935,6 +935,7 @@ textarea { resize: vertical; min-height: 70px; }
 label { color: var(--ws-text); font-size: 13px; font-weight: 600; cursor: pointer; }
 .ws-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 .ws-form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+.ws-form-actions.full, .ws-form-grid > .ws-inline-error { grid-column: 1 / -1; }
 .ws-report-filter {
   display: flex;
   flex-wrap: wrap;
