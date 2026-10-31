@@ -231,6 +231,7 @@ function nav() {
       tabs.push(['games', '🎰', t('games')]);
       tabs.push(['wallet', '💳', t('wallet')]);
       tabs.push(['deposit', '⬇', t('deposit')]);
+      tabs.push(['withdraw', '⬆', t('withdraw')]);
       tabs.push(['profile', '👤', lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
     } else {
       tabs.push(['games', '🎰', 'games']);
@@ -238,6 +239,7 @@ function nav() {
       tabs.push(['deposit', '⬇', 'deposit']);
       tabs.push(['withdraw', '⬆', 'withdraw']);
       tabs.push(['history', '📋', 'history']);
+      tabs.push(['profile', '👤', lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
       tabs.push(['support', '💬', 'support']);
     }
   }
