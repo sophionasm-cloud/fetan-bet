@@ -57,14 +57,16 @@
   const SIDE_L = 200;
   const SIDE_R = 190;
   const integrated = new URLSearchParams(location.search).get('fetan') === '1';
+  // Integrated iframe is demo-only until the approved server engine is ready.
+  const realWalletMode = false;
   const MIN_BET = 1;
   const MAX_BET = 500;
   const START_BALANCE = 1000000;
   const STORE_KEY = 'fetanbet.cr2.v1';
 
-  function laneLimit() { return integrated ? Math.max(1, Number(state.maxLanes) || LANES) : LANES; }
+  function laneLimit() { return LANES; }
   function roadWidth() { return laneLimit() * LANE_W; }
-  function finishPosition() { return integrated ? laneLimit() : laneLimit() + 1; }
+  function finishPosition() { return laneLimit() + 1; }
 
   const DIFFICULTY = {
     easy: {
@@ -118,7 +120,7 @@
 
   function saveStore() {
     if (integrated) {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify({ sound: state.sound, music: state.music })); } catch (e) { /* private mode */ }
+      try { localStorage.setItem(STORE_KEY, JSON.stringify({ balance: state.balance, bet: state.bet, difficulty: state.difficulty, sound: state.sound, music: state.music })); } catch (e) { /* private mode */ }
       return;
     }
     try {
@@ -147,7 +149,7 @@
     return Number(n).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }) + ' ETB';
+    }) + (integrated ? ' DEMO ETB' : ' ETB');
   }
   function grossPreviewBirr(stakeBirr, multiplier) {
     const stakeCents = BigInt(Math.round(Number(stakeBirr) * 100));
@@ -171,7 +173,7 @@
   // ---------------------------------------------------------------- State
   const state = {
     phase: 'idle',            // idle | playing | crashed | cashed | finished
-    balance: integrated ? 0 : Number.isFinite(saved.balance) ? saved.balance : START_BALANCE,
+    balance: Number.isFinite(saved.balance) && saved.balance >= 0 ? saved.balance : START_BALANCE,
     bet: clamp(Number(saved.bet) || 3, MIN_BET, MAX_BET),
     difficulty: DIFFICULTY[saved.difficulty] ? saved.difficulty : 'medium',
     sound: saved.sound !== false,
@@ -318,7 +320,7 @@
   }
 
   function updateHUD() {
-    balanceEl.textContent = integrated ? fmtMoney(state.balance) : `${fmtInt(state.balance)} ETB`;
+    balanceEl.textContent = integrated ? fmtMoney(state.balance).replace(' ETB', ' DEMO ETB') : `${fmtInt(state.balance)} ETB`;
     betAmountEl.textContent = fmtInt(state.bet);
     const active = state.phase === 'playing';
     const settling = state.phase === 'crashed' || state.phase === 'cashed' || state.phase === 'finished';
@@ -334,20 +336,20 @@
       const next = state.pos >= finishPosition() - 1 && active
         ? null
         : multForLane(Math.min(laneCount() + 1, laneLimit()));
-      nextText = next ? fmtMult(next) : integrated ? '—' : '1.5x bonus';
+      nextText = next ? fmtMult(next) : '1.5x bonus';
     }
     nextMultEl.textContent = nextText;
     nextMultEl.parentElement.classList.toggle('muted', settling);
-    const previewMultiplier = state.pos >= finishPosition() - 1 && !integrated ? state.mult * 1.5 : state.mult;
+    const previewMultiplier = state.pos >= finishPosition() - 1 ? state.mult * 1.5 : state.mult;
     cashValueEl.textContent = fmtMoney(grossPreviewBirr(state.bet, previewMultiplier));
     playBtn.classList.toggle('hidden', active || settling);
     playActions.classList.toggle('hidden', !active);
     if (active) {
-      const last = integrated ? state.pos === laneLimit() - 1 : state.pos === laneLimit();
-      goBtn.innerHTML = last && !integrated ? 'FINISH <span>→</span>' : 'GO <span>→</span>';
+      const last = state.pos === laneLimit();
+      goBtn.innerHTML = last ? 'FINISH <span>→</span>' : 'GO <span>→</span>';
       goBtn.disabled = !!state.hop || state.remoteBusy;
       cashBtn.disabled = !!state.hop || state.remoteBusy;
-      goBtn.title = last && !integrated ? 'Reach the far sidewalk for a 1.5x finish bonus' : 'Hop forward';
+      goBtn.title = last ? 'Reach the far sidewalk for a 1.5x finish bonus' : 'Hop forward';
     }
     setBetControls(state.phase === 'idle');
     playBtn.disabled = integrated && (!state.remoteReady || state.remoteBusy);
@@ -356,13 +358,13 @@
     }
 
     if (state.phase === 'idle') {
-      stageHint.textContent = integrated ? 'Play to place a bet · Fetan Bet decides every crossing' : 'Press Play, then hop across the road';
+      stageHint.textContent = integrated ? 'DEMO MODE · Play with a separate demo balance' : 'Press Play, then hop across the road';
       stageHint.classList.remove('fade');
     } else if (active) {
       if (state.hop) stageHint.textContent = 'Jumping…';
       else if (state.pos === 0) stageHint.textContent = 'Tap GO when the first lane is clear';
-      else if (!integrated && state.pos === laneLimit()) stageHint.textContent = 'Last lane! Hit FINISH for a 1.5x bonus';
-      else stageHint.textContent = integrated ? 'Fetan Bet verifies each crossing · hop or cash out' : 'Watch the traffic — hop or cash out';
+      else if (state.pos === laneLimit()) stageHint.textContent = 'Last lane! Hit FINISH for a 1.5x bonus';
+      else stageHint.textContent = integrated ? 'DEMO MODE · Watch traffic — hop or cash out' : 'Watch the traffic — hop or cash out';
       stageHint.classList.remove('fade');
     }
   }
@@ -424,8 +426,8 @@
   // ---------------------------------------------------------------- Round flow
   function startRound() {
     startAudio();
-    if (integrated) return;
-    if (integrated) {
+    if (integrated && realWalletMode) return;
+    if (integrated && realWalletMode) {
       if (!state.remoteReady || state.remoteBusy) return;
       state.remoteBusy = true;
       updateHUD();
@@ -459,7 +461,7 @@
     }
     if (state.balance < MIN_BET) {
       state.balance = START_BALANCE;
-      toast('Demo balance topped up to 1 000 000 ETB', 'good');
+      toast('Demo balance topped up to 1 000 000 DEMO ETB', 'good');
     }
     if (state.bet > state.balance) {
       toast('Not enough demo balance for that bet', 'bad');
@@ -488,9 +490,9 @@
 
   function hop() {
     if (state.phase !== 'playing' || state.hop) return;
-    if (integrated) return;
+    if (integrated && realWalletMode) return;
     if (state.pos >= finishPosition()) return;
-    if (integrated) {
+    if (integrated && realWalletMode) {
       if (state.remoteBusy) return;
       state.remoteBusy = true;
       state.pendingActionId ||= nextActionId();
@@ -539,7 +541,7 @@
     const to = state.hop.to;
     state.hop = null;
     state.pos = to;
-    if (integrated) {
+    if (integrated && realWalletMode) {
       const result = state.remoteAction;
       state.remoteAction = null;
       if (!result) { toast('The server result is missing. Reloading the round state.', 'bad'); return; }
@@ -578,8 +580,8 @@
 
   function cashOut() {
     if (state.phase !== 'playing' || state.hop) return;
-    if (integrated) return;
-    if (integrated) {
+    if (integrated && realWalletMode) return;
+    if (integrated && realWalletMode) {
       if (state.remoteBusy || state.pos < 1) return;
       state.remoteBusy = true;
       state.pendingActionId ||= nextActionId();
@@ -597,7 +599,7 @@
         play('cash');
         addConfetti(posX(state.pos), roadCenterY(), 48, false);
         updateHUD();
-        stageHint.textContent = 'Banked through Fetan Bet';
+        stageHint.textContent = integrated ? 'DEMO MODE · Banked it!' : 'Banked through Fetan Bet';
       }).catch(async (error) => {
         state.remoteBusy = false;
         if (error.message === 'STALE_ACTION') {
@@ -623,9 +625,9 @@
   }
 
   function finishRound(serverResult = null) {
-    const payout = integrated ? Number(serverResult?.payout || 0) / 100 : round2(state.bet * state.mult * 1.5);
+    const payout = integrated && realWalletMode ? Number(serverResult?.payout || 0) / 100 : round2(state.bet * state.mult * 1.5);
     state.phase = 'finished';
-    state.balance = integrated ? Number(serverResult?.balance || 0) / 100 : round2(state.balance + payout);
+    state.balance = integrated && realWalletMode ? Number(serverResult?.balance || 0) / 100 : round2(state.balance + payout);
     state.pos = finishPosition();
     state.lastOutcome = { type: 'finish', payout };
     state.resultTimer = 0.95;
@@ -634,7 +636,7 @@
     addConfetti(posX(finishPosition()), roadCenterY(), 110, true);
     addConfetti(state.cameraX + state.viewW * 0.4, roadCenterY() - 60, 60, true);
     updateHUD();
-    stageHint.textContent = integrated ? 'Round settled by Fetan Bet' : 'Clean crossing!';
+    stageHint.textContent = integrated ? 'DEMO MODE · Clean crossing!' : 'Clean crossing!';
   }
 
   function crash(car) {
@@ -663,10 +665,10 @@
         `Bet ${fmtMoney(state.bet)} · ${fmtMult(state.mult)} multiplier`, 'SAFE LANDING');
     } else if (out.type === 'finish') {
       showResult('good', 'ROAD CLEARED!', fmtMoney(out.payout),
-        integrated ? `${state.maxLanes} crossings · settled at ${fmtMult(state.mult)}` : `14 lanes crossed · ${fmtMult(state.mult)} + 1.5x finish bonus`, 'CLEAN CROSSING');
+        `14 lanes crossed · ${fmtMult(state.mult)} + 1.5x finish bonus`, 'CLEAN CROSSING');
     } else {
       showResult('bad', 'CRASHED!', fmtMoney(0),
-        integrated ? 'The crossing was decided by Fetan Bet. Try another round.' : 'A car got you. Try a safer lane timing.', 'ROUND OVER');
+        'A car got you. Try a safer lane timing.', 'ROUND OVER');
     }
   }
 
@@ -1502,7 +1504,7 @@
   }
 
   function checkCollision() {
-    if (integrated) return;
+    if (integrated && realWalletMode) return;
     if (state.phase !== 'playing') return;
     const x = chickenX();
     const y = roadCenterY();
@@ -1747,7 +1749,7 @@
   }
 
   function updateLiveTicker() {
-    if (integrated) return;
+    if (integrated && realWalletMode) return;
     const name = pick(TICKER_NAMES);
     const amount = rand(18, 420);
     tickerNameEl.textContent = name;
@@ -1759,32 +1761,26 @@
   function init() {
     if (integrated) {
       const wallet = balanceEl.closest('.balance-pill');
-      if (wallet) wallet.title = 'Fetan Bet wallet balance (ETB)';
-      balanceEl.textContent = 'Loading…';
-      state.remoteReady = false;
-      integrationBlocker.hidden = false;
-      stageHint.textContent = 'This game is not accepting bets yet.';
+      if (wallet) wallet.title = 'Demo balance only — not withdrawable';
+      balanceEl.textContent = fmtMoney(state.balance).replace(' ETB', ' DEMO ETB');
+      state.remoteReady = true;
+      integrationBlocker.hidden = true;
+      stageHint.textContent = 'DEMO MODE · Demo balance only';
       integrationWalletStatus.textContent = 'No bet has been placed. Your balance is unchanged.';
-      menuReset.disabled = true;
-      setBetControls(false);
-      playBtn.disabled = true;
-      goBtn.disabled = true;
-      cashBtn.disabled = true;
+      menuReset.disabled = false;
+      setBetControls(true);
       const howTitle = $('howTitle');
       const howDescription = document.querySelector('#howModal .modal-card > p');
       const howRules = document.querySelector('#howModal .modal-card > ul');
-      if (howTitle) howTitle.textContent = 'Wallet play is unavailable';
-      if (howDescription) howDescription.textContent = 'Chicken Road Dash uses moving traffic and collision timing resolved in the browser. Wallet play will stay disabled until the same rules can be enforced securely on Fetan Bet servers.';
-      if (howRules) howRules.hidden = true;
+      if (howTitle) howTitle.textContent = 'Demo mode';
+      if (howDescription) howDescription.textContent = 'Play Chicken Road Dash using a separate demo balance. Demo balance has no cash value and cannot be withdrawn.';
+      if (howRules) howRules.hidden = false;
     }
     syncSoundUI();
-    if (integrated && !difficultyEl.querySelector('option[value="hardcore"]')) {
-      difficultyEl.add(new Option('Hardcore', 'hardcore'));
-    }
     if (saved.difficulty && DIFFICULTY[saved.difficulty]) difficultyEl.value = saved.difficulty;
     else difficultyEl.value = state.difficulty;
     if (integrated) {
-      menuReset.disabled = true;
+      menuReset.disabled = false;
       const backLink = document.querySelector('[data-fetan-back]');
       backLink?.addEventListener('click', (event) => {
         event.preventDefault();
@@ -1792,7 +1788,7 @@
       });
     }
     updateHUD();
-    if (integrated) stageHint.textContent = 'Wallet play is disabled until these collision rules can be resolved securely on the server.';
+    if (integrated) stageHint.textContent = 'DEMO MODE · Demo balance only';
     resize();
     resetTraffic();
     bindEvents();
@@ -1811,7 +1807,7 @@
       // Audio is unlocked by the first pointer/key interaction.
       state.started = false;
     }
-    if (integrated) {
+    if (integrated && realWalletMode) {
       fetch('/api/me', { credentials: 'same-origin' }).then(async (response) => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !Number.isSafeInteger(Number(data.balance))) throw new Error('WALLET_UNAVAILABLE');

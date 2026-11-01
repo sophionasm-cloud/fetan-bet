@@ -32,20 +32,32 @@ for (const asset of ['public/img/chicken-road-2-card.png', 'public/img/penalty-u
 for (const game of ['chicken-road-2', 'penalty']) {
   const html = read(`public/games/${game}/index.html`);
   const bundle = read(`public/games/${game}/js/game.js`);
-  assert.match(html, /id="balance">Loading…</, `${game} does not flash a demo balance`);
-  assert.match(html, /Fetan Bet wallet balance \(ETB\)/, `${game} identifies the wallet`);
+  if (game === 'chicken-road-2') {
+    assert.match(html, /id="balance">1 000 000\.00 DEMO ETB</, 'Chicken Road Dash starts with a labeled demo balance');
+  } else {
+    assert.match(html, /id="balance">Loading…</, `${game} does not flash a demo balance`);
+    assert.match(html, /Fetan Bet wallet balance \(ETB\)/, `${game} identifies the wallet`);
+  }
   assert.doesNotMatch(`${html}\n${bundle}`, /localhost:4173|127\.0\.0\.1:4173/);
   assert.match(bundle, /credentials:\s*'same-origin'/, `${game} sends the authenticated same-origin cookie`);
 }
 
-assert.match(chicken, /function startRound\(\) \{[\s\S]*?if \(integrated\) return;/,
-  'Chicken Road Dash does not place a wallet bet against different Road Dash rules');
-assert.match(chicken, /fetch\('\/api\/me', \{ credentials: 'same-origin' \}\)/,
-  'Chicken Road Dash only reads the authenticated balance while betting is blocked');
-assert.match(read('public/games/chicken-road-2/index.html'), /integrationBlocker/,
-  'Chicken Road Dash explains why wallet play is unavailable');
-assert.match(read('public/games/chicken-road-2/css/style.css'), /html\.fetan-integrated \.bet-panel[\s\S]*?display: none/,
-  'Chicken Road Dash does not present active-looking wager controls while wallet play is blocked');
+assert.match(chicken, /const realWalletMode = false/, 'real wallet mode remains disabled');
+assert.match(chicken, /function laneLimit\(\) \{ return LANES; \}/, 'demo retains all 14 traffic lanes');
+assert.match(chicken, /function finishPosition\(\) \{ return laneLimit\(\) \+ 1; \}/, 'demo retains the finish sidewalk and bonus crossing');
+assert.match(chicken, /function startRound\(\)[\s\S]*?if \(integrated && realWalletMode\) \{[\s\S]*?state\.balance = round2\(state\.balance - state\.bet\)/,
+  'integrated demo starts using only its local demo balance');
+assert.match(chicken, /function checkCollision\(\)[\s\S]*?if \(integrated && realWalletMode\) return;/,
+  'demo collision decisions remain in the local gameplay simulation');
+assert.match(chicken, /if \(integrated && realWalletMode\) \{\s*fetch\('\/api\/me'/,
+  'demo mode never requests the real wallet balance');
+assert.match(chicken.slice(chicken.indexOf('function init()')), /if \(integrated && realWalletMode\) \{[\s\S]*?fetch\('\/api\/me'/,
+  'wallet lookup is reachable only in the explicitly disabled real-wallet mode');
+assert.match(chicken, /JSON\.stringify\(\{ balance: state\.balance, bet: state\.bet, difficulty: state\.difficulty/,
+  'demo balance and preferences persist locally');
+assert.match(read('public/games/chicken-road-2/index.html'), /DEMO MODE[\s\S]*?cannot be withdrawn|Demo balance only/, 'integrated page labels demo funds as nonwithdrawable');
+assert.match(read('public/games/chicken-road-2/css/style.css'), /html\.fetan-integrated #menuReset \{ display: initial/,
+  'integrated demo keeps its isolated reset control available');
 assert.match(gameServer, /const PENALTY_MAX_BET = 50000[\s\S]*?async function penaltyStart[\s\S]*?if \(bet > PENALTY_MAX_BET\) throw new Error\('INVALID'\)/,
   'Penalty preserves its standalone 500 ETB maximum bet');
 assert.match(penalty, /if \(data\.active && Number\.isSafeInteger\(serverBet\) && serverBet >= 100\)/,

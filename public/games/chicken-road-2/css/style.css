@@ -551,8 +551,7 @@ body {
 .menu-item:hover { color: #ffd329; }
 html.fetan-integrated .ticker-row,
 html.fetan-integrated .disclaimer { display: none !important; }
-html.fetan-integrated .bet-panel,
-html.fetan-integrated #menuReset { display: none !important; }
+html.fetan-integrated #menuReset { display: initial !important; }
 html.fetan-integrated .integration-blocker {
   position: absolute;
   inset: 12px;
