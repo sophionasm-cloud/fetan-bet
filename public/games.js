@@ -173,11 +173,11 @@ window.Games = (function () {
 
       <!-- GAMES GRID -->
       <div class="lobby" id="ggrid">
-        <!-- 1. Chicken Road 2 (replaces the active Road Dash catalogue entry) -->
+        <!-- 1. Chicken Road Dash (replaces the active Road Dash catalogue entry) -->
         <div class="gcard g1" data-g="chicken-road-2" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-chicken-road-2">
           <span class="gcard-badge hot">HOT</span>
-          ${posterMarkup('chicken-road-2', 'Chicken Road 2', 'eager')}
-          <h3 id="gtitle-chicken-road-2">Chicken Road 2</h3>
+          ${posterMarkup('chicken-road-2', 'Chicken Road Dash', 'eager')}
+          <h3 id="gtitle-chicken-road-2">Chicken Road Dash</h3>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -288,7 +288,7 @@ window.Games = (function () {
     document.body.classList.toggle('game-open', mobileShell);
     const titles = {
       road:     '🐔 ' + C.t('road_title'),
-      'chicken-road-2': '🐔 Chicken Road 2',
+      'chicken-road-2': '🐔 Chicken Road Dash',
       penalty: '⚽ Penalty Unlimited',
       mines:    '💎 ' + C.t('mines_title'),
       plinko:   '⚡ ' + C.t('plinko_title'),
@@ -330,7 +330,7 @@ window.Games = (function () {
     $('mobile-game-back').onclick = leaveGame;
     const gameView = {
       road, roulette, star, mines, plinko, keno, bingo,
-      'chicken-road-2': (body) => integratedFrame(body, 'chicken-road-2', 'Chicken Road 2'),
+      'chicken-road-2': (body) => integratedFrame(body, 'chicken-road-2', 'Chicken Road Dash'),
       penalty: (body) => integratedFrame(body, 'penalty', 'Penalty Unlimited')
     }[game];
     if (gameView) gameView($('gbody'), app.querySelector('.stage'));

@@ -23,7 +23,7 @@ for (const route of [
   "app.post('/api/games/penalty/cashout'",
 ]) assert.ok(server.includes(route), `customer route exists: ${route}`);
 
-assert.match(catalog, /data-g="chicken-road-2"[\s\S]*?Chicken Road 2/);
+assert.match(catalog, /data-g="chicken-road-2"[\s\S]*?Chicken Road Dash/);
 assert.match(catalog, /data-g="penalty"[\s\S]*?Penalty Unlimited/);
 assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1`/);
 for (const asset of ['public/img/chicken-road-2-card.png', 'public/img/penalty-unlimited-preview.png']) {
@@ -39,13 +39,13 @@ for (const game of ['chicken-road-2', 'penalty']) {
 }
 
 assert.match(chicken, /function startRound\(\) \{[\s\S]*?if \(integrated\) return;/,
-  'Chicken Road 2 does not place a wallet bet against different Road Dash rules');
+  'Chicken Road Dash does not place a wallet bet against different Road Dash rules');
 assert.match(chicken, /fetch\('\/api\/me', \{ credentials: 'same-origin' \}\)/,
-  'Chicken Road 2 only reads the authenticated balance while betting is blocked');
+  'Chicken Road Dash only reads the authenticated balance while betting is blocked');
 assert.match(read('public/games/chicken-road-2/index.html'), /integrationBlocker/,
-  'Chicken Road 2 explains why wallet play is unavailable');
+  'Chicken Road Dash explains why wallet play is unavailable');
 assert.match(read('public/games/chicken-road-2/css/style.css'), /html\.fetan-integrated \.bet-panel[\s\S]*?display: none/,
-  'Chicken Road 2 does not present active-looking wager controls while wallet play is blocked');
+  'Chicken Road Dash does not present active-looking wager controls while wallet play is blocked');
 assert.match(gameServer, /const PENALTY_MAX_BET = 50000[\s\S]*?async function penaltyStart[\s\S]*?if \(bet > PENALTY_MAX_BET\) throw new Error\('INVALID'\)/,
   'Penalty preserves its standalone 500 ETB maximum bet');
 assert.match(penalty, /if \(data\.active && Number\.isSafeInteger\(serverBet\) && serverBet >= 100\)/,

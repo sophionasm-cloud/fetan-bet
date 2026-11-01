@@ -1,4 +1,4 @@
-/* Chicken Road 2 — original canvas recreation.
+/* Chicken Road Dash — original canvas recreation.
  * Vanilla JS, no dependencies. All artwork is drawn procedurally at runtime.
  */
 (() => {
@@ -965,7 +965,7 @@
     ctx.letterSpacing = '3px';
     ctx.fillStyle = 'rgba(230,236,255,0.28)';
     ctx.textAlign = 'center';
-    ctx.fillText('CHICKEN ROAD 2', 0, 0);
+    ctx.fillText('CHICKEN ROAD DASH', 0, 0);
     ctx.restore();
 
     // Finish decoration
@@ -1774,7 +1774,7 @@
       const howDescription = document.querySelector('#howModal .modal-card > p');
       const howRules = document.querySelector('#howModal .modal-card > ul');
       if (howTitle) howTitle.textContent = 'Wallet play is unavailable';
-      if (howDescription) howDescription.textContent = 'Chicken Road 2 uses moving traffic and collision timing resolved in the browser. Wallet play will stay disabled until the same rules can be enforced securely on Fetan Bet servers.';
+      if (howDescription) howDescription.textContent = 'Chicken Road Dash uses moving traffic and collision timing resolved in the browser. Wallet play will stay disabled until the same rules can be enforced securely on Fetan Bet servers.';
       if (howRules) howRules.hidden = true;
     }
     syncSoundUI();
