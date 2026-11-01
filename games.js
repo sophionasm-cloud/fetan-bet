@@ -386,6 +386,12 @@ async function roadCashout(userId) {
   });
 }
 
+async function walletBalance(client, userId) {
+  const res = await client.query('SELECT balance FROM wallets WHERE user_id=$1', [userId]);
+  if (!res.rows[0]) throw new Error('NOT_FOUND');
+  return Number(res.rows[0].balance);
+}
+
 async function roadHistory(userId) {
   const res = await query(
     `SELECT id, bet, payout, step, difficulty, status, detail, server_seed, client_seed, server_seed_hash, created_at
@@ -1150,6 +1156,197 @@ async function bingoAbandon(userId) {
   });
 }
 
+// ---------- Penalty Unlimited (server-authoritative ladder) ----------
+const PENALTY_DIFFICULTY = Object.freeze({ easy: 8200, medium: 5800, hard: 3400 });
+const PENALTY_BASE_MULTIPLIERS = Object.freeze([0n, 180n, 337n, 632n, 1186n, 2224n]);
+const PENALTY_MAX_BET = 50000; // The standalone game caps a bet at 500 ETB (stored in santim).
+const PENALTY_MAX_SAFE_CENTS = BigInt(Number.MAX_SAFE_INTEGER);
+
+function penaltyMultiplierCents(step) {
+  if (!Number.isSafeInteger(step) || step < 0 || step > 1000) throw new Error('INVALID');
+  if (step < PENALTY_BASE_MULTIPLIERS.length) return PENALTY_BASE_MULTIPLIERS[step];
+  let multiplier = PENALTY_BASE_MULTIPLIERS[PENALTY_BASE_MULTIPLIERS.length - 1];
+  for (let i = PENALTY_BASE_MULTIPLIERS.length - 1; i < step; i++) {
+    // Standalone ladder rounds to the nearest 0.01 multiplier each tier.
+    multiplier = (multiplier * 1875n + 500n) / 1000n;
+  }
+  return multiplier;
+}
+
+function penaltyRandomIndex(serverSeed, clientSeed, step, stream, size) {
+  const ceiling = 0x100000000 - (0x100000000 % size);
+  for (let attempt = 0; attempt < 32; attempt++) {
+    const digest = crypto.createHmac('sha256', Buffer.from(serverSeed, 'hex'))
+      .update(`${clientSeed}:penalty:${step}:${stream}:${attempt}`)
+      .digest();
+    const value = digest.readUInt32BE(0);
+    if (value < ceiling) return value % size;
+  }
+  throw new Error('RNG_FAILURE');
+}
+
+function penaltyCue(serverSeed, clientSeed, step, difficulty) {
+  const aims = ['left', 'center', 'right'];
+  const diveIndex = penaltyRandomIndex(serverSeed, clientSeed, step, 'dive', 3);
+  const accurate = penaltyRandomIndex(serverSeed, clientSeed, step, 'tell', 10000) < PENALTY_DIFFICULTY[difficulty];
+  const tellIndex = accurate
+    ? diveIndex
+    : (diveIndex + 1 + penaltyRandomIndex(serverSeed, clientSeed, step, 'mislead', 2)) % aims.length;
+  return { dive: aims[diveIndex], tell: aims[tellIndex] };
+}
+
+function penaltyMaxSafeStep(betCents) {
+  let step = 0;
+  while (step < 1000 && BigInt(betCents) * penaltyMultiplierCents(step + 1) / 100n <= PENALTY_MAX_SAFE_CENTS) step++;
+  return step;
+}
+
+function readRoundDetail(round) {
+  try { return JSON.parse(round?.detail || '{}'); }
+  catch { throw new Error('INVALID'); }
+}
+
+async function readPenaltyAction(client, userId, actionId) {
+  const result = await client.query(
+    `SELECT detail FROM game_rounds
+     WHERE user_id=$1 AND game='penalty' AND detail IS NOT NULL
+       AND detail::jsonb->'lastAction'->>'id'=$2
+     ORDER BY id DESC LIMIT 1`,
+    [userId, actionId]
+  );
+  return result.rows[0] ? JSON.parse(result.rows[0].detail).lastAction.response : null;
+}
+
+async function penaltyState(userId) {
+  const [rounds, wallets] = await Promise.all([
+    query("SELECT * FROM game_rounds WHERE user_id=$1 AND game='penalty' AND status='active' ORDER BY id DESC LIMIT 1", [userId]),
+    query('SELECT balance FROM wallets WHERE user_id=$1', [userId])
+  ]);
+  if (!wallets.rows[0]) throw new Error('NOT_FOUND');
+  const round = rounds.rows[0];
+  const balance = Number(wallets.rows[0].balance);
+  if (!round) return { active: false, balance, difficulty: 'medium', streak: 0, bet: 0, multiplier: 0 };
+  const detail = readRoundDetail(round);
+  const difficulty = PENALTY_DIFFICULTY[detail.difficulty] ? detail.difficulty : 'medium';
+  const step = Number(round.step);
+  const cue = penaltyCue(round.server_seed, round.client_seed, step, difficulty);
+  const multiplierCents = penaltyMultiplierCents(step);
+  const maxSafeStep = penaltyMaxSafeStep(Number(round.bet));
+  return {
+    active: true, balance, bet: Number(round.bet), difficulty, streak: step,
+    multiplier: Number(multiplierCents) / 100, tell: cue.tell,
+    max_safe_step: maxSafeStep,
+    ladder: Array.from({ length: maxSafeStep + 1 }, (_, index) => Number(penaltyMultiplierCents(index)) / 100),
+    server_seed_hash: round.server_seed_hash, client_seed: round.client_seed
+  };
+}
+
+async function penaltyStart(userId, bet, difficulty = 'medium', clientSeed = '') {
+  checkBet(bet);
+  if (bet > PENALTY_MAX_BET) throw new Error('INVALID');
+  if (!PENALTY_DIFFICULTY[difficulty]) throw new Error('INVALID');
+  return withTx(async (client) => {
+    const wallet = await client.query('SELECT balance FROM wallets WHERE user_id=$1 FOR UPDATE', [userId]);
+    if (!wallet.rows[0]) throw new Error('NOT_FOUND');
+    const existing = await client.query("SELECT id FROM game_rounds WHERE user_id=$1 AND game='penalty' AND status='active' FOR UPDATE", [userId]);
+    if (existing.rows.length) throw new Error('ACTIVE_ROUND');
+    const serverSeed = crypto.randomBytes(32).toString('hex');
+    const serverSeedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+    const safeClientSeed = String(clientSeed || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || crypto.randomBytes(16).toString('hex');
+    const detail = { payoutVersion: 1, difficulty, lastAction: null };
+    const id = await saveRound(client, userId, 'penalty', bet, 0, detail, 'active', 0, serverSeed, safeClientSeed, serverSeedHash, difficulty);
+    const balance = await postLedger({ client, userId, delta: -bet, type: 'bet', refType: 'round', refId: id });
+    const firstCue = penaltyCue(serverSeed, safeClientSeed, 0, difficulty);
+    const maxSafeStep = penaltyMaxSafeStep(bet);
+    return {
+      active: true, id, balance, bet, difficulty, streak: 0, multiplier: 0,
+      tell: firstCue.tell, max_safe_step: maxSafeStep,
+      ladder: Array.from({ length: maxSafeStep + 1 }, (_, index) => Number(penaltyMultiplierCents(index)) / 100),
+      server_seed_hash: serverSeedHash, client_seed: safeClientSeed
+    };
+  });
+}
+
+async function penaltyShoot(userId, aim, actionId, expectedStep) {
+  if (!['left', 'center', 'right'].includes(aim) || !/^[a-zA-Z0-9_-]{12,80}$/.test(String(actionId || '')) || !Number.isSafeInteger(expectedStep) || expectedStep < 0) throw new Error('INVALID');
+  return withTx(async (client) => {
+    const result = await client.query("SELECT * FROM game_rounds WHERE user_id=$1 AND game='penalty' AND status='active' FOR UPDATE", [userId]);
+    const round = result.rows[0];
+    if (!round) {
+      const prior = await readPenaltyAction(client, userId, actionId);
+      if (prior) return { ...prior, balance: await walletBalance(client, userId) };
+      throw new Error('NOT_FOUND');
+    }
+    const detail = readRoundDetail(round);
+    if (detail.lastAction?.id === actionId) return { ...detail.lastAction.response, balance: await walletBalance(client, userId) };
+    if (expectedStep !== Number(round.step)) throw new Error('STALE_ACTION');
+    const difficulty = PENALTY_DIFFICULTY[detail.difficulty] ? detail.difficulty : 'medium';
+    const cue = penaltyCue(round.server_seed, round.client_seed, Number(round.step), difficulty);
+    const saved = aim === cue.dive;
+    const nextStep = Number(round.step) + (saved ? 0 : 1);
+    const multiplierCents = penaltyMultiplierCents(nextStep);
+    const maxSafeStep = penaltyMaxSafeStep(Number(round.bet));
+    if (!saved && nextStep > maxSafeStep) throw new Error('PAYOUT_LIMIT');
+    const balance = await walletBalance(client, userId);
+    const lastAction = {
+      id: actionId,
+      response: {
+        active: !saved, saved, goal: !saved, aim, dive: cue.dive, tell: cue.tell,
+        streak: nextStep, multiplier: Number(multiplierCents) / 100,
+        payout: 0, net: saved ? -Number(round.bet) : 0,
+        balance: saved ? balance : balance, difficulty,
+        next_tell: saved ? null : penaltyCue(round.server_seed, round.client_seed, nextStep, difficulty).tell,
+        max_safe_step: maxSafeStep,
+        ladder: Array.from({ length: maxSafeStep + 1 }, (_, index) => Number(penaltyMultiplierCents(index)) / 100),
+        ...(saved ? { server_seed: round.server_seed, server_seed_hash: round.server_seed_hash, client_seed: round.client_seed } : {})
+      }
+    };
+    const nextDetail = { ...detail, lastAction };
+    const update = await client.query(
+      "UPDATE game_rounds SET status=$1, step=$2, detail=$3 WHERE id=$4 AND status='active' AND step=$5",
+      [saved ? 'done' : 'active', nextStep, JSON.stringify(nextDetail), round.id, expectedStep]
+    );
+    if (update.rowCount !== 1) throw new Error('STALE_ACTION');
+    return lastAction.response;
+  });
+}
+
+async function penaltyCashout(userId, actionId, expectedStep) {
+  if (!/^[a-zA-Z0-9_-]{12,80}$/.test(String(actionId || '')) || !Number.isSafeInteger(expectedStep) || expectedStep < 1) throw new Error('INVALID');
+  return withTx(async (client) => {
+    const result = await client.query("SELECT * FROM game_rounds WHERE user_id=$1 AND game='penalty' AND status='active' FOR UPDATE", [userId]);
+    const round = result.rows[0];
+    if (!round) {
+      const prior = await readPenaltyAction(client, userId, actionId);
+      if (prior) return { ...prior, balance: await walletBalance(client, userId) };
+      throw new Error('NOT_FOUND');
+    }
+    const detail = readRoundDetail(round);
+    if (detail.lastAction?.id === actionId) return { ...detail.lastAction.response, balance: await walletBalance(client, userId) };
+    if (expectedStep !== Number(round.step)) throw new Error('STALE_ACTION');
+    const multiplierCents = penaltyMultiplierCents(expectedStep);
+    const payout = grossPayoutFromMultiplierCents(Number(round.bet), multiplierCents);
+    const net = netWinningsCents(payout, Number(round.bet));
+    const response = {
+      active: false, claimed: true, payout, net, multiplier: Number(multiplierCents) / 100,
+      streak: expectedStep, balance: (await walletBalance(client, userId)) + payout,
+      max_safe_step: penaltyMaxSafeStep(Number(round.bet)),
+      server_seed: round.server_seed, server_seed_hash: round.server_seed_hash, client_seed: round.client_seed
+    };
+    const nextDetail = { ...detail, lastAction: { id: actionId, response } };
+    const update = await client.query(
+      "UPDATE game_rounds SET status='done', payout=$1, detail=$2 WHERE id=$3 AND status='active' AND step=$4",
+      [payout, JSON.stringify(nextDetail), round.id, expectedStep]
+    );
+    if (update.rowCount !== 1) throw new Error('STALE_ACTION');
+    await postLedger({ client, userId, delta: payout, type: 'win', refType: 'round', refId: Number(round.id) });
+    response.balance = await walletBalance(client, userId);
+    nextDetail.lastAction.response.balance = response.balance;
+    await client.query('UPDATE game_rounds SET detail=$1 WHERE id=$2', [JSON.stringify(nextDetail), round.id]);
+    return response;
+  });
+}
+
 module.exports = {
   roulette,
   ROULETTE_MULTIPLIERS,
@@ -1163,6 +1360,12 @@ module.exports = {
   roadCashout,
   roadHistory,
   roadVerify,
+  penaltyState,
+  penaltyStart,
+  penaltyShoot,
+  penaltyCashout,
+  penaltyMultiplierCents,
+  penaltyMaxSafeStep,
   ROAD_CONFIG,
   getLadder,
   getMultiplier,

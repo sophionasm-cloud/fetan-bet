@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1017" />
+  <title>Penalty Unlimited — Recreated</title>
+  <script>if (new URLSearchParams(location.search).get('fetan') === '1') document.documentElement.classList.add('fetan-integrated');</script>
+  <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../../shared/fonts.css" />
+  <link rel="stylesheet" href="../../shared/ui.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="loader-screen" id="loader">
+    <div class="loader-brand">PENALTY <span>UNLIMITED</span></div>
+    <div class="spinner"></div>
+    <div class="loader-hint">Painting the beach pitch…</div>
+  </div>
+
+  <div class="app" id="app">
+    <header class="penalty-topbar">
+      <a class="penalty-brand" href="../" data-fetan-back aria-label="Back to Fetan Bet games">
+        <span class="brand-ball" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="27" fill="#fff" stroke="#111722" stroke-width="3"/>
+            <path d="M32 17l10 7-4 12H26l-4-12z" fill="#10151f"/>
+            <path d="M32 17V6M42 24l10-3M38 36l7 10M26 36l-7 10M22 24l-10-3" stroke="#10151f" stroke-width="3"/>
+            <path d="M32 45v9M11 36l7 5M53 36l-7 5" stroke="#10151f" stroke-width="3"/>
+          </svg>
+        </span>
+        <span class="penalty-brand-text">PENALTY <b>UNLIMITED</b></span>
+      </a>
+      <div class="penalty-top-actions">
+        <button class="how-btn" id="howBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.4 2.4 0 1 1 3.2 2.3c-.8.3-.9 1-.9 1.7"/><path d="M12 17h.01"/></svg>
+          <span>How to play?</span>
+        </button>
+        <div class="balance-pill" title="Fetan Bet wallet balance (ETB)">
+          <span class="coin-dot"></span>
+          <span id="balance">Loading…</span>
+        </div>
+        <button class="icon-btn" id="soundBtn" aria-label="Toggle sound" title="Sound">
+          <svg id="soundOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a9 9 0 0 1 0 12"/>
+          </svg>
+          <svg id="soundOffIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="m16 9 5 6M21 9l-5 6"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="fullscreenBtn" aria-label="Fullscreen" title="Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="menuBtn" aria-label="Open menu" title="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="penalty-stage" id="stage">
+      <canvas id="game" aria-label="Penalty Unlimited game area"></canvas>
+
+      <div class="ladder-wrap">
+        <div class="ladder" id="ladder" aria-label="Multiplier ladder"></div>
+      </div>
+
+      <div class="stage-message" id="stageMessage">Pick a corner and beat the keeper</div>
+      <div class="aim-hint" id="aimHint">
+        <span><b>← →</b> aim</span>
+        <span><b>Space</b> shoot</span>
+        <span class="touch-hint"><b>Tap</b> goal to aim · ball to shoot</span>
+      </div>
+
+      <div class="result-overlay" id="resultOverlay" aria-live="polite">
+        <div class="result-card" id="resultCard">
+          <div class="result-kicker" id="resultKicker">RUN OVER</div>
+          <h2 id="resultTitle">SAVED!</h2>
+          <div class="result-amount" id="resultAmount">0.00 ETB</div>
+          <div class="result-sub" id="resultSub">The keeper guessed right.</div>
+          <button class="btn btn-gold" id="resultBtn">Play again</button>
+        </div>
+      </div>
+    </main>
+
+    <section class="penalty-bar" aria-label="Game controls">
+      <div class="bar-cell diff-cell">
+        <span class="bar-label">DIFFICULTY</span>
+        <button class="bar-value diff-btn" id="difficultyBtn" title="Change difficulty">
+          <span id="difficultyLabel">MEDIUM</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m7 9 5 5 5-5"/></svg>
+        </button>
+      </div>
+      <div class="bar-cell bet-cell">
+        <span class="bar-label">BET</span>
+        <div class="bet-controls">
+          <button id="betMinus" aria-label="Decrease bet">−</button>
+          <span class="bet-amount"><i>ETB</i><b id="betAmount">3</b></span>
+          <button id="betPlus" aria-label="Increase bet">+</button>
+        </div>
+      </div>
+      <div class="bar-cell action-cell">
+        <button class="shoot-btn" id="shootBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <span>SHOOT</span>
+        </button>
+        <button class="claim-btn" id="claimBtn" disabled>
+          <span>CLAIM</span>
+          <b id="claimValue">0.00 ETB</b>
+        </button>
+      </div>
+      <div class="bar-cell lastwin-cell">
+        <span class="bar-label">LAST WIN</span>
+        <b id="lastWin" class="last-win"><i>ETB</i>0.00</b>
+      </div>
+    </section>
+
+    <p class="penalty-disclaimer">
+      Independent recreation for personal use · Not affiliated with InOut Games or the original publisher · Demo Birr (ETB) only, no real money · All artwork and sounds are original.
+    </p>
+  </div>
+
+  <!-- How to play -->
+  <div class="modal" id="howModal" role="dialog" aria-modal="true" aria-labelledby="howTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="howTitle">How to play</h2>
+        <button class="icon-btn" data-close="howModal" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <p>Take penalties against the keeper and climb the multiplier ladder. Bank your winnings whenever you like — one save ends the run.</p>
+      <ul>
+        <li><b>Aim</b> with the arrow keys, or tap a third of the goal. The green arrows around the ball also work.</li>
+        <li><b>Shoot</b> with Space, the SHOOT button, or by tapping the ball.</li>
+        <li>Watch the keeper's lean and glove position before you shoot — that is his tell.</li>
+        <li>Every goal moves you up the ladder. <b>CLAIM</b> after any goal to bank bet × multiplier.</li>
+        <li>A save ends the run and loses the stake. Difficulty changes how reliable the keeper's tell is.</li>
+      </ul>
+      <div class="modal-actions">
+        <button class="btn btn-gold" data-close="howModal">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu -->
+  <div class="modal" id="menuModal" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="menuTitle">Menu</h2>
+        <button class="icon-btn" data-close="menuModal" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <p>Settings and info for this local recreation.</p>
+      <div class="menu-list">
+        <button class="menu-item" id="menuSound">
+          <span>Sound effects</span><b id="menuSoundState">On</b>
+        </button>
+        <button class="menu-item" id="menuMusic">
+          <span>Music</span><b id="menuMusicState">On</b>
+        </button>
+        <button class="menu-item" id="menuHow">
+          <span>How to play</span><span>›</span>
+        </button>
+        <button class="menu-item" id="menuReset">
+          <span>Reset demo balance</span><span>↺</span>
+        </button>
+        <a class="menu-item" href="../">
+          <span>Back to arcade hub</span><span>›</span>
+        </a>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close="menuModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <script src="../../shared/sound.js"></script>
+  <script src="./js/game.js"></script>
+</body>
+</html>

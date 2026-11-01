@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b2036" />
+  <title>Chicken Road 2 — Recreated</title>
+  <script>if (new URLSearchParams(location.search).get('fetan') === '1') document.documentElement.classList.add('fetan-integrated');</script>
+  <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../../shared/fonts.css" />
+  <link rel="stylesheet" href="../../shared/ui.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="loader-screen" id="loader">
+    <div class="loader-brand">CHICKEN <span>ROAD</span> 2</div>
+    <div class="spinner"></div>
+    <div class="loader-hint">Warming up the road…</div>
+  </div>
+
+  <div class="app" id="app">
+    <header class="topbar">
+      <a class="brand" href="../" data-fetan-back aria-label="Back to Fetan Bet games">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none">
+            <ellipse cx="30" cy="36" rx="17" ry="15" fill="#fff"/>
+            <circle cx="42" cy="26" r="11" fill="#fff"/>
+            <path d="M36 17c1-5 5-8 9-6 0 4-2 7-5 9z" fill="#ff4d5e"/>
+            <path d="M34 18c-2-4-1-8 3-10 2 4 1 8-1 11z" fill="#ff4d5e"/>
+            <path d="M51 27l9 3-9 4z" fill="#ffb020"/>
+            <circle cx="45" cy="24" r="1.9" fill="#1a1d2c"/>
+            <path d="M22 50l-3 8M35 50l2 8" stroke="#ffb020" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="brand-text">CHICKEN <em>ROAD</em> <b>2</b></span>
+      </a>
+      <div class="top-actions">
+        <div class="balance-pill" title="Fetan Bet wallet balance (ETB)">
+          <span class="coin-dot"></span>
+          <span id="balance">Loading…</span>
+        </div>
+        <button class="icon-btn" id="soundBtn" aria-label="Toggle sound" title="Sound">
+          <svg id="soundOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a9 9 0 0 1 0 12"/>
+          </svg>
+          <svg id="soundOffIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="m16 9 5 6M21 9l-5 6"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="menuBtn" aria-label="Open menu" title="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="ticker-row">
+      <div class="ticker">
+        <span class="live-dot"></span>
+        <span class="ticker-label">Live wins:</span>
+        <span class="ticker-name" id="tickerName">Salmon S.</span>
+        <span class="ticker-amount" id="tickerAmount">+262.50 ETB</span>
+      </div>
+      <div class="online"><span class="online-dot"></span> Online: <b id="online">5 073</b></div>
+    </div>
+
+    <main class="stage-wrap">
+      <div class="stage" id="stage">
+        <canvas id="game" aria-label="Chicken Road 2 game area"></canvas>
+        <aside class="integration-blocker" id="integrationBlocker" role="status" hidden>
+          <strong>Chicken Road 2 is not ready for wallet play</strong>
+          <p>The standalone version decides traffic collisions in the browser. Fetan Bet needs those same crossing rules to be resolved securely on the server before this game can use your wallet.</p>
+          <p id="integrationWalletStatus">No bet has been placed. Your balance is unchanged.</p>
+        </aside>
+        <div class="mult-badge" id="multBadge">
+          <span class="mult-value" id="multiplier">1.18x</span>
+          <span class="mult-label">MULTIPLIER</span>
+        </div>
+        <div class="stage-hint" id="stageHint">Press Play, then hop across the road</div>
+
+        <div class="result-overlay" id="resultOverlay" aria-live="polite">
+          <div class="result-card" id="resultCard">
+            <div class="result-kicker" id="resultKicker">ROUND OVER</div>
+            <h2 id="resultTitle">CRASHED!</h2>
+            <div class="result-amount" id="resultAmount">0.00 ETB</div>
+            <div class="result-sub" id="resultSub">A car got you. Try again!</div>
+            <button class="btn btn-primary" id="resultBtn">Play again</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <section class="bet-panel" id="betPanel">
+      <div class="bet-top">
+        <div class="bet-field">
+          <button class="mini-btn" id="minBtn" aria-label="Minimum bet">MIN</button>
+          <div class="bet-input" aria-label="Bet amount">
+            <span class="bet-currency">ETB</span>
+            <span id="betAmount">3</span>
+          </div>
+          <button class="mini-btn" id="maxBtn" aria-label="Maximum bet">MAX</button>
+        </div>
+        <div class="chips" id="chips" role="group" aria-label="Quick bet amounts in Ethiopian Birr (ETB)">
+          <button class="chip" data-bet="2">2</button>
+          <button class="chip" data-bet="3">3</button>
+          <button class="chip" data-bet="8">8</button>
+          <button class="chip" data-bet="20">20</button>
+        </div>
+      </div>
+
+      <div class="difficulty-row">
+        <label for="difficulty">Difficulty</label>
+        <div class="select-wrap">
+          <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="next-payout">Next hop <b id="nextMult">1.18x</b></div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-primary play-btn" id="playBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Play
+        </button>
+        <div class="play-actions hidden" id="playActions">
+          <button class="btn btn-primary go-btn" id="goBtn">GO <span>→</span></button>
+          <button class="btn btn-gold cash-btn" id="cashBtn">
+            Cash out <b id="cashValue">0.00 ETB</b>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-foot">
+        <span><kbd>Space</kbd> hop</span>
+        <span><kbd>C</kbd> cash out</span>
+      </div>
+    </section>
+
+    <p class="disclaimer">
+      Independent recreation for personal use. Not affiliated with the original publisher.
+      Demo Birr (ETB) only — no real money. All artwork and sounds are original.
+    </p>
+  </div>
+
+  <!-- How to play -->
+  <div class="modal" id="howModal" role="dialog" aria-modal="true" aria-labelledby="howTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="howTitle">How to play</h2>
+        <button class="icon-btn" data-close="howModal" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <p>Place a bet and guide the chicken across 14 lanes of traffic. Every successful hop raises your multiplier. Cash out before a car hits you — or reach the far side for a clean-crossing bonus.</p>
+      <ul>
+        <li><b>Play</b> starts the round and deducts your bet.</li>
+        <li><b>GO</b> (or Space) hops one lane forward.</li>
+        <li><b>Cash out</b> (or C) banks bet × multiplier at any time.</li>
+        <li>Harder difficulty means faster traffic and a bigger multiplier step.</li>
+        <li>Balance is demo-only and saved in this browser.</li>
+      </ul>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-close="howModal">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu -->
+  <div class="modal" id="menuModal" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="menuTitle">Menu</h2>
+        <button class="icon-btn" data-close="menuModal" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <p>Settings and info for this local recreation.</p>
+      <div class="menu-list">
+        <button class="menu-item" id="menuSound">
+          <span>Sound effects</span><b id="menuSoundState">On</b>
+        </button>
+        <button class="menu-item" id="menuMusic">
+          <span>Music</span><b id="menuMusicState">On</b>
+        </button>
+        <button class="menu-item" id="menuHow">
+          <span>How to play</span><span>›</span>
+        </button>
+        <button class="menu-item" id="menuReset">
+          <span>Reset demo balance</span><span>↺</span>
+        </button>
+        <a class="menu-item" href="../">
+          <span>Back to arcade hub</span><span>›</span>
+        </a>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close="menuModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <script src="../../shared/sound.js"></script>
+  <script src="./js/game.js"></script>
+</body>
+</html>

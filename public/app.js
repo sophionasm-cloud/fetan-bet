@@ -295,7 +295,7 @@ function nav() {
 }
 
 async function render(subMode = '') {
-  const gameRoute = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
+  const gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
   await refreshMe();
   if ((!me || !['agent', 'superadmin'].includes(me.role)) && window.FetanWorkspace) {
     window.FetanWorkspace.cleanup();
@@ -408,7 +408,7 @@ function setAppViewportHeight() {
   document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`);
   document.body.classList.toggle('mobile-app', window.innerWidth <= 1024);
   document.body.classList.toggle('game-landscape', window.innerWidth > height);
-  const routeIsGame = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
+  const routeIsGame = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
   const shouldOpenShell = window.innerWidth <= 1024 && routeIsGame && me?.role === 'user';
   syncTelegramShell(shouldOpenShell);
   if (document.body.classList.contains('game-open') !== shouldOpenShell) {

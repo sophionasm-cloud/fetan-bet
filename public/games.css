@@ -283,7 +283,7 @@
 }
 
 /* Distinct Card Accent Borders */
-.gcard.g1, .gcard.g4, .gcard.g5, .gcard.g-keno, .gcard.g-bingo, .gcard.g2, .gcard.g3 { border-bottom: 1px solid var(--border); }
+.gcard.g1, .gcard.g4, .gcard.g5, .gcard.g6, .gcard.g-keno, .gcard.g-bingo, .gcard.g2, .gcard.g3 { border-bottom: 1px solid var(--border); }
 
 /* ---- GAME STAGE ---- */
 .stage {
@@ -1745,6 +1745,31 @@
     transition: none !important;
   }
 }
+
+/* Same-origin standalone game packages hosted inside the customer shell. */
+.mobile-game-shell[data-game="chicken-road-2"] .mobile-game-topbar,
+.mobile-game-shell[data-game="chicken-road-2"] .stage-head,
+.mobile-game-shell[data-game="chicken-road-2"] .legacy-game-title,
+.mobile-game-shell[data-game="penalty"] .mobile-game-topbar,
+.mobile-game-shell[data-game="penalty"] .stage-head,
+.mobile-game-shell[data-game="penalty"] .legacy-game-title { display: none !important; }
+.mobile-game-shell[data-game="chicken-road-2"] .stage,
+.mobile-game-shell[data-game="penalty"] .stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.mobile-game-shell[data-game="chicken-road-2"] .stage::before,
+.mobile-game-shell[data-game="penalty"] .stage::before { display: none; }
+.mobile-game-shell[data-game="chicken-road-2"] #gbody,
+.mobile-game-shell[data-game="penalty"] #gbody { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.integrated-game-frame { display: block; width: 100%; height: clamp(520px, calc(100vh - 190px), 920px); min-height: 0; border: 0; background: #0b1017; }
 /* ---- SOUND BTN IN DARK STAGE ---- */
 .stage .chip {
   background: rgba(255,255,255,0.06);
@@ -3296,6 +3321,11 @@ body.game-open .mobile-game-topbar {
   border-bottom: 1px solid var(--border);
   background: #0e120f;
 }
+body.game-open .mobile-game-shell[data-game="chicken-road-2"] .stage,
+body.game-open .mobile-game-shell[data-game="penalty"] .stage { flex: 1 1 auto; width: 100%; height: auto; min-height: 0; }
+body.game-open .mobile-game-shell[data-game="chicken-road-2"] #gbody,
+body.game-open .mobile-game-shell[data-game="penalty"] #gbody { flex: 1 1 auto; width: 100%; height: 100%; min-height: 0; }
+body.game-open .integrated-game-frame { width: 100%; height: 100%; min-height: 0; }
 body.game-open .mobile-game-icon {
   flex: 0 0 44px;
   width: 44px;

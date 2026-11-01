@@ -24,6 +24,8 @@ window.Games = (function () {
   }
   const GAME_POSTERS = {
     road: '/img/road-dash.webp.jpg',
+    'chicken-road-2': '/img/chicken-road-2-card.png',
+    penalty: '/img/penalty-unlimited-preview.png',
     mines: '/img/mines.webp.jpg',
     plinko: '/img/plinko.webp.jpg',
     keno: '/img/keno.webp.jpg',
@@ -33,6 +35,8 @@ window.Games = (function () {
   };
   const GAME_ART = {
     road: '<svg viewBox="0 0 64 64" fill="none"><path d="M18 42c0-11 7-19 18-19 7 0 13 4 16 10l-6 11H18Z" fill="#F2D98B"/><path d="m22 45-5 8m24-8 4 8" stroke="#F2D98B" stroke-width="4" stroke-linecap="round"/><path d="m26 22 4-7 5 6 5-5 2 8" fill="#E66A45"/><circle cx="44" cy="29" r="2" fill="#0B0E0D"/><path d="m51 34 9 3-9 4" fill="#E9A23B"/></svg>',
+    'chicken-road-2': '<svg viewBox="0 0 64 64" fill="none"><path d="M18 42c0-11 7-19 18-19 7 0 13 4 16 10l-6 11H18Z" fill="#F2D98B"/><path d="m22 45-5 8m24-8 4 8" stroke="#F2D98B" stroke-width="4" stroke-linecap="round"/><path d="m26 22 4-7 5 6 5-5 2 8" fill="#E66A45"/><circle cx="44" cy="29" r="2" fill="#0B0E0D"/><path d="m51 34 9 3-9 4" fill="#E9A23B"/></svg>',
+    penalty: '<svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="23" stroke="#D6BD72" stroke-width="3"/><path d="M32 14v8m17 10h-8M32 50v-8M15 32h8M20 20l6 6m18 18-6-6m6-18-6 6M20 44l6-6" stroke="#F2D98B" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="32" r="8" fill="#F2D98B"/></svg>',
     mines: '<svg viewBox="0 0 64 64" fill="none"><path d="m32 7 23 17-9 29H18L9 24 32 7Z" fill="#28C895"/><path d="m32 7-4 17h27L32 7Z" fill="#9BF0CA"/><path d="m28 24-10 29 14-14 13 14-8-29H28Z" fill="#087B60"/><path d="M9 24h46" stroke="#D6BD72" stroke-width="2"/></svg>',
     plinko: '<svg viewBox="0 0 64 64" fill="none"><path d="M13 12h38L45 52H19L13 12Z" stroke="#D6BD72" stroke-width="3"/><g fill="#F2D98B"><circle cx="25" cy="21" r="2.5"/><circle cx="38" cy="21" r="2.5"/><circle cx="19" cy="31" r="2.5"/><circle cx="32" cy="31" r="2.5"/><circle cx="45" cy="31" r="2.5"/><circle cx="25" cy="41" r="2.5"/><circle cx="38" cy="41" r="2.5"/></g><circle cx="32" cy="12" r="4" fill="#F27C3D"/></svg>',
     keno: '<svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="24" fill="#252135" stroke="#B893F2" stroke-width="4"/><circle cx="32" cy="32" r="17" fill="#33294B"/><text x="32" y="39" fill="#F5EFFF" font-family="Arial,sans-serif" font-size="22" font-weight="800" text-anchor="middle">8</text><circle cx="19" cy="18" r="3" fill="#F2D98B"/></svg>',
@@ -159,8 +163,8 @@ window.Games = (function () {
       <!-- GAME DISCOVERY & CATEGORY TABS -->
       <div class="lobby-nav-bar">
         <div class="lobby-filter-pills" id="gfilters">
-          <button type="button" class="gfilter on" data-cat="all">${esc(t('cat_all'))} <span class="gcount">7</span></button>
-          <button type="button" class="gfilter" data-cat="originals">${esc(t('cat_originals'))} <span class="gcount">3</span></button>
+          <button type="button" class="gfilter on" data-cat="all">${esc(t('cat_all'))} <span class="gcount">8</span></button>
+          <button type="button" class="gfilter" data-cat="originals">${esc(t('cat_originals'))} <span class="gcount">4</span></button>
           <button type="button" class="gfilter" data-cat="table">${esc(t('cat_classic'))} <span class="gcount">2</span></button>
           <button type="button" class="gfilter" data-cat="lottery">🎱 ${lang === 'am' ? 'ኬኖ እና ቢንጎ' : 'Keno & Bingo'} <span class="gcount">2</span></button>
         </div>
@@ -169,11 +173,11 @@ window.Games = (function () {
 
       <!-- GAMES GRID -->
       <div class="lobby" id="ggrid">
-        <!-- 1. Road Dash -->
-        <div class="gcard g1" data-g="road" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-road">
+        <!-- 1. Chicken Road 2 (replaces the active Road Dash catalogue entry) -->
+        <div class="gcard g1" data-g="chicken-road-2" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-chicken-road-2">
           <span class="gcard-badge hot">HOT</span>
-          ${posterMarkup('road', t('road_title'), 'eager')}
-          <h3 id="gtitle-road">${esc(t('road_title'))}</h3>
+          ${posterMarkup('chicken-road-2', 'Chicken Road 2', 'eager')}
+          <h3 id="gtitle-chicken-road-2">Chicken Road 2</h3>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -190,6 +194,14 @@ window.Games = (function () {
           <span class="gcard-badge original">ORIGINAL</span>
           ${posterMarkup('plinko', t('plinko_title'))}
           <h3 id="gtitle-plinko">${esc(t('plinko_title'))}</h3>
+          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
+        </div>
+
+        <!-- Penalty Unlimited -->
+        <div class="gcard g6" data-g="penalty" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-penalty">
+          <span class="gcard-badge original">ORIGINAL</span>
+          ${posterMarkup('penalty', 'Penalty Unlimited')}
+          <h3 id="gtitle-penalty">Penalty Unlimited</h3>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -276,6 +288,8 @@ window.Games = (function () {
     document.body.classList.toggle('game-open', mobileShell);
     const titles = {
       road:     '🐔 ' + C.t('road_title'),
+      'chicken-road-2': '🐔 Chicken Road 2',
+      penalty: '⚽ Penalty Unlimited',
       mines:    '💎 ' + C.t('mines_title'),
       plinko:   '⚡ ' + C.t('plinko_title'),
       roulette: '🎡 ' + C.t('roulette_title'),
@@ -314,7 +328,12 @@ window.Games = (function () {
     };
     $('gback').onclick = leaveGame;
     $('mobile-game-back').onclick = leaveGame;
-    ({ road, roulette, star, mines, plinko, keno, bingo })[game]($('gbody'), app.querySelector('.stage'));
+    const gameView = {
+      road, roulette, star, mines, plinko, keno, bingo,
+      'chicken-road-2': (body) => integratedFrame(body, 'chicken-road-2', 'Chicken Road 2'),
+      penalty: (body) => integratedFrame(body, 'penalty', 'Penalty Unlimited')
+    }[game];
+    if (gameView) gameView($('gbody'), app.querySelector('.stage'));
     const topSound = $('mobile-game-sound');
     const roadSound = $('road-sound-btn');
     if (roadSound) topSound.onclick = () => { roadSound.click(); topSound.textContent = $('road-sound-icon')?.textContent || '🔊'; };
@@ -346,6 +365,25 @@ window.Games = (function () {
       if (watched) balanceObserver.observe(watched, { childList: true, characterData: true, subtree: true });
       stopFns.push(() => balanceObserver.disconnect());
     }
+  }
+
+  function integratedFrame(body, game, title) {
+    const frame = document.createElement('iframe');
+    frame.className = 'integrated-game-frame';
+    frame.title = title;
+    frame.src = `/games/${game}/?fetan=1`;
+    frame.loading = 'eager';
+    frame.allow = 'fullscreen; autoplay';
+    frame.referrerPolicy = 'same-origin';
+    frame.setAttribute('allowfullscreen', '');
+    body.replaceChildren(frame);
+    const onMessage = (event) => {
+      if (event.origin !== location.origin || event.source !== frame.contentWindow || event.data?.type !== 'fetan-game-close') return;
+      $('mobile-game-back')?.click();
+    };
+    window.addEventListener('message', onMessage);
+    stopFns.push(() => window.removeEventListener('message', onMessage));
+    stopFns.push(() => { frame.src = 'about:blank'; });
   }
 
   // =========================================================

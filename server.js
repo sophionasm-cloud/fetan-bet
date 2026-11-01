@@ -66,7 +66,8 @@ const wrap = (fn) => async (req, res) => {
     const result = await fn(req, res);
     if (!res.headersSent && result !== res) res.json(result ?? { ok: true });
   } catch (e) {
-    const known = ['INSUFFICIENT', 'INVALID', 'INVALID_FILE', 'VERIFICATION_REQUIRED', 'REAUTH_REQUIRED', 'PROMO_INVALID', 'PROMO_SUSPENDED', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE'];
+    const known = ['INSUFFICIENT', 'INVALID', 'INVALID_FILE', 'VERIFICATION_REQUIRED', 'REAUTH_REQUIRED', 'PROMO_INVALID', 'PROMO_SUSPENDED', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE', 'PAYOUT_LIMIT'];
+    if (e.message === 'STALE_ACTION') return res.status(409).json({ error: 'STALE_ACTION' });
     if (e.message === 'SETTLEMENT_GAP') return res.status(409).json({ error: 'SETTLEMENT_GAP' });
     if (known.includes(e.message)) return res.status(400).json({ error: e.message });
     // Keep server-side diagnostics useful without logging SQL values or customer data.
@@ -1476,6 +1477,10 @@ app.get('/api/games/road', ...g((req) => games.roadState(req.user.id, req.query.
 app.post('/api/games/road/start', ...g((req) => games.roadStart(req.user.id, Number(req.body.bet), req.body.difficulty, req.body.client_seed)));
 app.post('/api/games/road/step', ...g((req) => games.roadStep(req.user.id)));
 app.post('/api/games/road/cashout', ...g((req) => games.roadCashout(req.user.id)));
+app.get('/api/games/penalty', ...g((req) => games.penaltyState(req.user.id)));
+app.post('/api/games/penalty/start', ...g((req) => games.penaltyStart(req.user.id, Number(req.body.bet), req.body.difficulty, req.body.client_seed)));
+app.post('/api/games/penalty/shoot', ...g((req) => games.penaltyShoot(req.user.id, req.body.aim, req.body.action_id, Number(req.body.expected_step))));
+app.post('/api/games/penalty/cashout', ...g((req) => games.penaltyCashout(req.user.id, req.body.action_id, Number(req.body.expected_step))));
 app.get('/api/games/road/history', ...g((req) => games.roadHistory(req.user.id)));
 app.post('/api/games/road/verify', ...g((req) => Promise.resolve(games.roadVerify(req.body))));
 app.get('/api/games/mines', ...g((req) => games.minesState(req.user.id)));
