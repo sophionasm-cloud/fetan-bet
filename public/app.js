@@ -24,6 +24,51 @@ const downloadCsv = (filename, rows) => {
 const fmt = (n) => (n / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const rel = (cents) => (cents >= 0 ? '+' : '') + fmt(cents);
 const initials = (name) => String(name || '?').trim().charAt(0).toUpperCase();
+const uiIcon = (name) => {
+  const paths = {
+    games: '<path d="M6 11h4m-2-2v4m8-3h.01M19 13h.01"/><path d="M7.5 6h9a4 4 0 0 1 3.8 2.8l1.1 3.6a2.7 2.7 0 0 1-4.2 2.9l-2.3-1.7H9.1l-2.3 1.7a2.7 2.7 0 0 1-4.2-2.9l1.1-3.6A4 4 0 0 1 7.5 6Z"/>',
+    wallet: '<rect x="3" y="6" width="18" height="15" rx="2.5"/><path d="M3 9h18M16 14h2"/><path d="M6 6V4.8A1.8 1.8 0 0 1 7.8 3H19"/>',
+    deposit: '<path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 17v3h14v-3"/>',
+    withdraw: '<path d="M12 21V9m-5 5 5-5 5 5"/><path d="M5 7V4h14v3"/>',
+    history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    profile: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+    support: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.2 1.8c-1.2 1-1.8 1.4-1.8 2.7m0 3h.01"/>',
+    home: '<path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/>',
+    promo: '<path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2zM12 7v13"/><path d="M12 7H8.5a2.5 2.5 0 1 1 2.2-3.7L12 7Zm0 0h3.5a2.5 2.5 0 1 0-2.2-3.7L12 7Z"/>',
+    login: '<path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/>',
+    logout: '<path d="M14 17l5-5-5-5m5 5H3"/><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  };
+  return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">${paths[name] || ''}</svg>`;
+};
+
+function scrollPublicTarget(target) {
+  if (target === 'top') {
+    window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    return;
+  }
+  const node = document.getElementById(target);
+  if (!node) return;
+  node.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}
+
+function syncPublicNavigation(enabled) {
+  const nav = $('publicPrimaryNav');
+  if (!nav) return;
+  nav.hidden = !enabled;
+  document.body.classList.toggle('guest-mode', enabled);
+  if (!enabled) return;
+  const links = lang === 'am'
+    ? [['top', 'መነሻ'], ['ggrid', 'ጨዋታዎች'], ['guestPromo', 'የሪፈራል ኮድ'], ['publicInfo', 'ስለ እኛ'], ['publicHelp', 'እገዛ']]
+    : [['top', 'Home'], ['ggrid', 'Games'], ['guestPromo', 'Promo code'], ['publicInfo', 'About'], ['publicHelp', 'Help']];
+  nav.innerHTML = links.map(([target, label], index) => `<button type="button" data-public-target="${target}"${index === 0 ? ' class="is-active"' : ''}>${label}</button>`).join('');
+  nav.querySelectorAll('[data-public-target]').forEach((button) => {
+    button.addEventListener('click', () => {
+      nav.querySelectorAll('[data-public-target]').forEach((item) => item.classList.toggle('is-active', item === button));
+      scrollPublicTarget(button.dataset.publicTarget);
+    });
+  });
+}
 
 function applyCustomerTheme(theme = localStorage.getItem('fetan-theme') || 'dark') {
   const light = theme === 'light';
@@ -31,10 +76,16 @@ function applyCustomerTheme(theme = localStorage.getItem('fetan-theme') || 'dark
   document.body.dataset.customerTheme = light ? 'light' : 'dark';
   const toggle = $('customerThemeToggle');
   if (toggle) {
-    toggle.textContent = light ? '☾' : '☼';
+    toggle.innerHTML = `<span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb">${light
+      ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>'
+      : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.1A8.4 8.4 0 0 1 9.9 3.5a8.5 8.5 0 1 0 10.6 10.6Z"/></svg>'
+    }</span></span>`;
+    toggle.setAttribute('aria-pressed', String(light));
     toggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
     toggle.title = light ? 'Switch to dark theme' : 'Switch to light theme';
   }
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.content = light ? '#F6F5FA' : '#090812';
 }
 
 function syncCustomerThemeControl(enabled) {
@@ -65,10 +116,10 @@ function renderMobileHeaderMenu() {
   const panel = $('mobileMenuPanel');
   if (!panel) return;
   const links = me?.role === 'user'
-    ? [['withdraw', '⬆', t('withdraw')], ['history', '📋', t('history')], ['support', '💬', t('support')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ'], ['logout', '↪', t('logout')]]
+    ? [['withdraw', uiIcon('withdraw'), t('withdraw')], ['history', uiIcon('history'), t('history')], ['support', uiIcon('support'), t('support')], ['language', uiIcon('globe'), lang === 'am' ? 'English' : 'አማርኛ'], ['logout', uiIcon('logout'), t('logout')]]
     : me
       ? [['support', '💬', t('support')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ'], ['logout', '↪', t('logout')]]
-    : [['login', '↪', t('login')], ['register', '＋', t('register')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ']];
+    : [['games', uiIcon('games'), t('games')], ['promo', uiIcon('promo'), lang === 'am' ? 'የሪፈራል ኮድ' : 'Promo code'], ['about', uiIcon('home'), lang === 'am' ? 'ስለ ፍጣን ቤት' : 'About'], ['help', uiIcon('support'), lang === 'am' ? 'እገዛ' : 'Help'], ['login', uiIcon('login'), t('login')], ['register', uiIcon('profile'), t('register')], ['language', uiIcon('globe'), lang === 'am' ? 'English' : 'አማርኛ']];
   panel.innerHTML = links.map(([action, icon, label]) =>
     `<button type="button" data-mobile-action="${action}"><span aria-hidden="true">${icon}</span>${esc(label)}</button>`
   ).join('');
@@ -79,6 +130,10 @@ function renderMobileHeaderMenu() {
       $('mobileHeaderMenu').setAttribute('aria-expanded', 'false');
       if (action === 'withdraw' || action === 'history') { tab = action; render(); }
       if (action === 'support') { tab = 'support'; render(); }
+      if (action === 'games') scrollPublicTarget('ggrid');
+      if (action === 'promo') scrollPublicTarget('guestPromo');
+      if (action === 'about') scrollPublicTarget('publicInfo');
+      if (action === 'help') scrollPublicTarget('publicHelp');
       if (action === 'language') $('langBtn').click();
       if (action === 'login') $('headerLoginBtn').click();
       if (action === 'register') $('headerRegBtn').click();
@@ -210,6 +265,7 @@ async function refreshMe() {
 
   // Header controls synchronization
   const isLogged = Boolean(me);
+  syncPublicNavigation(!me);
   syncCustomerThemeControl(!me || me.role === 'user');
   $('balanceBox').hidden = !isLogged;
   $('quickDepositBtn').hidden = !isLogged;
@@ -218,7 +274,8 @@ async function refreshMe() {
   $('headerRegBtn').hidden = isLogged;
 
   if (isLogged) {
-    $('balanceBox').innerHTML = `🪙 ${fmt(balance)} <small style="color:var(--text-muted);font-weight:400">${t('credits')}</small>`;
+    const balanceUnit = me.role === 'user' ? t('currency_etb') : t('credits');
+    $('balanceBox').innerHTML = `🪙 ${fmt(balance)} <small style="color:var(--text-muted);font-weight:400">${balanceUnit}</small>`;
     if (me.role !== 'user') {
       $('quickDepositBtn').hidden = true;
     }
@@ -229,7 +286,7 @@ async function refreshMe() {
 
 function setBalance(b) {
   balance = b;
-  $('balanceBox').innerHTML = `🪙 ${fmt(b)} <small style="color:var(--text-muted);font-weight:400">${t('credits')}</small>`;
+  $('balanceBox').innerHTML = `🪙 ${fmt(b)} <small style="color:var(--text-muted);font-weight:400">${t('currency_etb')}</small>`;
 }
 
 // Header listeners
@@ -268,18 +325,18 @@ function nav() {
     tabs.push(['agent', '🔑', 'agent']);
   } else {
     if (mobileUserTabs) {
-      tabs.push(['games', '🎰', t('games')]);
-      tabs.push(['wallet', '💳', t('wallet')]);
-      tabs.push(['deposit', '⬇', t('deposit')]);
-      tabs.push(['profile', '👤', lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
+      tabs.push(['games', uiIcon('games'), t('games')]);
+      tabs.push(['wallet', uiIcon('wallet'), t('wallet')]);
+      tabs.push(['deposit', uiIcon('deposit'), t('deposit')]);
+      tabs.push(['profile', uiIcon('profile'), lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
     } else {
-      tabs.push(['games', '🎰', 'games']);
-      tabs.push(['wallet', '💳', 'wallet']);
-      tabs.push(['deposit', '⬇', 'deposit']);
-      tabs.push(['withdraw', '⬆', 'withdraw']);
-      tabs.push(['history', '📋', 'history']);
-      tabs.push(['profile', '👤', lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
-      tabs.push(['support', '💬', 'support']);
+      tabs.push(['games', uiIcon('games'), 'games']);
+      tabs.push(['wallet', uiIcon('wallet'), 'wallet']);
+      tabs.push(['deposit', uiIcon('deposit'), 'deposit']);
+      tabs.push(['withdraw', uiIcon('withdraw'), 'withdraw']);
+      tabs.push(['history', uiIcon('history'), 'history']);
+      tabs.push(['profile', uiIcon('profile'), lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
+      tabs.push(['support', uiIcon('support'), 'support']);
     }
   }
 
@@ -395,7 +452,9 @@ function syncTelegramShell(gameOpen) {
     if (gameOpen) {
       back.show();
       telegramApp.disableVerticalSwipes?.();
-      telegramApp.requestFullscreen?.();
+      // Fullscreen is available on newer Telegram WebApp clients only. Older
+      // clients log an unsupported-method error if called despite the stub.
+      if (telegramApp.isVersionAtLeast?.('8.0')) telegramApp.requestFullscreen();
     } else {
       back.hide();
       telegramApp.enableVerticalSwipes?.();
@@ -452,21 +511,21 @@ function authView(app, initialMode = 'login', promoPrefill = '') {
             </div>
 
             <div class="auth-brand-tagline">
-              ${lang === 'am' ? 'በፈጣን ቤት በሚወዷቸው የካሲኖ እና የስፖርት ጨዋታዎች ይደሰቱ' : 'Bet on your favorite sports and casino games with FETAN BET'}
+              ${lang === 'am' ? 'የፍጣን ቤት ጨዋታዎችን ይመልከቱና የሚወዱትን ይምረጡ።' : 'Explore the games in the Fetan Bet lobby and choose one to play.'}
             </div>
 
             <ul class="auth-features">
               <li class="auth-feat-item">
                 <span class="auth-feat-icon">⚡</span>
-                <span>${lang === 'am' ? '<strong>ደህንነቱ የተጠበቀ እና ፈጣን ክፍያ፡</strong> ያሸነፉትን በፍጥነት እና በደህንነት ይቀበሉ።' : '<strong>Secure and Instant Payouts:</strong> Get your winnings quickly and safely.'}</span>
+                <span>${lang === 'am' ? '<strong>የኪስ ቦርሳዎ፡</strong> ቀሪ ሂሳብዎንና የግብይት ታሪክዎን ይመልከቱ።' : '<strong>Your wallet:</strong> View your balance and transaction history.'}</span>
               </li>
               <li class="auth-feat-item">
                 <span class="auth-feat-icon">⚖️</span>
-                <span>${lang === 'am' ? '<strong>ፍትሃዊ ጨዋታ እና ግልጽነት፡</strong> የተረጋገጠ RNG ለሁሉም ጨዋታዎች።' : '<strong>Fair Play and Transparency:</strong> Verified RNG for all games, guaranteed.'}</span>
+                <span>${lang === 'am' ? '<strong>የክፍያ ጥያቄዎች፡</strong> የገንዘብ ማስገባትና ማውጣት ጥያቄዎችዎን ይከታተሉ።' : '<strong>Payment requests:</strong> Follow the status of your deposit and withdrawal requests.'}</span>
               </li>
               <li class="auth-feat-item">
                 <span class="auth-feat-icon">🎧</span>
-                <span>${lang === 'am' ? '<strong>የ24/7 የባለሙያ ድጋፍ፡</strong> በማንኛውም ሰዓት ዝግጁ የሆነ ቡድን።' : '<strong>24/7 Expert Support:</strong> Dedicated team available around the clock.'}</span>
+                <span>${lang === 'am' ? '<strong>ድጋፍ፡</strong> ከገቡ በኋላ በመለያዎ ውስጥ የድጋፍ አማራጩን ይጠቀሙ።' : '<strong>Support:</strong> Open the Support section from your account after signing in.'}</span>
               </li>
             </ul>
           </div>
@@ -751,16 +810,17 @@ function guestView(app) {
 
   const banner = document.createElement('section');
   banner.className = 'guest-promo-banner';
+  banner.id = 'guestPromo';
   banner.innerHTML = `
     <div class="guest-promo-inner">
       <div class="guest-promo-gift" aria-hidden="true">${iconGift()}</div>
       <div class="guest-promo-copy">
-        <h2 class="guest-promo-title">${lang === 'am' ? 'የፕሮሞ ኮድ አለዎት?' : 'Got a promo code?'}</h2>
-        <p class="guest-promo-text">${lang === 'am' ? 'ሲመዘገቡ ኮዱን ያስገቡ።' : 'Enter it during registration to link your account to its agent.'}</p>
+        <h2 class="guest-promo-title">${lang === 'am' ? 'የሪፈራል ኮድ አለዎት?' : 'Have a referral code?'}</h2>
+        <p class="guest-promo-text">${lang === 'am' ? 'ከመመዝገብዎ በፊት ያስገቡት።' : 'Enter it before registering to connect your account with its agent.'}</p>
       </div>
       <div class="guest-promo-actions">
-        <input type="text" id="guest-promo-code" placeholder="${lang === 'am' ? 'የፕሮሞ ኮድ ያስገቡ' : 'Enter promo code'}" maxlength="20" value="${esc(urlPromo || '')}">
-        <button type="button" class="btn btn-gold" id="guest-promo-register">${lang === 'am' ? 'ይቀጥሉ' : 'Claim'}</button>
+        <input type="text" id="guest-promo-code" aria-label="${lang === 'am' ? 'የፕሮሞ ኮድ' : 'Referral promo code'}" placeholder="${lang === 'am' ? 'የፕሮሞ ኮድ ያስገቡ' : 'Enter promo code'}" maxlength="20" value="${esc(urlPromo || '')}">
+        <button type="button" class="btn btn-gold" id="guest-promo-register">${lang === 'am' ? 'ይቀጥሉ' : 'Use code'}</button>
       </div>
     </div>`;
   app.prepend(banner);
@@ -769,11 +829,48 @@ function guestView(app) {
   if (hero) {
     const actions = document.createElement('div');
     actions.className = 'guest-hero-actions';
-    actions.innerHTML = `<button type="button" class="btn btn-gold" id="guest-register">${esc(t('register'))}</button><button type="button" class="btn btn-outline" id="guest-login">${esc(t('login'))}</button>`;
+    actions.innerHTML = `<button type="button" class="btn btn-gold" id="guest-register">${esc(t('register'))}</button><button type="button" class="btn btn-outline" id="guest-explore">${lang === 'am' ? 'ጨዋታዎችን ይመልከቱ' : 'Explore games'}</button>`;
     hero.appendChild(actions);
     $('guest-register').onclick = () => authView(app, 'register');
-    $('guest-login').onclick = () => authView(app, 'login');
+    $('guest-explore').onclick = () => scrollPublicTarget('ggrid');
   }
+
+  const info = document.createElement('section');
+  info.id = 'publicInfo';
+  info.className = 'guest-info-section';
+  info.setAttribute('aria-labelledby', 'guest-info-title');
+  info.innerHTML = `
+    <div class="guest-info-heading"><div><span>${lang === 'am' ? 'መረጃ' : 'THE ESSENTIALS'}</span><h2 id="guest-info-title">${lang === 'am' ? 'ስለ ፍጣን ቤት' : 'About Fetan Bet'}</h2></div><p>${lang === 'am' ? 'ከመለያዎ ውስጥ ጨዋታዎችን፣ የኪስ ቦርሳ እና ድጋፍን ያግኙ።' : 'Find games, account payments and support in one place.'}</p></div>
+    <div class="guest-info-grid">
+      <article><span aria-hidden="true">${uiIcon('games')}</span><h3>${lang === 'am' ? 'ጨዋታዎች' : 'Games'}</h3><p>${lang === 'am' ? 'በዚህ ገጽ ላይ ያሉትን ጨዋታዎች ይመልከቱ።' : 'Browse the available game catalog from the lobby.'}</p></article>
+      <article><span aria-hidden="true">${uiIcon('wallet')}</span><h3>${lang === 'am' ? 'የኪስ ቦርሳ እና ክፍያዎች' : 'Wallet and payments'}</h3><p>${lang === 'am' ? 'የክፍያ ጥያቄዎችን ከመለያዎ ያስገቡና ሁኔታቸውን ይከታተሉ።' : 'Sign in to submit deposit or withdrawal requests and follow their status.'}</p></article>
+      <article><span aria-hidden="true">${uiIcon('support')}</span><h3>${lang === 'am' ? 'ድጋፍ' : 'Support'}</h3><p>${lang === 'am' ? 'በመለያዎ ውስጥ የድጋፍ አማራጩን ይጠቀሙ።' : 'Open Support from your account to contact the support assistant.'}</p></article>
+      <article><span aria-hidden="true">${uiIcon('history')}</span><h3>${lang === 'am' ? 'በኃላፊነት ይጫወቱ' : 'Play thoughtfully'}</h3><p>${lang === 'am' ? 'ከመጫወትዎ በፊት የግል ገደብ ያዘጋጁና ዕረፍት ይውሰዱ።' : 'Set a personal limit before playing and take breaks.'}</p></article>
+    </div>`;
+
+  const footer = document.createElement('footer');
+  footer.className = 'guest-site-footer';
+  footer.innerHTML = `
+    <div class="guest-footer-brand"><span class="logo" aria-hidden="true">ፈ</span><div><strong>FETAN BET</strong><small>ፍጣን ቤት</small></div></div>
+    <div class="guest-footer-copy">
+      <h2>${lang === 'am' ? 'የፍጣን ቤት ጨዋታዎች' : 'Fetan Bet games'}</h2>
+      <p>${lang === 'am' ? 'ጨዋታዎቹን ይመልከቱ። የኪስ ቦርሳዎን፣ የክፍያ ጥያቄዎችንና ድጋፍን ለማግኘት ይግቡ።' : 'Browse the current game catalog. Sign in to see your wallet, payment requests and support options.'}</p>
+      <p class="guest-footer-note">${lang === 'am' ? 'የሪፈራል ኮድ ካለዎት ከመመዝገብዎ በፊት ያስገቡት።' : 'If you have a referral code, enter it before registering.'}</p>
+    </div>
+    <nav class="guest-footer-links" aria-label="Footer navigation">
+      <button type="button" data-public-target="ggrid">${esc(t('games'))}</button>
+      <button type="button" data-public-target="guestPromo">${lang === 'am' ? 'የሪፈራል ኮድ' : 'Promo code'}</button>
+      <button type="button" data-public-target="publicHelp">${lang === 'am' ? 'እገዛ' : 'Help'}</button>
+      <button type="button" id="guest-footer-language">${lang === 'am' ? 'English' : 'አማርኛ'}</button>
+    </nav>
+    <div class="guest-footer-help" id="publicHelp"><span>${lang === 'am' ? 'የደንበኛ ድጋፍን ለመጠቀም ወደ መለያዎ ይግቡ።' : 'Sign in to open Support from your customer account.'}</span><button type="button" id="guest-footer-login" class="btn btn-outline">${esc(t('login'))}</button></div>
+    <div class="guest-footer-legal">© ${new Date().getFullYear()} Fetan Bet</div>`;
+  app.append(info, footer);
+  footer.querySelectorAll('[data-public-target]').forEach((button) => {
+    button.addEventListener('click', () => scrollPublicTarget(button.dataset.publicTarget));
+  });
+  $('guest-footer-language').onclick = () => $('langBtn').click();
+  $('guest-footer-login').onclick = () => authView(app, 'login');
 
   $('guest-promo-register')?.addEventListener('click', () => {
     const promo = String($('guest-promo-code')?.value || '').trim();
@@ -835,7 +932,6 @@ async function walletView(app) {
         <div class="stat" style="background:var(--surface-hover);border-color:rgba(214,189,114,0.3)">
           <div class="stat-label">${esc(t('balance'))} (${esc(t('currency_etb'))})</div>
           <b style="color:var(--gold-bright);font-size:32px;letter-spacing:0.5px">🪙 ${fmt(balance)}</b>
-          <div class="muted">${esc(t('credits'))}</div>
         </div>
         ${promoCredits > 0 ? `<div class="stat">
           <div class="stat-label">Promotional credits</div>

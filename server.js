@@ -1,10 +1,9 @@
 // ፍጣን ቤት (Fetan Bet) - web server for Neon PostgreSQL.
 // Routes, auth, wallets, ledger, agent/admin, and games.
 require('dotenv').config();
-const path = require('path');
-const fs = require('fs');
-const fsp = fs.promises;
 const crypto = require('crypto');
+const fs = require('node:fs');
+const path = require('node:path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
@@ -12,8 +11,14 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { query, withTx, postLedger, createUser, audit, seed } = require('./db');
 const games = require('./games');
+const { createChickenRoadDemoService } = require('./chicken-road-demo-service');
+const chickenRoadDemo = createChickenRoadDemoService({ query, withTx });
+const { createChickenRoadRealService } = require('./chicken-road-real-service');
+const chickenRoadReal = createChickenRoadRealService({ query, withTx, ledger: postLedger });
 const { getAiResponse } = require('./ai-support');
 const { hasPermission } = require('./permissions');
+const { createHealthHandler } = require('./health-check');
+const { createReceiptStorage } = require('./receipt-storage');
 const { commissionForWeek, utcWeekBounds, completedWeekBounds, addDays, DEFAULT_COMMISSION_BPS, WEEK_TIME_ZONE } = require('./agent-finance');
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
@@ -28,11 +33,7 @@ app.use(express.json({ limit: '20kb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { error: 'RATE' } });
-const receiptDir = path.resolve(process.env.RECEIPT_STORAGE_DIR || path.join(__dirname, 'private-receipts'));
-const publicDir = path.resolve(__dirname, 'public');
-if (receiptDir === publicDir || receiptDir.startsWith(publicDir + path.sep)) {
-  throw new Error('RECEIPT_STORAGE_DIR must be outside the public web directory.');
-}
+const receiptStorage = createReceiptStorage();
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const receiptFormats = {
   jpeg: { mime: 'image/jpeg', ext: '.jpg' },
@@ -66,7 +67,7 @@ const wrap = (fn) => async (req, res) => {
     const result = await fn(req, res);
     if (!res.headersSent && result !== res) res.json(result ?? { ok: true });
   } catch (e) {
-    const known = ['INSUFFICIENT', 'INVALID', 'INVALID_FILE', 'VERIFICATION_REQUIRED', 'REAUTH_REQUIRED', 'PROMO_INVALID', 'PROMO_SUSPENDED', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE', 'PAYOUT_LIMIT'];
+    const known = ['INSUFFICIENT', 'INSUFFICIENT_DEMO', 'INVALID', 'INVALID_FILE', 'VERIFICATION_REQUIRED', 'REAUTH_REQUIRED', 'PROMO_INVALID', 'PROMO_SUSPENDED', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE', 'PAYOUT_LIMIT', 'ROUND_SETTLED'];
     if (e.message === 'STALE_ACTION') return res.status(409).json({ error: 'STALE_ACTION' });
     if (e.message === 'SETTLEMENT_GAP') return res.status(409).json({ error: 'SETTLEMENT_GAP' });
     if (known.includes(e.message)) return res.status(400).json({ error: e.message });
@@ -75,7 +76,9 @@ const wrap = (fn) => async (req, res) => {
     // The current deposit receipt/review code depends on additive migration 002.
     // Signal an unavailable schema clearly instead of presenting it as a bad request.
     if (e.code === '42P01' || e.code === '42703') return res.status(503).json({ error: 'SCHEMA_NOT_READY' });
-    if (String(e.code || '').startsWith('08') || e.code === '57P01') return res.status(503).json({ error: 'SERVICE_UNAVAILABLE' });
+    if (String(e.code || '').startsWith('08') || ['57P01', 'ECONNRESET', 'ETIMEDOUT', 'EPIPE', 'ECONNREFUSED', 'ENOTFOUND', '28P01'].includes(e.code)) {
+      return res.status(503).json({ error: 'SERVICE_UNAVAILABLE' });
+    }
     res.status(500).json({ error: 'GENERIC' });
   }
 };
@@ -352,14 +355,7 @@ function touchLastSeen(userId) {
 
 
 // ---------- health check endpoint ----------
-app.get('/health', async (req, res) => {
-  try {
-    await query('SELECT 1');
-    res.json({ ok: true, status: 'healthy', database: 'connected' });
-  } catch (err) {
-    res.status(503).json({ ok: false, status: 'unhealthy', error: err.message });
-  }
-});
+app.get('/health', createHealthHandler({ query, logger: console }));
 
 // ---------- translations ----------
 app.get('/api/i18n/:lang', (req, res) => {
@@ -540,10 +536,9 @@ app.post('/api/deposits', auth, need('customer'), wrap(async (req) => {
   const receipt = decodeReceipt(req.body.receipt_data);
   let receiptKey = null;
   if (receipt) {
-    await fsp.mkdir(receiptDir, { recursive: true, mode: 0o700 });
-    if (process.platform !== 'win32') await fsp.chmod(receiptDir, 0o700);
     receiptKey = `${crypto.randomBytes(32).toString('hex')}${receipt.ext}`;
-    await fsp.writeFile(path.join(receiptDir, receiptKey), receipt.buffer, { flag: 'wx', mode: 0o600 });
+    try { await receiptStorage.put(receiptKey, receipt.buffer, receipt.mime); }
+    catch (error) { console.error('[receipt storage] upload failed', { code: error?.$metadata?.httpStatusCode || 'unknown' }); throw new Error('RECEIPT_STORAGE_UNAVAILABLE'); }
   }
 
   try {
@@ -565,7 +560,7 @@ app.post('/api/deposits', auth, need('customer'), wrap(async (req) => {
     });
     return { id, existing: false };
   } catch (e) {
-    if (receiptKey) await fsp.unlink(path.join(receiptDir, receiptKey)).catch(() => {});
+    if (receiptKey) await receiptStorage.delete(receiptKey).catch(() => {});
     if (e.code === '23505') {
       const duplicate = await query(
         'SELECT id, user_id, status FROM deposits WHERE provider_id=$1 AND tx_ref=$2',
@@ -605,17 +600,19 @@ app.get('/api/deposits/:id/receipt', auth, wrap(async (req, res) => {
   if (Number(deposit.user_id) !== req.user.id && !staffAllowed && !agentAllowed) {
     return res.status(403).json({ error: 'FORBIDDEN' });
   }
-  const filePath = path.join(receiptDir, path.basename(deposit.receipt_key));
-  const ext = path.extname(filePath).toLowerCase();
+  const key = String(deposit.receipt_key);
+  const ext = key.slice(key.lastIndexOf('.')).toLowerCase();
   const mime = ext === '.jpg' ? 'image/jpeg' : ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : null;
-  if (!mime || path.dirname(filePath) !== receiptDir) throw new Error('NOT_FOUND');
+  if (!/^[a-f0-9]{64}\.(jpg|png|webp)$/.test(key) || !mime) throw new Error('NOT_FOUND');
   try {
-    await fsp.access(filePath, fs.constants.R_OK);
-  } catch {
-    return res.status(404).json({ error: 'NOT_FOUND' });
+    const receipt = await receiptStorage.get(key);
+    res.set({ 'Content-Type': mime, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
+    return res.send(receipt.body);
+  } catch (error) {
+    if (error?.name === 'NoSuchKey' || error?.$metadata?.httpStatusCode === 404) return res.status(404).json({ error: 'NOT_FOUND' });
+    console.error('[receipt storage] retrieval failed', { code: error?.$metadata?.httpStatusCode || 'unknown' });
+    return res.status(503).json({ error: 'RECEIPT_STORAGE_UNAVAILABLE' });
   }
-  res.set({ 'Content-Type': mime, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
-  return res.sendFile(filePath);
 }));
 
 app.post('/api/withdrawals', auth, need('customer'), wrap(async (req) => {
@@ -1483,6 +1480,19 @@ app.post('/api/games/penalty/shoot', ...g((req) => games.penaltyShoot(req.user.i
 app.post('/api/games/penalty/cashout', ...g((req) => games.penaltyCashout(req.user.id, req.body.action_id, Number(req.body.expected_step))));
 app.get('/api/games/road/history', ...g((req) => games.roadHistory(req.user.id)));
 app.post('/api/games/road/verify', ...g((req) => Promise.resolve(games.roadVerify(req.body))));
+// Chicken Road Dash Model C is demo-only. Its balance and rounds are stored
+// outside the financial wallet, game_rounds, and ledger tables.
+app.get('/api/games/chicken-road-dash/demo', ...g((req) => chickenRoadDemo.current(req.user.id)));
+app.post('/api/games/chicken-road-dash/demo/start', ...g((req) => chickenRoadDemo.start(req.user.id, req.body)));
+app.post('/api/games/chicken-road-dash/demo/cross', ...g((req) => chickenRoadDemo.cross(req.user.id, req.body.round_id, req.body.action_id)));
+app.post('/api/games/chicken-road-dash/demo/cashout', ...g((req) => chickenRoadDemo.cashout(req.user.id, req.body.round_id, req.body.action_id)));
+app.get('/api/games/chicken-road-dash/demo/verify/:roundId', ...g((req) => chickenRoadDemo.verify(req.user.id, req.params.roundId)));
+app.post('/api/games/chicken-road-dash/demo/reset', ...g((req) => chickenRoadDemo.reset(req.user.id)));
+app.get('/api/games/chicken-road-dash/real', ...g((req) => chickenRoadReal.current(req.user.id)));
+app.post('/api/games/chicken-road-dash/real/start', ...g((req) => chickenRoadReal.start(req.user.id, req.body)));
+app.post('/api/games/chicken-road-dash/real/cross', ...g((req) => chickenRoadReal.cross(req.user.id, req.body.round_id, req.body.action_id)));
+app.post('/api/games/chicken-road-dash/real/cashout', ...g((req) => chickenRoadReal.cashout(req.user.id, req.body.round_id, req.body.action_id)));
+app.get('/api/games/chicken-road-dash/real/verify/:roundId', ...g((req) => chickenRoadReal.verify(req.user.id, req.params.roundId)));
 app.get('/api/games/mines', ...g((req) => games.minesState(req.user.id)));
 app.post('/api/games/mines/start', ...g((req) => games.minesStart(req.user.id, Number(req.body.bet), req.body.mines, req.body.grid, req.body.client_seed)));
 app.post('/api/games/mines/step', ...g((req) => games.minesStep(req.user.id, req.body.cell)));

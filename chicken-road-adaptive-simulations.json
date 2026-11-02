@@ -1,0 +1,830 @@
+[
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.65369,
+    "rtp_ci95_normal": [
+      0.6130927605934807,
+      0.6942872394065192
+    ],
+    "house_edge": 0.34631,
+    "collision_rate": 0.501,
+    "collision_rate_ci95_wilson": [
+      0.47006526890602685,
+      0.5319270772968004
+    ],
+    "cashout_rate": 0.499,
+    "finish_rate": 0,
+    "average_crossings": 1.937,
+    "average_payout_santim": 65.369,
+    "observed_max_payout_santim": 131
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.33642000000000005,
+    "rtp_ci95_normal": [
+      0.29322659884058955,
+      0.3796134011594105
+    ],
+    "house_edge": 0.66358,
+    "collision_rate": 0.811,
+    "collision_rate_ci95_wilson": [
+      0.785561129785638,
+      0.8340585392936273
+    ],
+    "cashout_rate": 0.189,
+    "finish_rate": 0,
+    "average_crossings": 3.047,
+    "average_payout_santim": 33.642,
+    "observed_max_payout_santim": 178
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.12188,
+    "rtp_ci95_normal": [
+      0.08666796500500207,
+      0.15709203499499794
+    ],
+    "house_edge": 0.87812,
+    "collision_rate": 0.956,
+    "collision_rate_ci95_wilson": [
+      0.9414479081796453,
+      0.9670619603095666
+    ],
+    "cashout_rate": 0.044,
+    "finish_rate": 0,
+    "average_crossings": 3.617,
+    "average_payout_santim": 12.188,
+    "observed_max_payout_santim": 277
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.25s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.12480000000000001,
+    "rtp_ci95_normal": [
+      0.08081588110310722,
+      0.1687841188968928
+    ],
+    "house_edge": 0.8752,
+    "collision_rate": 0.97,
+    "collision_rate_ci95_wilson": [
+      0.95749631851849,
+      0.978906396810303
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.03,
+    "average_crossings": 3.627,
+    "average_payout_santim": 12.48,
+    "observed_max_payout_santim": 416
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.6943,
+    "rtp_ci95_normal": [
+      0.6537758204621489,
+      0.7348241795378513
+    ],
+    "house_edge": 0.30569999999999997,
+    "collision_rate": 0.47,
+    "collision_rate_ci95_wilson": [
+      0.43923935362476774,
+      0.5009902602904157
+    ],
+    "cashout_rate": 0.53,
+    "finish_rate": 0,
+    "average_crossings": 1.997,
+    "average_payout_santim": 69.43,
+    "observed_max_payout_santim": 131
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.41296,
+    "rtp_ci95_normal": [
+      0.3663905963963737,
+      0.45952940360362626
+    ],
+    "house_edge": 0.58704,
+    "collision_rate": 0.768,
+    "collision_rate_ci95_wilson": [
+      0.74084178021127,
+      0.7931070021464247
+    ],
+    "cashout_rate": 0.232,
+    "finish_rate": 0,
+    "average_crossings": 3.38,
+    "average_payout_santim": 41.296,
+    "observed_max_payout_santim": 178
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.19667,
+    "rtp_ci95_normal": [
+      0.1525766727324671,
+      0.24076332726753294
+    ],
+    "house_edge": 0.80333,
+    "collision_rate": 0.929,
+    "collision_rate_ci95_wilson": [
+      0.9113859810064908,
+      0.9433305400063863
+    ],
+    "cashout_rate": 0.071,
+    "finish_rate": 0,
+    "average_crossings": 4.437,
+    "average_payout_santim": 19.667,
+    "observed_max_payout_santim": 277
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-0.5s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.21632,
+    "rtp_ci95_normal": [
+      0.15907266916129487,
+      0.27356733083870516
+    ],
+    "house_edge": 0.7836799999999999,
+    "collision_rate": 0.948,
+    "collision_rate_ci95_wilson": [
+      0.9324439406590116,
+      0.9601271582075824
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.052,
+    "average_crossings": 4.103,
+    "average_payout_santim": 21.632,
+    "observed_max_payout_santim": 416
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-1s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.8541200000000001,
+    "rtp_ci95_normal": [
+      0.8154440681008853,
+      0.8927959318991148
+    ],
+    "house_edge": 0.1458799999999999,
+    "collision_rate": 0.348,
+    "collision_rate_ci95_wilson": [
+      0.3191088817410635,
+      0.3780544954291993
+    ],
+    "cashout_rate": 0.652,
+    "finish_rate": 0,
+    "average_crossings": 2.27,
+    "average_payout_santim": 85.412,
+    "observed_max_payout_santim": 131
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-1s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.7351399999999999,
+    "rtp_ci95_normal": [
+      0.6808187005849028,
+      0.7894612994150971
+    ],
+    "house_edge": 0.2648600000000001,
+    "collision_rate": 0.587,
+    "collision_rate_ci95_wilson": [
+      0.5562061061222425,
+      0.6171280135237254
+    ],
+    "cashout_rate": 0.413,
+    "finish_rate": 0,
+    "average_crossings": 4.397,
+    "average_payout_santim": 73.514,
+    "observed_max_payout_santim": 178
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-1s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.50691,
+    "rtp_ci95_normal": [
+      0.4405246248935879,
+      0.5732953751064122
+    ],
+    "house_edge": 0.49309000000000003,
+    "collision_rate": 0.817,
+    "collision_rate_ci95_wilson": [
+      0.7918361923371519,
+      0.8397375539590765
+    ],
+    "cashout_rate": 0.183,
+    "finish_rate": 0,
+    "average_crossings": 6.173,
+    "average_payout_santim": 50.691,
+    "observed_max_payout_santim": 277
+  },
+  {
+    "difficulty": "easy",
+    "strategy": "safe-window-latest-1s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.80704,
+    "rtp_ci95_normal": [
+      0.705082826363235,
+      0.9089971736367649
+    ],
+    "house_edge": 0.19296000000000002,
+    "collision_rate": 0.806,
+    "collision_rate_ci95_wilson": [
+      0.7803389611908129,
+      0.8293189768743163
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.194,
+    "average_crossings": 6.404,
+    "average_payout_santim": 80.704,
+    "observed_max_payout_santim": 416
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.6656799999999999,
+    "rtp_ci95_normal": [
+      0.6175905407312147,
+      0.7137694592687853
+    ],
+    "house_edge": 0.33432000000000006,
+    "collision_rate": 0.576,
+    "collision_rate_ci95_wilson": [
+      0.5451362089936294,
+      0.6062821024212393
+    ],
+    "cashout_rate": 0.424,
+    "finish_rate": 0,
+    "average_crossings": 1.767,
+    "average_payout_santim": 66.568,
+    "observed_max_payout_santim": 157
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.39564,
+    "rtp_ci95_normal": [
+      0.33881751460908593,
+      0.45246248539091405
+    ],
+    "house_edge": 0.60436,
+    "collision_rate": 0.843,
+    "collision_rate_ci95_wilson": [
+      0.8191437085463132,
+      0.8642310390234228
+    ],
+    "cashout_rate": 0.157,
+    "finish_rate": 0,
+    "average_crossings": 2.754,
+    "average_payout_santim": 39.564,
+    "observed_max_payout_santim": 252
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.09234,
+    "rtp_ci95_normal": [
+      0.05121521459198797,
+      0.13346478540801204
+    ],
+    "house_edge": 0.90766,
+    "collision_rate": 0.981,
+    "collision_rate_ci95_wilson": [
+      0.9705153112972965,
+      0.9878032122625958
+    ],
+    "cashout_rate": 0.019,
+    "finish_rate": 0,
+    "average_crossings": 3.133,
+    "average_payout_santim": 9.234,
+    "observed_max_payout_santim": 486
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.25s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.21141,
+    "rtp_ci95_normal": [
+      0.13558852765057222,
+      0.28723147234942775
+    ],
+    "house_edge": 0.78859,
+    "collision_rate": 0.971,
+    "collision_rate_ci95_wilson": [
+      0.958661377168108,
+      0.9797336843635122
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.029,
+    "average_crossings": 3.292,
+    "average_payout_santim": 21.141,
+    "observed_max_payout_santim": 729
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.7928499999999999,
+    "rtp_ci95_normal": [
+      0.7441976287216748,
+      0.8415023712783252
+    ],
+    "house_edge": 0.20715000000000006,
+    "collision_rate": 0.495,
+    "collision_rate_ci95_wilson": [
+      0.46408970934046934,
+      0.5259485596453947
+    ],
+    "cashout_rate": 0.505,
+    "finish_rate": 0,
+    "average_crossings": 1.942,
+    "average_payout_santim": 79.285,
+    "observed_max_payout_santim": 157
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.56448,
+    "rtp_ci95_normal": [
+      0.49936043632861654,
+      0.6295995636713835
+    ],
+    "house_edge": 0.43552,
+    "collision_rate": 0.776,
+    "collision_rate_ci95_wilson": [
+      0.7491305540091692,
+      0.8007569979711434
+    ],
+    "cashout_rate": 0.224,
+    "finish_rate": 0,
+    "average_crossings": 3.315,
+    "average_payout_santim": 56.448,
+    "observed_max_payout_santim": 252
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.27216,
+    "rtp_ci95_normal": [
+      0.20290161643128657,
+      0.34141838356871346
+    ],
+    "house_edge": 0.72784,
+    "collision_rate": 0.944,
+    "collision_rate_ci95_wilson": [
+      0.9279763237468875,
+      0.9566253903083978
+    ],
+    "cashout_rate": 0.056,
+    "finish_rate": 0,
+    "average_crossings": 4.338,
+    "average_payout_santim": 27.216,
+    "observed_max_payout_santim": 486
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-0.5s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.40824,
+    "rtp_ci95_normal": [
+      0.30435242464692974,
+      0.5121275753530702
+    ],
+    "house_edge": 0.5917600000000001,
+    "collision_rate": 0.944,
+    "collision_rate_ci95_wilson": [
+      0.9279763237468875,
+      0.9566253903083978
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.056,
+    "average_crossings": 4.039,
+    "average_payout_santim": 40.824,
+    "observed_max_payout_santim": 729
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-1s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 1.21675,
+    "rtp_ci95_normal": [
+      1.176115227364977,
+      1.2573847726350227
+    ],
+    "house_edge": -0.21675,
+    "collision_rate": 0.225,
+    "collision_rate_ci95_wilson": [
+      0.20019851963259613,
+      0.25190627458991877
+    ],
+    "cashout_rate": 0.775,
+    "finish_rate": 0,
+    "average_crossings": 2.522,
+    "average_payout_santim": 121.675,
+    "observed_max_payout_santim": 157
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-1s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 1.47672,
+    "rtp_ci95_normal": [
+      1.3997882537072597,
+      1.5536517462927404
+    ],
+    "house_edge": -0.47672000000000003,
+    "collision_rate": 0.414,
+    "collision_rate_ci95_wilson": [
+      0.38385733584089365,
+      0.4448008907159655
+    ],
+    "cashout_rate": 0.586,
+    "finish_rate": 0,
+    "average_crossings": 5.274,
+    "average_payout_santim": 147.672,
+    "observed_max_payout_santim": 252
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-1s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 1.8322200000000002,
+    "rtp_ci95_normal": [
+      1.686235401738887,
+      1.9782045982611132
+    ],
+    "house_edge": -0.8322200000000002,
+    "collision_rate": 0.623,
+    "collision_rate_ci95_wilson": [
+      0.5925451445892167,
+      0.6525134383585312
+    ],
+    "cashout_rate": 0.377,
+    "finish_rate": 0,
+    "average_crossings": 8.148,
+    "average_payout_santim": 183.222,
+    "observed_max_payout_santim": 486
+  },
+  {
+    "difficulty": "medium",
+    "strategy": "safe-window-latest-1s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 2.7993599999999996,
+    "rtp_ci95_normal": [
+      2.5796045938050196,
+      3.01911540619498
+    ],
+    "house_edge": -1.7993599999999996,
+    "collision_rate": 0.616,
+    "collision_rate_ci95_wilson": [
+      0.5854657662994249,
+      0.6456463932285326
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.384,
+    "average_crossings": 8.222,
+    "average_payout_santim": 279.936,
+    "observed_max_payout_santim": 729
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.8183199999999999,
+    "rtp_ci95_normal": [
+      0.759203658351111,
+      0.8774363416488888
+    ],
+    "house_edge": 0.18168000000000006,
+    "collision_rate": 0.576,
+    "collision_rate_ci95_wilson": [
+      0.5451362089936294,
+      0.6062821024212393
+    ],
+    "cashout_rate": 0.424,
+    "finish_rate": 0,
+    "average_crossings": 1.756,
+    "average_payout_santim": 81.832,
+    "observed_max_payout_santim": 193
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.52416,
+    "rtp_ci95_normal": [
+      0.44495080795509245,
+      0.6033691920449075
+    ],
+    "house_edge": 0.47584000000000004,
+    "collision_rate": 0.856,
+    "collision_rate_ci95_wilson": [
+      0.8328758480857206,
+      0.8763994001207693
+    ],
+    "cashout_rate": 0.144,
+    "finish_rate": 0,
+    "average_crossings": 2.587,
+    "average_payout_santim": 52.416,
+    "observed_max_payout_santim": 364
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.25s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.0872,
+    "rtp_ci95_normal": [
+      0.03342379464246292,
+      0.14097620535753708
+    ],
+    "house_edge": 0.9128000000000001,
+    "collision_rate": 0.99,
+    "collision_rate_ci95_wilson": [
+      0.981690334694608,
+      0.9945593046907295
+    ],
+    "cashout_rate": 0.01,
+    "finish_rate": 0,
+    "average_crossings": 2.833,
+    "average_payout_santim": 8.72,
+    "observed_max_payout_santim": 872
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.25s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.23544,
+    "rtp_ci95_normal": [
+      0.12765562400001454,
+      0.34322437599998545
+    ],
+    "house_edge": 0.76456,
+    "collision_rate": 0.982,
+    "collision_rate_ci95_wilson": [
+      0.9717265156214581,
+      0.9885843541412616
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.018,
+    "average_crossings": 2.869,
+    "average_payout_santim": 23.544,
+    "observed_max_payout_santim": 1308
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 1.1387,
+    "rtp_ci95_normal": [
+      1.0798656019347865,
+      1.1975343980652136
+    ],
+    "house_edge": -0.13870000000000005,
+    "collision_rate": 0.41,
+    "collision_rate_ci95_wilson": [
+      0.37991671320713805,
+      0.4407721285384123
+    ],
+    "cashout_rate": 0.59,
+    "finish_rate": 0,
+    "average_crossings": 2.141,
+    "average_payout_santim": 113.87,
+    "observed_max_payout_santim": 193
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.97552,
+    "rtp_ci95_normal": [
+      0.8755935652626826,
+      1.0754464347373176
+    ],
+    "house_edge": 0.024479999999999946,
+    "collision_rate": 0.732,
+    "collision_rate_ci95_wilson": [
+      0.7036980405782712,
+      0.7585262784776435
+    ],
+    "cashout_rate": 0.268,
+    "finish_rate": 0,
+    "average_crossings": 3.595,
+    "average_payout_santim": 97.552,
+    "observed_max_payout_santim": 364
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.5s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.54064,
+    "rtp_ci95_normal": [
+      0.41030236984722857,
+      0.6709776301527713
+    ],
+    "house_edge": 0.45936,
+    "collision_rate": 0.938,
+    "collision_rate_ci95_wilson": [
+      0.9213116000993365,
+      0.9513360367389853
+    ],
+    "cashout_rate": 0.062,
+    "finish_rate": 0,
+    "average_crossings": 4.413,
+    "average_payout_santim": 54.064,
+    "observed_max_payout_santim": 872
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-0.5s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 0.99408,
+    "rtp_ci95_normal": [
+      0.7792442278576732,
+      1.208915772142327
+    ],
+    "house_edge": 0.005920000000000036,
+    "collision_rate": 0.924,
+    "collision_rate_ci95_wilson": [
+      0.9059039930034635,
+      0.9388507969952776
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.076,
+    "average_crossings": 4.414,
+    "average_payout_santim": 99.408,
+    "observed_max_payout_santim": 1308
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-1s",
+    "target": 3,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 1.81999,
+    "rtp_ci95_normal": [
+      1.7922563740023805,
+      1.8477236259976195
+    ],
+    "house_edge": -0.81999,
+    "collision_rate": 0.057,
+    "collision_rate_ci95_wilson": [
+      0.04425323441955428,
+      0.07313739772798773
+    ],
+    "cashout_rate": 0.943,
+    "finish_rate": 0,
+    "average_crossings": 2.89,
+    "average_payout_santim": 181.999,
+    "observed_max_payout_santim": 193
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-1s",
+    "target": 7,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 3.18864,
+    "rtp_ci95_normal": [
+      3.114283258323023,
+      3.262996741676977
+    ],
+    "house_edge": -2.18864,
+    "collision_rate": 0.124,
+    "collision_rate_ci95_wilson": [
+      0.10499965005666721,
+      0.14587817768029848
+    ],
+    "cashout_rate": 0.876,
+    "finish_rate": 0,
+    "average_crossings": 6.433,
+    "average_payout_santim": 318.864,
+    "observed_max_payout_santim": 364
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-1s",
+    "target": 14,
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 7.037039999999999,
+    "rtp_ci95_normal": [
+      6.8237414131542415,
+      7.250338586845758
+    ],
+    "house_edge": -6.037039999999999,
+    "collision_rate": 0.193,
+    "collision_rate_ci95_wilson": [
+      0.16973260811821303,
+      0.21861710761383082
+    ],
+    "cashout_rate": 0.807,
+    "finish_rate": 0,
+    "average_crossings": 12.186,
+    "average_payout_santim": 703.704,
+    "observed_max_payout_santim": 872
+  },
+  {
+    "difficulty": "hard",
+    "strategy": "safe-window-latest-1s",
+    "target": "finish",
+    "bet_santim": 100,
+    "rounds": 1000,
+    "rtp": 10.5948,
+    "rtp_ci95_normal": [
+      10.276758989057173,
+      10.912841010942827
+    ],
+    "house_edge": -9.5948,
+    "collision_rate": 0.19,
+    "collision_rate_ci95_wilson": [
+      0.16688886767222819,
+      0.21548380945133397
+    ],
+    "cashout_rate": 0,
+    "finish_rate": 0.81,
+    "average_crossings": 12.133,
+    "average_payout_santim": 1059.48,
+    "observed_max_payout_santim": 1308
+  }
+]

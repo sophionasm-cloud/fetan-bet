@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { databaseIdentity, assertSeparateTestDatabase } = require('./test-db-safety');
+const { databaseIdentity, assertSeparateTestDatabase, assertExpectedNeonTestEndpoint } = require('./test-db-safety');
 
 const pooled = 'postgresql://app:secret@ep-demo-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require';
 const direct = 'postgresql://test:other@ep-demo.us-east-2.aws.neon.tech/neondb?sslmode=require';
@@ -15,6 +15,18 @@ assert.doesNotThrow(() => assertSeparateTestDatabase({
   DATABASE_URL: pooled,
   TEST_DATABASE_URL: 'postgresql://test:secret@ep-isolated.us-east-2.aws.neon.tech/fetan_test?sslmode=require',
 }));
+const expectedEndpoint = 'ep-withered-pond-b5xflte3';
+assert.deepEqual(assertExpectedNeonTestEndpoint(
+  `postgresql://test:secret@${expectedEndpoint}-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require`,
+  expectedEndpoint
+), { endpointId: expectedEndpoint });
+assert.throws(() => assertExpectedNeonTestEndpoint(
+  'postgresql://test:secret@ep-other-endpoint.us-east-2.aws.neon.tech/neondb',
+  expectedEndpoint
+), /does not match/);
+assert.throws(() => assertExpectedNeonTestEndpoint(
+  'postgresql://test:secret@example.com/neondb', expectedEndpoint
+), /must point to a Neon/);
 
 const project = path.resolve(__dirname, '..');
 const launcher = fs.readFileSync(path.join(__dirname, 'run-integration-tests.js'), 'utf8');
@@ -27,6 +39,8 @@ assert.match(launcher, /process\.env\.TEST_DATABASE_URL/);
 assert.match(launcher, /--check/);
 assert.doesNotMatch(launcher, /runMigrations\s*\(/);
 assert.match(database, /integrationTestMode[\s\S]*process\.env\.TEST_DATABASE_URL/);
+assert.match(database, /testDatabaseOnly[\s\S]*process\.env\.TEST_DATABASE_URL/);
+assert.match(database, /assertExpectedNeonTestEndpoint\(process\.env\.TEST_DATABASE_URL/);
 assert.match(server, /FETAN_INTEGRATION_TEST !== '1'[\s\S]*seed\(\)/);
 assert.match(suite, /FETAN_TEST_DB_PREFLIGHT !== 'passed'[\s\S]*const app = require\('\.\/server'\)/);
 for (const name of ['synthetic agent fixture can log in', 'concurrent duplicate Road Dash cashouts settle once',

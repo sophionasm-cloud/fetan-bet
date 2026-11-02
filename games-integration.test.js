@@ -43,19 +43,54 @@ for (const game of ['chicken-road-2', 'penalty']) {
 }
 
 assert.match(chicken, /const realWalletMode = false/, 'real wallet mode remains disabled');
+const chickenHtml = read('public/games/chicken-road-2/index.html');
+assert.match(chickenHtml, /<a class="home-btn" href="\.\.\/" data-fetan-back[^>]*>[\s\S]*?Home<\/span>[\s\S]*?<\/a>\s*<a class="brand"/,
+  'Home link appears before the existing game title');
+assert.match(chicken, /querySelectorAll\('\[data-fetan-back\]'\)[\s\S]*?fetan-game-close/,
+  'Home uses the existing parent Games-page navigation message');
+assert.match(read('public/games/chicken-road-2/css/style.css'), /\.home-btn[\s\S]*?@media \(max-width: 400px\)[\s\S]*?\.home-btn/,
+  'Home control has compact responsive styling');
+assert.match(chicken, /SCHEMA_NOT_READY:[\s\S]*?required migration/,
+  'missing game migration has a clear, persistent error message');
+assert.match(chicken, /ENDPOINT_NOT_FOUND:[\s\S]*?Restart the server/,
+  'a stale local server is distinguished from a balance loading state');
 assert.match(chicken, /function laneLimit\(\) \{ return LANES; \}/, 'demo retains all 14 traffic lanes');
 assert.match(chicken, /function finishPosition\(\) \{ return laneLimit\(\) \+ 1; \}/, 'demo retains the finish sidewalk and bonus crossing');
-assert.match(chicken, /function startRound\(\)[\s\S]*?if \(integrated && realWalletMode\) \{[\s\S]*?state\.balance = round2\(state\.balance - state\.bet\)/,
-  'integrated demo starts using only its local demo balance');
-assert.match(chicken, /function checkCollision\(\)[\s\S]*?if \(integrated && realWalletMode\) return;/,
-  'demo collision decisions remain in the local gameplay simulation');
-assert.match(chicken, /if \(integrated && realWalletMode\) \{\s*fetch\('\/api\/me'/,
-  'demo mode never requests the real wallet balance');
-assert.match(chicken.slice(chicken.indexOf('function init()')), /if \(integrated && realWalletMode\) \{[\s\S]*?fetch\('\/api\/me'/,
-  'wallet lookup is reachable only in the explicitly disabled real-wallet mode');
+assert.match(chicken, /fetanApi\(''\)\.then\(\(data\) => \{\s*useServerRound\(data\)/,
+  'integrated game retrieves its server balance and active round');
+assert.match(chicken, /fetanApi\('\/start', \{ bet_santim: Math\.round\(state\.bet \* 100\), difficulty: state\.difficulty, action_id: state\.pendingStartActionId \}\)/,
+  'integrated round creation submits stake, difficulty and a start idempotency key');
+assert.match(chicken, /fetanApi\('\/cross', \{ round_id: state\.serverRoundId, action_id: actionId \}\)/,
+  'integrated crossing sends an idempotency key without a client outcome or timestamp');
+assert.match(chicken, /fetanApi\('\/cashout', \{ round_id: state\.serverRoundId, action_id: actionId \}\)/,
+  'integrated cash out submits only the round and idempotency key');
+assert.match(chicken, /function checkCollision\(\)[\s\S]*?if \(integrated\) return;/,
+  'integrated visual traffic cannot decide a crossing outcome');
+assert.doesNotMatch(chicken, /\/api\/me/, 'Chicken Road Dash demo never requests the real wallet balance');
+for (const route of [
+  "app.get('/api/games/chicken-road-dash/demo'",
+  "app.post('/api/games/chicken-road-dash/demo/start'",
+  "app.post('/api/games/chicken-road-dash/demo/cross'",
+  "app.post('/api/games/chicken-road-dash/demo/cashout'",
+  "app.get('/api/games/chicken-road-dash/demo/verify/:roundId'",
+]) assert.ok(server.includes(route), `Model C demo endpoint exists: ${route}`);
+const demoService = read('chicken-road-demo-service.js');
+const demoMigration = read('migrations/005_chicken_road_dash_demo.sql');
+assert.match(demoService, /FOR UPDATE OF r, b/, 'demo actions lock the user-owned round and isolated demo balance');
+assert.match(demoService, /priorAction\(client, roundId, actionId, request\)/, 'demo actions persist and replay the exact prior response');
+assert.doesNotMatch(demoService, /postLedger|game_rounds|wallets|ledger/, 'demo settlement is isolated from financial tables');
+assert.match(demoService, /verifyProof[\s\S]*?merkle_proofs_valid/, 'completed demo rounds verify seed commitment and Merkle proofs');
+assert.match(demoMigration, /CREATE TABLE IF NOT EXISTS chicken_road_dash_demo_rounds/);
+assert.match(demoMigration, /CREATE TABLE IF NOT EXISTS chicken_road_dash_demo_actions/);
+assert.match(demoMigration, /trg_chicken_road_dash_demo_commitment_immutable/);
+assert.match(demoMigration, /trg_chicken_road_dash_demo_actions_immutable/);
+assert.doesNotMatch(demoMigration, /CREATE TABLE IF NOT EXISTS game_rounds|ALTER TABLE wallets|CREATE TABLE IF NOT EXISTS ledger/,
+  'demo migration is isolated from financial game rounds, wallets and ledger');
+assert.match(chicken, /fetanApi\(`\/verify\/\$\{encodeURIComponent\(state\.serverRoundId\)\}`\)/,
+  'integrated result screen can request completed round verification');
 assert.match(chicken, /JSON\.stringify\(\{ balance: state\.balance, bet: state\.bet, difficulty: state\.difficulty/,
-  'demo balance and preferences persist locally');
-assert.match(read('public/games/chicken-road-2/index.html'), /DEMO MODE[\s\S]*?cannot be withdrawn|Demo balance only/, 'integrated page labels demo funds as nonwithdrawable');
+  'demo preferences persist locally while authoritative integrated credits load from the demo service');
+assert.match(chickenHtml, /DEMO MODE[\s\S]*?cannot be withdrawn|Demo balance only/, 'integrated page labels demo funds as nonwithdrawable');
 assert.match(read('public/games/chicken-road-2/css/style.css'), /html\.fetan-integrated #menuReset \{ display: initial/,
   'integrated demo keeps its isolated reset control available');
 assert.match(gameServer, /const PENALTY_MAX_BET = 50000[\s\S]*?async function penaltyStart[\s\S]*?if \(bet > PENALTY_MAX_BET\) throw new Error\('INVALID'\)/,

@@ -3,6 +3,8 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
+const { assertExpectedNeonTestEndpoint } = require('./test-db-safety');
+const { postgresSslOptions } = require('./database-config');
 
 function sanitizeConnectionString(url) {
   if (!url) return '';
@@ -10,18 +12,46 @@ function sanitizeConnectionString(url) {
   return url.replace(/([?&])channel_binding=[^&]+(&|$)/, '$1').replace(/[?&]$/, '');
 }
 
-async function runMigrations(customUrl = null) {
-  const connString = customUrl || process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
+function testOptionsFromArgs(args) {
+  const get = (name) => args.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
+  return {
+    target: 'test',
+    expectedEndpointId: get('endpoint-id'),
+    expectedProjectId: get('project-id'),
+    expectedBranchId: get('branch-id'),
+  };
+}
+
+function validTestMetadata(options) {
+  return /^muddy-dew-45860324$/.test(options.expectedProjectId || '') &&
+    /^br-patient-recipe-b58ey3ge$/.test(options.expectedBranchId || '');
+}
+
+async function runMigrations(options = null) {
+  const testTarget = options?.target === 'test';
+  const customUrl = typeof options === 'string' ? options : null;
+  let connString;
+  if (testTarget) {
+    if (!validTestMetadata(options)) throw new Error('Expected test Neon project and branch IDs are required.');
+    if (!process.env.TEST_DATABASE_URL) throw new Error('TEST_DATABASE_URL is required; refusing test migration.');
+    assertExpectedNeonTestEndpoint(process.env.TEST_DATABASE_URL, options.expectedEndpointId);
+    connString = sanitizeConnectionString(process.env.TEST_DATABASE_URL);
+  } else {
+    // Preserve the existing default behavior for non-test migration runs.
+    connString = customUrl || process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
+  }
   if (!connString) {
-    throw new Error('Neither DIRECT_DATABASE_URL nor DATABASE_URL environment variable is set.');
+    throw new Error(testTarget ? 'TEST_DATABASE_URL is required.' : 'Neither DIRECT_DATABASE_URL nor DATABASE_URL environment variable is set.');
   }
 
   const client = new Client({
     connectionString: sanitizeConnectionString(connString),
-    ssl: { rejectUnauthorized: false }
+    ssl: postgresSslOptions()
   });
 
-  console.log('Connecting to PostgreSQL for migrations...');
+  console.log(testTarget
+    ? `Connecting to verified Neon test endpoint ${options.expectedEndpointId} for branch ${options.expectedBranchId}...`
+    : 'Connecting to PostgreSQL for migrations...');
   await client.connect();
 
   try {
@@ -68,7 +98,7 @@ async function runMigrations(customUrl = null) {
         count++;
       } catch (err) {
         await client.query('ROLLBACK');
-        console.error(`  [error] Migration ${file} failed:`, err);
+        console.error(`  [error] Migration ${file} failed (code ${err.code || 'unknown'}).`);
         throw err;
       }
     }
@@ -80,7 +110,10 @@ async function runMigrations(customUrl = null) {
 }
 
 if (require.main === module) {
-  runMigrations()
+  const args = process.argv.slice(2);
+  const testMode = args.includes('--test');
+  const options = testMode ? testOptionsFromArgs(args) : null;
+  runMigrations(options)
     .then(() => process.exit(0))
     .catch((err) => {
       console.error('Migration runner error:', err.message);
@@ -88,4 +121,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { runMigrations, sanitizeConnectionString };
+module.exports = { runMigrations, sanitizeConnectionString, testOptionsFromArgs };

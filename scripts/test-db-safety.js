@@ -44,4 +44,23 @@ function assertSeparateTestDatabase(env = process.env) {
   return { test, application };
 }
 
-module.exports = { databaseIdentity, formatIdentity, assertSeparateTestDatabase };
+function assertExpectedNeonTestEndpoint(connectionString, expectedEndpointId) {
+  if (typeof connectionString !== 'string' || !connectionString.trim()) {
+    throw new Error('TEST_DATABASE_URL is required.');
+  }
+  if (typeof expectedEndpointId !== 'string' || !/^ep-[a-z0-9-]+$/i.test(expectedEndpointId)) {
+    throw new Error('A valid expected Neon test endpoint ID is required.');
+  }
+  let parsed;
+  try { parsed = new URL(connectionString); } catch { throw new Error('TEST_DATABASE_URL is invalid.'); }
+  if (!['postgres:', 'postgresql:'].includes(parsed.protocol) || !parsed.hostname.toLowerCase().endsWith('.neon.tech')) {
+    throw new Error('TEST_DATABASE_URL must point to a Neon PostgreSQL endpoint.');
+  }
+  const actualEndpointId = parsed.hostname.toLowerCase().split('.')[0].replace(/-pooler$/i, '');
+  if (actualEndpointId !== expectedEndpointId.toLowerCase()) {
+    throw new Error('TEST_DATABASE_URL endpoint does not match the expected test endpoint.');
+  }
+  return { endpointId: actualEndpointId };
+}
+
+module.exports = { databaseIdentity, formatIdentity, assertSeparateTestDatabase, assertExpectedNeonTestEndpoint };

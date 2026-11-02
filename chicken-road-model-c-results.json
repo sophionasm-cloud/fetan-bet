@@ -1,0 +1,1620 @@
+{
+  "calibration": {
+    "easy": [
+      {
+        "lane": 1,
+        "entered": 100000,
+        "collision": 23512,
+        "p": 0.23512,
+        "ci95": [
+          0.23250176940174946,
+          0.23775858107662654
+        ]
+      },
+      {
+        "lane": 2,
+        "entered": 76488,
+        "collision": 18391,
+        "p": 0.24044294529860893,
+        "ci95": [
+          0.23742740291252373,
+          0.24348455881490844
+        ]
+      },
+      {
+        "lane": 3,
+        "entered": 58097,
+        "collision": 13934,
+        "p": 0.2398402671394392,
+        "ci95": [
+          0.23638543717351185,
+          0.24332950038085222
+        ]
+      },
+      {
+        "lane": 4,
+        "entered": 44163,
+        "collision": 10706,
+        "p": 0.24242012544437652,
+        "ci95": [
+          0.23844572167517178,
+          0.2464393374366847
+        ]
+      },
+      {
+        "lane": 5,
+        "entered": 33457,
+        "collision": 8129,
+        "p": 0.24296858654392206,
+        "ci95": [
+          0.2384026400452263,
+          0.24759355199317115
+        ]
+      },
+      {
+        "lane": 6,
+        "entered": 25328,
+        "collision": 5980,
+        "p": 0.23610233733417563,
+        "ci95": [
+          0.23091234023046753,
+          0.24137237514529897
+        ]
+      },
+      {
+        "lane": 7,
+        "entered": 19348,
+        "collision": 4645,
+        "p": 0.2400764936944387,
+        "ci95": [
+          0.23410983620135387,
+          0.2461463477889078
+        ]
+      },
+      {
+        "lane": 8,
+        "entered": 14703,
+        "collision": 3540,
+        "p": 0.24076719036931238,
+        "ci95": [
+          0.2339245024074793,
+          0.24774530764881453
+        ]
+      },
+      {
+        "lane": 9,
+        "entered": 11163,
+        "collision": 2708,
+        "p": 0.2425871181582012,
+        "ci95": [
+          0.23472474088070835,
+          0.25062660501820727
+        ]
+      },
+      {
+        "lane": 10,
+        "entered": 8455,
+        "collision": 2094,
+        "p": 0.24766410408042577,
+        "ci95": [
+          0.2385790435580365,
+          0.2569783623165457
+        ]
+      },
+      {
+        "lane": 11,
+        "entered": 6361,
+        "collision": 1559,
+        "p": 0.24508725043232196,
+        "ci95": [
+          0.23467251734681224,
+          0.2558096966960322
+        ]
+      },
+      {
+        "lane": 12,
+        "entered": 4802,
+        "collision": 1163,
+        "p": 0.24219075385256142,
+        "ci95": [
+          0.23028268697156945,
+          0.25451098579533993
+        ]
+      },
+      {
+        "lane": 13,
+        "entered": 3639,
+        "collision": 873,
+        "p": 0.23990107172300082,
+        "ci95": [
+          0.22630550375526248,
+          0.2540452202509638
+        ]
+      },
+      {
+        "lane": 14,
+        "entered": 2766,
+        "collision": 665,
+        "p": 0.24041937816341288,
+        "ci95": [
+          0.224860562110437,
+          0.25669823894157984
+        ]
+      }
+    ],
+    "medium": [
+      {
+        "lane": 1,
+        "entered": 100000,
+        "collision": 28225,
+        "p": 0.28225,
+        "ci95": [
+          0.2794686920278917,
+          0.2850480374974268
+        ]
+      },
+      {
+        "lane": 2,
+        "entered": 71775,
+        "collision": 20890,
+        "p": 0.2910484151863462,
+        "ci95": [
+          0.28773643853730907,
+          0.2943827579920482
+        ]
+      },
+      {
+        "lane": 3,
+        "entered": 50885,
+        "collision": 14840,
+        "p": 0.291638007271298,
+        "ci95": [
+          0.28770463844101674,
+          0.29560283460627695
+        ]
+      },
+      {
+        "lane": 4,
+        "entered": 36045,
+        "collision": 10526,
+        "p": 0.29202385906505757,
+        "ci95": [
+          0.28735212342298677,
+          0.29673992129891624
+        ]
+      },
+      {
+        "lane": 5,
+        "entered": 25519,
+        "collision": 7515,
+        "p": 0.2944864610682237,
+        "ci95": [
+          0.2889251832249445,
+          0.30010960512714874
+        ]
+      },
+      {
+        "lane": 6,
+        "entered": 18004,
+        "collision": 5329,
+        "p": 0.29598978004887805,
+        "ci95": [
+          0.2893658120261841,
+          0.30270079078089523
+        ]
+      },
+      {
+        "lane": 7,
+        "entered": 12675,
+        "collision": 3684,
+        "p": 0.2906508875739645,
+        "ci95": [
+          0.2828103338276469,
+          0.29861830394317285
+        ]
+      },
+      {
+        "lane": 8,
+        "entered": 8991,
+        "collision": 2635,
+        "p": 0.2930708486264042,
+        "ci95": [
+          0.2837521913864166,
+          0.30256626029148737
+        ]
+      },
+      {
+        "lane": 9,
+        "entered": 6356,
+        "collision": 1834,
+        "p": 0.28854625550660795,
+        "ci95": [
+          0.27753764045688084,
+          0.299810323681094
+        ]
+      },
+      {
+        "lane": 10,
+        "entered": 4522,
+        "collision": 1350,
+        "p": 0.29854046881910656,
+        "ci95": [
+          0.2853779440095695,
+          0.31204499717334755
+        ]
+      },
+      {
+        "lane": 11,
+        "entered": 3172,
+        "collision": 947,
+        "p": 0.2985498108448928,
+        "ci95": [
+          0.2828756429003653,
+          0.3147113400272466
+        ]
+      },
+      {
+        "lane": 12,
+        "entered": 2225,
+        "collision": 699,
+        "p": 0.3141573033707865,
+        "ci95": [
+          0.29520404353374896,
+          0.3337511949183688
+        ]
+      },
+      {
+        "lane": 13,
+        "entered": 1526,
+        "collision": 459,
+        "p": 0.300786369593709,
+        "ci95": [
+          0.27830028212939195,
+          0.32427295159624336
+        ]
+      },
+      {
+        "lane": 14,
+        "entered": 1067,
+        "collision": 297,
+        "p": 0.27835051546391754,
+        "ci95": [
+          0.2522895664088111,
+          0.30600178125642724
+        ]
+      }
+    ],
+    "hard": [
+      {
+        "lane": 1,
+        "entered": 100000,
+        "collision": 32382,
+        "p": 0.32382,
+        "ci95": [
+          0.3209265414351769,
+          0.3267269943065941
+        ]
+      },
+      {
+        "lane": 2,
+        "entered": 67618,
+        "collision": 22691,
+        "p": 0.3355763258304002,
+        "ci95": [
+          0.3320266316014945,
+          0.33914470189262313
+        ]
+      },
+      {
+        "lane": 3,
+        "entered": 44927,
+        "collision": 15154,
+        "p": 0.33730273554877915,
+        "ci95": [
+          0.33294491438044677,
+          0.341688378043793
+        ]
+      },
+      {
+        "lane": 4,
+        "entered": 29773,
+        "collision": 10122,
+        "p": 0.33997245826755784,
+        "ci95": [
+          0.33461260124680386,
+          0.34537360655839194
+        ]
+      },
+      {
+        "lane": 5,
+        "entered": 19651,
+        "collision": 6572,
+        "p": 0.33443590656964023,
+        "ci95": [
+          0.3278723080720207,
+          0.34106422510258394
+        ]
+      },
+      {
+        "lane": 6,
+        "entered": 13079,
+        "collision": 4424,
+        "p": 0.3382521599510666,
+        "ci95": [
+          0.33019230286714857,
+          0.3464070071787669
+        ]
+      },
+      {
+        "lane": 7,
+        "entered": 8655,
+        "collision": 2998,
+        "p": 0.3463893703061814,
+        "ci95": [
+          0.33643497580961296,
+          0.35648006723725373
+        ]
+      },
+      {
+        "lane": 8,
+        "entered": 5657,
+        "collision": 1912,
+        "p": 0.3379883330387131,
+        "ci95": [
+          0.32577527615658397,
+          0.35042128090659197
+        ]
+      },
+      {
+        "lane": 9,
+        "entered": 3745,
+        "collision": 1267,
+        "p": 0.3383177570093458,
+        "ci95": [
+          0.3233366483429676,
+          0.35363023123924786
+        ]
+      },
+      {
+        "lane": 10,
+        "entered": 2478,
+        "collision": 854,
+        "p": 0.3446327683615819,
+        "ci95": [
+          0.3261739475320378,
+          0.3635725697315942
+        ]
+      },
+      {
+        "lane": 11,
+        "entered": 1624,
+        "collision": 571,
+        "p": 0.3516009852216749,
+        "ci95": [
+          0.3287534553641017,
+          0.3751489390703445
+        ]
+      },
+      {
+        "lane": 12,
+        "entered": 1053,
+        "collision": 372,
+        "p": 0.35327635327635326,
+        "ci95": [
+          0.3249864948783433,
+          0.38263288725044486
+        ]
+      },
+      {
+        "lane": 13,
+        "entered": 681,
+        "collision": 225,
+        "p": 0.3303964757709251,
+        "ci95": [
+          0.29610705117013403,
+          0.3665886729213931
+        ]
+      },
+      {
+        "lane": 14,
+        "entered": 456,
+        "collision": 146,
+        "p": 0.3201754385964912,
+        "ci95": [
+          0.2790086026707986,
+          0.3643468484236652
+        ]
+      }
+    ]
+  },
+  "rows": [
+    {
+      "difficulty": "easy",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.08729655,
+      "rtp": 0.0874848,
+      "rtp_ci95": [
+        0.08378520886621611,
+        0.0911843911337839
+      ],
+      "house_edge": 0.9125152,
+      "collision_rate": 0.97897,
+      "finish_rate": 0.02103,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 8.74848,
+      "maximum_payout_santim": 416,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.08729655,
+      "rtp": 0.0874147,
+      "rtp_ci95": [
+        0.08371807328218869,
+        0.0911113267178113
+      ],
+      "house_edge": 0.9125853,
+      "collision_rate": 0.97897,
+      "finish_rate": 0.02103,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 26.22441,
+      "maximum_payout_santim": 1247,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.08729655,
+      "rtp": 0.08737965,
+      "rtp_ci95": [
+        0.08368450549017498,
+        0.09107479450982503
+      ],
+      "house_edge": 0.91262035,
+      "collision_rate": 0.97897,
+      "finish_rate": 0.02103,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 4368.9825,
+      "maximum_payout_santim": 207750,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_3",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5785353000000001,
+      "rtp": 0.5784566999999999,
+      "rtp_ci95": [
+        0.5744247836082805,
+        0.5824886163917194
+      ],
+      "house_edge": 0.42154330000000007,
+      "collision_rate": 0.55843,
+      "finish_rate": 0,
+      "cashout_rate": 0.44157,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 1.78731,
+      "average_payout_santim": 57.84567,
+      "maximum_payout_santim": 131,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_3",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5785353000000001,
+      "rtp": 0.5784567,
+      "rtp_ci95": [
+        0.5744247836082806,
+        0.5824886163917194
+      ],
+      "house_edge": 0.42154329999999995,
+      "collision_rate": 0.55843,
+      "finish_rate": 0,
+      "cashout_rate": 0.44157,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 1.78731,
+      "average_payout_santim": 173.53701,
+      "maximum_payout_santim": 393,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_3",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5785353000000001,
+      "rtp": 0.5784566999999999,
+      "rtp_ci95": [
+        0.5744247836082805,
+        0.5824886163917194
+      ],
+      "house_edge": 0.42154330000000007,
+      "collision_rate": 0.55843,
+      "finish_rate": 0,
+      "cashout_rate": 0.44157,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 1.78731,
+      "average_payout_santim": 28922.835,
+      "maximum_payout_santim": 65500,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_7",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.2617134,
+      "rtp": 0.26023599999999997,
+      "rtp_ci95": [
+        0.2563381256508011,
+        0.2641338743491988
+      ],
+      "house_edge": 0.7397640000000001,
+      "collision_rate": 0.8538,
+      "finish_rate": 0,
+      "cashout_rate": 0.1462,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 2.7146,
+      "average_payout_santim": 26.0236,
+      "maximum_payout_santim": 178,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_7",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.2617134,
+      "rtp": 0.260236,
+      "rtp_ci95": [
+        0.25633812565080116,
+        0.2641338743491989
+      ],
+      "house_edge": 0.739764,
+      "collision_rate": 0.8538,
+      "finish_rate": 0,
+      "cashout_rate": 0.1462,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 2.7146,
+      "average_payout_santim": 78.0708,
+      "maximum_payout_santim": 534,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_7",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.2617134,
+      "rtp": 0.26023599999999997,
+      "rtp_ci95": [
+        0.2563381256508011,
+        0.2641338743491988
+      ],
+      "house_edge": 0.7397640000000001,
+      "collision_rate": 0.8538,
+      "finish_rate": 0,
+      "cashout_rate": 0.1462,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 2.7146,
+      "average_payout_santim": 13011.8,
+      "maximum_payout_santim": 89000,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_14",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.058197700000000005,
+      "rtp": 0.0582531,
+      "rtp_ci95": [
+        0.05578967032678332,
+        0.060716529673216675
+      ],
+      "house_edge": 0.9417469,
+      "collision_rate": 0.97897,
+      "finish_rate": 0,
+      "cashout_rate": 0.02103,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 5.82531,
+      "maximum_payout_santim": 277,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_14",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.058197700000000005,
+      "rtp": 0.05825310000000001,
+      "rtp_ci95": [
+        0.05578967032678333,
+        0.06071652967321668
+      ],
+      "house_edge": 0.9417468999999999,
+      "collision_rate": 0.97897,
+      "finish_rate": 0,
+      "cashout_rate": 0.02103,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 17.47593,
+      "maximum_payout_santim": 831,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "cashout_14",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.058197700000000005,
+      "rtp": 0.0582531,
+      "rtp_ci95": [
+        0.05578967032678332,
+        0.06071652967321668
+      ],
+      "house_edge": 0.9417469,
+      "collision_rate": 0.97897,
+      "finish_rate": 0,
+      "cashout_rate": 0.02103,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 2912.655,
+      "maximum_payout_santim": 138500,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.8413680000000001,
+      "rtp": 0.84172,
+      "rtp_ci95": [
+        0.8388300835741314,
+        0.8446099164258686
+      ],
+      "house_edge": 0.15827999999999998,
+      "collision_rate": 0.2348,
+      "finish_rate": 0,
+      "cashout_rate": 0.7652,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 0.7652,
+      "average_payout_santim": 84.172,
+      "maximum_payout_santim": 110,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.8413680000000001,
+      "rtp": 0.84172,
+      "rtp_ci95": [
+        0.8388300835741314,
+        0.8446099164258686
+      ],
+      "house_edge": 0.15827999999999998,
+      "collision_rate": 0.2348,
+      "finish_rate": 0,
+      "cashout_rate": 0.7652,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 0.7652,
+      "average_payout_santim": 252.516,
+      "maximum_payout_santim": 330,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.8413680000000001,
+      "rtp": 0.84172,
+      "rtp_ci95": [
+        0.8388300835741312,
+        0.8446099164258687
+      ],
+      "house_edge": 0.15827999999999998,
+      "collision_rate": 0.2348,
+      "finish_rate": 0,
+      "cashout_rate": 0.7652,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 0.7652,
+      "average_payout_santim": 42086,
+      "maximum_payout_santim": 55000,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.1386652499999999,
+      "rtp": 1.1384389,
+      "rtp_ci95": [
+        1.1334893977067277,
+        1.1433884022932723
+      ],
+      "house_edge": -0.13843889999999992,
+      "collision_rate": 0.2348,
+      "finish_rate": 0.02103,
+      "cashout_rate": 0.74417,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 113.84389,
+      "maximum_payout_santim": 416,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.1386652499999999,
+      "rtp": 1.1383688,
+      "rtp_ci95": [
+        1.1334209410849903,
+        1.1433166589150099
+      ],
+      "house_edge": -0.13836880000000007,
+      "collision_rate": 0.2348,
+      "finish_rate": 0.02103,
+      "cashout_rate": 0.74417,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 341.51064,
+      "maximum_payout_santim": 1247,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "easy",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.1386652499999999,
+      "rtp": 1.13833375,
+      "rtp_ci95": [
+        1.1333867123127037,
+        1.1432807876872964
+      ],
+      "house_edge": -0.13833374999999992,
+      "collision_rate": 0.2348,
+      "finish_rate": 0.02103,
+      "cashout_rate": 0.74417,
+      "all14_survival_rate": 0.02103,
+      "average_crossings": 3.10347,
+      "average_payout_santim": 56916.6875,
+      "maximum_payout_santim": 207750,
+      "optimal_hidden_value": 1.1
+    },
+    {
+      "difficulty": "medium",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.05613300000000003,
+      "rtp": 0.053581500000000004,
+      "rtp_ci95": [
+        0.04972205067758841,
+        0.057440949322411596
+      ],
+      "house_edge": 0.9464185,
+      "collision_rate": 0.99265,
+      "finish_rate": 0.00735,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 5.35815,
+      "maximum_payout_santim": 729,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.05613300000000003,
+      "rtp": 0.0535815,
+      "rtp_ci95": [
+        0.049722050677588406,
+        0.05744094932241159
+      ],
+      "house_edge": 0.9464185,
+      "collision_rate": 0.99265,
+      "finish_rate": 0.00735,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 16.07445,
+      "maximum_payout_santim": 2187,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.05613300000000003,
+      "rtp": 0.0535815,
+      "rtp_ci95": [
+        0.049722050677588406,
+        0.05744094932241159
+      ],
+      "house_edge": 0.9464185,
+      "collision_rate": 0.99265,
+      "finish_rate": 0.00735,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 2679.075,
+      "maximum_payout_santim": 364500,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_3",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5659065,
+      "rtp": 0.5647133,
+      "rtp_ci95": [
+        0.5600433197065988,
+        0.5693832802934012
+      ],
+      "house_edge": 0.4352867,
+      "collision_rate": 0.64031,
+      "finish_rate": 0,
+      "cashout_rate": 0.35969,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 1.58388,
+      "average_payout_santim": 56.47133,
+      "maximum_payout_santim": 157,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_3",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5659065,
+      "rtp": 0.5647133000000001,
+      "rtp_ci95": [
+        0.5600433197065988,
+        0.5693832802934014
+      ],
+      "house_edge": 0.4352866999999999,
+      "collision_rate": 0.64031,
+      "finish_rate": 0,
+      "cashout_rate": 0.35969,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 1.58388,
+      "average_payout_santim": 169.41399,
+      "maximum_payout_santim": 471,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_3",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5659065,
+      "rtp": 0.5647133,
+      "rtp_ci95": [
+        0.5600433197065988,
+        0.5693832802934012
+      ],
+      "house_edge": 0.4352867,
+      "collision_rate": 0.64031,
+      "finish_rate": 0,
+      "cashout_rate": 0.35969,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 1.58388,
+      "average_payout_santim": 28235.665,
+      "maximum_payout_santim": 78500,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_7",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.2265732,
+      "rtp": 0.22365,
+      "rtp_ci95": [
+        0.21920819423265264,
+        0.22809180576734733
+      ],
+      "house_edge": 0.77635,
+      "collision_rate": 0.91125,
+      "finish_rate": 0,
+      "cashout_rate": 0.08875,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.23469,
+      "average_payout_santim": 22.365,
+      "maximum_payout_santim": 252,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_7",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.2265732,
+      "rtp": 0.22365,
+      "rtp_ci95": [
+        0.21920819423265267,
+        0.22809180576734733
+      ],
+      "house_edge": 0.77635,
+      "collision_rate": 0.91125,
+      "finish_rate": 0,
+      "cashout_rate": 0.08875,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.23469,
+      "average_payout_santim": 67.095,
+      "maximum_payout_santim": 756,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_7",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.2265732,
+      "rtp": 0.22365,
+      "rtp_ci95": [
+        0.21920819423265267,
+        0.22809180576734733
+      ],
+      "house_edge": 0.77635,
+      "collision_rate": 0.91125,
+      "finish_rate": 0,
+      "cashout_rate": 0.08875,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.23469,
+      "average_payout_santim": 11182.5,
+      "maximum_payout_santim": 126000,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_14",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.03742200000000002,
+      "rtp": 0.035720999999999996,
+      "rtp_ci95": [
+        0.033148033785058935,
+        0.03829396621494106
+      ],
+      "house_edge": 0.964279,
+      "collision_rate": 0.99265,
+      "finish_rate": 0,
+      "cashout_rate": 0.00735,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 3.5721,
+      "maximum_payout_santim": 486,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_14",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.03742200000000002,
+      "rtp": 0.035721,
+      "rtp_ci95": [
+        0.03314803378505894,
+        0.038293966214941064
+      ],
+      "house_edge": 0.964279,
+      "collision_rate": 0.99265,
+      "finish_rate": 0,
+      "cashout_rate": 0.00735,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 10.7163,
+      "maximum_payout_santim": 1458,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "cashout_14",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.03742200000000002,
+      "rtp": 0.035720999999999996,
+      "rtp_ci95": [
+        0.033148033785058935,
+        0.038293966214941064
+      ],
+      "house_edge": 0.964279,
+      "collision_rate": 0.99265,
+      "finish_rate": 0,
+      "cashout_rate": 0.00735,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 1786.05,
+      "maximum_payout_santim": 243000,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.846945,
+      "rtp": 0.8461544000000001,
+      "rtp_ci95": [
+        0.842860171590217,
+        0.8494486284097832
+      ],
+      "house_edge": 0.15384559999999992,
+      "collision_rate": 0.28292,
+      "finish_rate": 0,
+      "cashout_rate": 0.71708,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 0.71708,
+      "average_payout_santim": 84.61544,
+      "maximum_payout_santim": 118,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.846945,
+      "rtp": 0.8461544,
+      "rtp_ci95": [
+        0.8428601715902169,
+        0.8494486284097831
+      ],
+      "house_edge": 0.15384560000000003,
+      "collision_rate": 0.28292,
+      "finish_rate": 0,
+      "cashout_rate": 0.71708,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 0.71708,
+      "average_payout_santim": 253.84632,
+      "maximum_payout_santim": 354,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.846945,
+      "rtp": 0.8461544,
+      "rtp_ci95": [
+        0.842860171590217,
+        0.8494486284097831
+      ],
+      "house_edge": 0.15384560000000003,
+      "collision_rate": 0.28292,
+      "finish_rate": 0,
+      "cashout_rate": 0.71708,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 0.71708,
+      "average_payout_santim": 42307.72,
+      "maximum_payout_santim": 59000,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.2469456,
+      "rtp": 1.243216,
+      "rtp_ci95": [
+        1.2367121078585956,
+        1.2497198921414046
+      ],
+      "house_edge": -0.2432160000000001,
+      "collision_rate": 0.28292,
+      "finish_rate": 0.00735,
+      "cashout_rate": 0.70973,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 124.3216,
+      "maximum_payout_santim": 729,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.2469456,
+      "rtp": 1.243216,
+      "rtp_ci95": [
+        1.2367121078585956,
+        1.2497198921414046
+      ],
+      "house_edge": -0.2432160000000001,
+      "collision_rate": 0.28292,
+      "finish_rate": 0.00735,
+      "cashout_rate": 0.70973,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 372.9648,
+      "maximum_payout_santim": 2187,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "medium",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.2469456,
+      "rtp": 1.243216,
+      "rtp_ci95": [
+        1.2367121078585956,
+        1.2497198921414046
+      ],
+      "house_edge": -0.2432160000000001,
+      "collision_rate": 0.28292,
+      "finish_rate": 0.00735,
+      "cashout_rate": 0.70973,
+      "all14_survival_rate": 0.00735,
+      "average_crossings": 2.42703,
+      "average_payout_santim": 62160.8,
+      "maximum_payout_santim": 364500,
+      "optimal_hidden_value": 1.18
+    },
+    {
+      "difficulty": "hard",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.040547999999999994,
+      "rtp": 0.043948799999999996,
+      "rtp_ci95": [
+        0.039257398408909294,
+        0.0486402015910907
+      ],
+      "house_edge": 0.9560512,
+      "collision_rate": 0.99664,
+      "finish_rate": 0.00336,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 4.39488,
+      "maximum_payout_santim": 1308,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.040547999999999994,
+      "rtp": 0.0439488,
+      "rtp_ci95": [
+        0.039257398408909294,
+        0.048640201591090705
+      ],
+      "house_edge": 0.9560512,
+      "collision_rate": 0.99664,
+      "finish_rate": 0.00336,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 13.18464,
+      "maximum_payout_santim": 3924,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "always_accept_to_finish",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.040547999999999994,
+      "rtp": 0.0439488,
+      "rtp_ci95": [
+        0.0392573984089093,
+        0.0486402015910907
+      ],
+      "house_edge": 0.9560512,
+      "collision_rate": 0.99664,
+      "finish_rate": 0.00336,
+      "cashout_rate": 0,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 2197.44,
+      "maximum_payout_santim": 654000,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_3",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5746188999999998,
+      "rtp": 0.5708554,
+      "rtp_ci95": [
+        0.5653959114417817,
+        0.5763148885582183
+      ],
+      "house_edge": 0.4291446,
+      "collision_rate": 0.70422,
+      "finish_rate": 0,
+      "cashout_rate": 0.29578,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.41757,
+      "average_payout_santim": 57.08554,
+      "maximum_payout_santim": 193,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_3",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5746188999999998,
+      "rtp": 0.5708554,
+      "rtp_ci95": [
+        0.5653959114417817,
+        0.5763148885582183
+      ],
+      "house_edge": 0.4291446,
+      "collision_rate": 0.70422,
+      "finish_rate": 0,
+      "cashout_rate": 0.29578,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.41757,
+      "average_payout_santim": 171.25662,
+      "maximum_payout_santim": 579,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_3",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.5746188999999998,
+      "rtp": 0.5708554,
+      "rtp_ci95": [
+        0.5653959114417817,
+        0.5763148885582183
+      ],
+      "house_edge": 0.4291446,
+      "collision_rate": 0.70422,
+      "finish_rate": 0,
+      "cashout_rate": 0.29578,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.41757,
+      "average_payout_santim": 28542.77,
+      "maximum_payout_santim": 96500,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_7",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.20591479999999995,
+      "rtp": 0.204568,
+      "rtp_ci95": [
+        0.19937204239038728,
+        0.20976395760961275
+      ],
+      "house_edge": 0.795432,
+      "collision_rate": 0.9438,
+      "finish_rate": 0,
+      "cashout_rate": 0.0562,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.88684,
+      "average_payout_santim": 20.4568,
+      "maximum_payout_santim": 364,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_7",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.20591479999999995,
+      "rtp": 0.204568,
+      "rtp_ci95": [
+        0.19937204239038725,
+        0.20976395760961272
+      ],
+      "house_edge": 0.795432,
+      "collision_rate": 0.9438,
+      "finish_rate": 0,
+      "cashout_rate": 0.0562,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.88684,
+      "average_payout_santim": 61.3704,
+      "maximum_payout_santim": 1092,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_7",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.20591479999999995,
+      "rtp": 0.204568,
+      "rtp_ci95": [
+        0.19937204239038725,
+        0.20976395760961272
+      ],
+      "house_edge": 0.795432,
+      "collision_rate": 0.9438,
+      "finish_rate": 0,
+      "cashout_rate": 0.0562,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.88684,
+      "average_payout_santim": 10228.4,
+      "maximum_payout_santim": 182000,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_14",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.027031999999999997,
+      "rtp": 0.0292992,
+      "rtp_ci95": [
+        0.02617159893927287,
+        0.03242680106072713
+      ],
+      "house_edge": 0.9707008,
+      "collision_rate": 0.99664,
+      "finish_rate": 0,
+      "cashout_rate": 0.00336,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 2.92992,
+      "maximum_payout_santim": 872,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_14",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.027031999999999997,
+      "rtp": 0.029299199999999997,
+      "rtp_ci95": [
+        0.02617159893927286,
+        0.03242680106072713
+      ],
+      "house_edge": 0.9707008,
+      "collision_rate": 0.99664,
+      "finish_rate": 0,
+      "cashout_rate": 0.00336,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 8.78976,
+      "maximum_payout_santim": 2616,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "cashout_14",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.027031999999999997,
+      "rtp": 0.0292992,
+      "rtp_ci95": [
+        0.02617159893927287,
+        0.03242680106072714
+      ],
+      "house_edge": 0.9707008,
+      "collision_rate": 0.99664,
+      "finish_rate": 0,
+      "cashout_rate": 0.00336,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 1464.96,
+      "maximum_payout_santim": 436000,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.8655104,
+      "rtp": 0.8644992,
+      "rtp_ci95": [
+        0.8607844952479367,
+        0.8682139047520634
+      ],
+      "house_edge": 0.13550079999999998,
+      "collision_rate": 0.32461,
+      "finish_rate": 0,
+      "cashout_rate": 0.67539,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 0.67539,
+      "average_payout_santim": 86.44992,
+      "maximum_payout_santim": 128,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.8655104,
+      "rtp": 0.8644992,
+      "rtp_ci95": [
+        0.8607844952479365,
+        0.8682139047520635
+      ],
+      "house_edge": 0.13550079999999998,
+      "collision_rate": 0.32461,
+      "finish_rate": 0,
+      "cashout_rate": 0.67539,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 0.67539,
+      "average_payout_santim": 259.34976,
+      "maximum_payout_santim": 384,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "optimal_hidden_adaptive",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 0.8655104,
+      "rtp": 0.8644992,
+      "rtp_ci95": [
+        0.8607844952479365,
+        0.8682139047520634
+      ],
+      "house_edge": 0.13550079999999998,
+      "collision_rate": 0.32461,
+      "finish_rate": 0,
+      "cashout_rate": 0.67539,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 0.67539,
+      "average_payout_santim": 43224.96,
+      "maximum_payout_santim": 64000,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 100,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.3763108,
+      "rtp": 1.3740094999999999,
+      "rtp_ci95": [
+        1.3653975371412557,
+        1.3826214628587443
+      ],
+      "house_edge": -0.3740094999999999,
+      "collision_rate": 0.32461,
+      "finish_rate": 0.00336,
+      "cashout_rate": 0.67203,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 137.40095,
+      "maximum_payout_santim": 1308,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 300,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.3763108,
+      "rtp": 1.3740095,
+      "rtp_ci95": [
+        1.365397537141256,
+        1.382621462858744
+      ],
+      "house_edge": -0.3740095000000001,
+      "collision_rate": 0.32461,
+      "finish_rate": 0.00336,
+      "cashout_rate": 0.67203,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 412.20285,
+      "maximum_payout_santim": 3924,
+      "optimal_hidden_value": 1.28
+    },
+    {
+      "difficulty": "hard",
+      "policy": "visible_outcome_selective",
+      "bet_santim": 50000,
+      "rounds": 100000,
+      "calibration_rounds": 100000,
+      "theoretical_rtp": 1.3763108,
+      "rtp": 1.3740095,
+      "rtp_ci95": [
+        1.3653975371412561,
+        1.382621462858744
+      ],
+      "house_edge": -0.3740095000000001,
+      "collision_rate": 0.32461,
+      "finish_rate": 0.00336,
+      "cashout_rate": 0.67203,
+      "all14_survival_rate": 0.00336,
+      "average_crossings": 1.98921,
+      "average_payout_santim": 68700.475,
+      "maximum_payout_santim": 654000,
+      "optimal_hidden_value": 1.28
+    }
+  ]
+}

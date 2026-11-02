@@ -4,21 +4,37 @@ require('dotenv').config();
 const { Pool, types } = require('pg');
 const bcrypt = require('bcryptjs');
 const { sanitizeConnectionString } = require('./scripts/run-migrations');
-const { assertSeparateTestDatabase } = require('./scripts/test-db-safety');
+const { assertSeparateTestDatabase, assertExpectedNeonTestEndpoint } = require('./scripts/test-db-safety');
+const { resolveRuntimeConnectionString, postgresSslOptions } = require('./scripts/database-config');
 
 // Parse BIGINT (int8) as JavaScript numbers for smooth arithmetic and strict === comparison
 types.setTypeParser(types.builtins.INT8, (val) => (val === null ? null : parseInt(val, 10)));
 
 const integrationTestMode = process.env.FETAN_INTEGRATION_TEST === '1';
-if (integrationTestMode && process.env.FETAN_TEST_DB_PREFLIGHT !== 'passed') {
+const testDatabaseOnly = process.env.FETAN_TEST_DATABASE_ONLY === '1';
+if ((integrationTestMode || testDatabaseOnly) && process.env.FETAN_TEST_DB_PREFLIGHT !== 'passed') {
   throw new Error('Integration database must pass the isolated launcher preflight before pool initialization.');
 }
-const connString = integrationTestMode
+const connString = testDatabaseOnly
+  ? (() => {
+      const expectedEndpointId = process.env.FETAN_EXPECTED_TEST_ENDPOINT_ID;
+      const expectedProjectId = process.env.FETAN_EXPECTED_TEST_PROJECT_ID;
+      const expectedBranchId = process.env.FETAN_EXPECTED_TEST_BRANCH_ID;
+      if (expectedProjectId !== 'muddy-dew-45860324' || expectedBranchId !== 'br-patient-recipe-b58ey3ge') {
+        throw new Error('Explicit expected Neon test project and branch IDs are required.');
+      }
+      if (process.env.TEST_DATABASE_BRANCH_ID !== expectedBranchId) {
+        throw new Error('TEST_DATABASE_BRANCH_ID does not match the explicitly expected test branch.');
+      }
+      assertExpectedNeonTestEndpoint(process.env.TEST_DATABASE_URL, expectedEndpointId);
+      return sanitizeConnectionString(process.env.TEST_DATABASE_URL);
+    })()
+  : integrationTestMode
   ? (() => {
       assertSeparateTestDatabase(process.env);
       return sanitizeConnectionString(process.env.TEST_DATABASE_URL);
     })()
-  : sanitizeConnectionString(process.env.DATABASE_URL || process.env.TEST_DATABASE_URL || '');
+  : resolveRuntimeConnectionString(process.env, sanitizeConnectionString);
 
 if (!connString) {
   console.warn('[db.js] Warning: no database connection is configured. Database operations will fail until configured.');
@@ -27,7 +43,7 @@ if (!connString) {
 // Configured for Neon serverless: small pool, idle timeouts, keepalives
 const pool = new Pool({
   connectionString: connString,
-  ssl: { rejectUnauthorized: false },
+  ssl: postgresSslOptions(),
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 25000,

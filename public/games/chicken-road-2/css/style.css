@@ -90,6 +90,18 @@ body {
   font-size: 11px;
   vertical-align: 1px;
 }
+.home-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  flex: 0 0 auto; min-height: 32px; padding: 0 9px;
+  border: 1px solid rgba(255, 195, 49, 0.48); border-radius: 9px;
+  color: #ffd36b; background: linear-gradient(180deg, #151719, #090a0b);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 8px rgba(0,0,0,.24);
+  font-size: 11px; font-weight: 800; letter-spacing: .15px; text-decoration: none;
+  white-space: nowrap; -webkit-tap-highlight-color: transparent;
+}
+.home-btn > span:first-child { color: #ffc331; font-size: 14px; line-height: 1; }
+.home-btn:hover { border-color: rgba(255, 211, 41, 0.8); color: #ffe29a; }
+.home-btn:active { transform: scale(.96); }
 .top-actions { display: flex; align-items: center; gap: 6px; }
 .balance-pill {
   display: inline-flex;
@@ -443,13 +455,29 @@ body {
 .menu-item b.off { color: #7e89a6; }
 
 /* Responsive */
-@media (max-width: 400px) {
-  .brand-text { font-size: 12px; }
-  .brand-icon { width: 31px; height: 31px; }
-  .brand-icon svg { width: 23px; height: 23px; }
-  .balance-pill { font-size: 11.5px; padding: 0 9px; height: 32px; }
-  .top-actions .icon-btn { width: 32px; height: 32px; }
+@media (max-width: 520px) {
+  .topbar { gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .home-btn { min-height: 30px; padding: 0 7px; font-size: 10px; }
+  .brand { gap: 4px; }
+  .brand-icon { display: none; }
+  .brand-text { font-size: 12px; letter-spacing: 0; }
+  .balance-pill { gap: 4px; font-size: 10px; padding: 0 7px; letter-spacing: 0; }
+  .balance-pill .coin-dot { display: none; }
+  .top-actions .icon-btn { width: 31px; height: 31px; }
   .top-actions { gap: 4px; }
+}
+
+@media (max-width: 400px) {
+  .topbar { gap: 5px; padding-left: 9px; padding-right: 9px; }
+  .home-btn { min-height: 30px; padding: 0 7px; font-size: 10px; }
+  .brand { gap: 4px; }
+  .brand-text { display: none; }
+  .brand-icon { display: grid; }
+  .balance-pill { gap: 4px; font-size: 9.5px; padding: 0 5px; height: 30px; letter-spacing: 0; }
+  .balance-pill .coin-dot { width: 13px; height: 13px; }
+  .balance-pill .coin-dot::after { font-size: 7px; }
+  .top-actions .icon-btn { width: 29px; height: 29px; }
+  .top-actions { gap: 3px; }
   .chip { width: 33px; height: 30px; font-size: 11.5px; }
   .bet-input { font-size: 15.5px; }
   .mult-badge { width: 68px; height: 68px; right: 9px; }
@@ -470,7 +498,8 @@ body {
 
 @media (max-width: 360px) {
   .brand-text { display: none; }
-  .topbar { padding-left: 10px; padding-right: 10px; }
+  .brand-icon { display: grid; }
+  .topbar { padding-left: 8px; padding-right: 8px; }
 }
 
 @media (max-height: 700px) {
@@ -552,6 +581,14 @@ body {
 html.fetan-integrated .ticker-row,
 html.fetan-integrated .disclaimer { display: none !important; }
 html.fetan-integrated #menuReset { display: initial !important; }
+html.fetan-integrated .model-c-note {
+  position: absolute; z-index: 7; top: 8px; left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - 20px); padding: 5px 10px;
+  border: 1px solid rgba(255,211,41,.24); border-radius: 10px;
+  color: #f2dfa0; background: rgba(8,12,17,.8); text-align: center;
+  font-size: clamp(9px, 1.6vw, 11px); line-height: 1.35; pointer-events: none;
+}
+html.fetan-integrated .model-c-note[hidden] { display: none; }
 html.fetan-integrated .integration-blocker {
   position: absolute;
   inset: 12px;

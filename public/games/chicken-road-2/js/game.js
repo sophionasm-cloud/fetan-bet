@@ -39,6 +39,7 @@
   const resultAmount = $('resultAmount');
   const resultSub = $('resultSub');
   const resultBtn = $('resultBtn');
+  const verifyRoundBtn = $('verifyRoundBtn');
   const toastWrap = $('toastWrap');
   const howModal = $('howModal');
   const menuModal = $('menuModal');
@@ -50,6 +51,7 @@
   const menuReset = $('menuReset');
   const integrationBlocker = $('integrationBlocker');
   const integrationWalletStatus = $('integrationWalletStatus');
+  const modelCNote = $('modelCNote');
 
   // ---------------------------------------------------------------- Constants
   const LANES = 14;
@@ -57,7 +59,8 @@
   const SIDE_L = 200;
   const SIDE_R = 190;
   const integrated = new URLSearchParams(location.search).get('fetan') === '1';
-  // Integrated iframe is demo-only until the approved server engine is ready.
+  // Real wallet mode stays disabled until isolated PostgreSQL integration tests pass.
+  // Keep real settlement disabled until the real service passes isolated DB integration tests.
   const realWalletMode = false;
   const MIN_BET = 1;
   const MAX_BET = 500;
@@ -149,7 +152,7 @@
     return Number(n).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }) + (integrated ? ' DEMO ETB' : ' ETB');
+    }) + (integrated && !realWalletMode ? ' DEMO ETB' : ' ETB');
   }
   function grossPreviewBirr(stakeBirr, multiplier) {
     const stakeCents = BigInt(Math.round(Number(stakeBirr) * 100));
@@ -181,10 +184,13 @@
     pos: 0,
     maxLanes: LANES,
     serverLadder: [],
+    serverRoundId: null,
     remoteAction: null,
     pendingActionId: null,
+    pendingStartActionId: null,
     remoteBusy: false,
     remoteReady: !integrated,
+    remoteError: null,
     lane: 0,
     mult: 1,
     hop: null,
@@ -267,44 +273,100 @@
   }
 
   async function fetanApi(path, payload) {
-    const response = await fetch(`/api/games/road${path}`, {
-      method: payload === undefined ? 'GET' : 'POST',
-      credentials: 'same-origin',
-      headers: payload === undefined ? {} : { 'Content-Type': 'application/json' },
-      body: payload === undefined ? undefined : JSON.stringify(payload),
-    });
+    let response;
+    try {
+      response = await fetch(`/api/games/chicken-road-dash/${realWalletMode ? 'real' : 'demo'}${path}`, {
+        method: payload === undefined ? 'GET' : 'POST',
+        credentials: 'same-origin',
+        headers: payload === undefined ? {} : { 'Content-Type': 'application/json' },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+      });
+    } catch {
+      const error = new Error('NETWORK');
+      error.code = 'NETWORK';
+      throw error;
+    }
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'GENERIC');
+    if (!response.ok) {
+      const error = new Error(data.error || (response.status === 404 ? 'ENDPOINT_NOT_FOUND' : 'GENERIC'));
+      error.status = response.status;
+      throw error;
+    }
     return data;
   }
 
   function nextActionId() {
-    return crypto.randomUUID?.() || `cr2_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+    return crypto.randomUUID?.() || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
   }
 
-  function useRoadState(data) {
-    state.balance = Number(data.balance || 0) / 100;
-    state.maxLanes = Math.max(1, Number(data.maxSteps || laneLimit()));
-    state.serverLadder = Array.isArray(data.ladder) ? data.ladder : [];
-    if (data.difficulty && (DIFFICULTY[data.difficulty] || data.difficulty === 'hardcore')) state.difficulty = data.difficulty;
-    if (data.bet !== undefined) state.bet = Math.max(MIN_BET, Number(data.bet) / 100);
-    else state.bet = Math.min(state.bet, Math.max(MIN_BET, Math.floor(state.balance)));
-    state.pos = data.active ? Number(data.step || 0) : 0;
-    state.lane = state.pos;
-    state.mult = Number(data.mult || 0);
-    state.phase = data.active ? 'playing' : 'idle';
+  function useServerRound(data) {
+    state.balance = Number(data.balance_santim ?? data.balance ?? 0) / 100;
+    const round = data.round || (data.id ? data : null);
+    if (!round) {
+      state.serverRoundId = null;
+      state.phase = 'idle';
+      state.pos = state.lane = 0;
+      state.mult = 1;
+      state.serverLadder = [];
+    } else {
+      state.serverRoundId = round.id;
+      state.serverLadder = Array.isArray(round.ladder) ? round.ladder : [];
+      state.difficulty = round.difficulty;
+      state.bet = Number(round.bet_santim) / 100;
+      state.pos = Math.min(15, Number(round.step || 0));
+      state.lane = Math.min(14, state.pos);
+      state.mult = Number(round.multiplier || (state.pos ? state.serverLadder[Math.min(state.pos, 14) - 1] : 1));
+      state.phase = round.status === 'active' ? 'playing' : round.status === 'crashed' ? 'crashed' : round.status === 'finished' ? 'finished' : round.status === 'cashed_out' ? 'cashed' : 'idle';
+      if (round.status !== 'active') {
+        state.lastOutcome = { type: round.status === 'finished' ? 'finish' : round.status === 'cashed_out' ? 'cash' : 'crash', payout: Number(round.payout_santim || 0) / 100 };
+        state.resultTimer = 0;
+        state.resultShown = false;
+      }
+    }
     state.remoteReady = true;
+    state.remoteError = null;
+    state.remoteBusy = false;
     state.remoteAction = null;
     state.pendingActionId = null;
     state.hop = null;
-    state.cameraX = 0;
-    state.cameraTarget = 0;
     resetTraffic();
+    if (integrationBlocker) integrationBlocker.hidden = true;
+    if (menuReset) menuReset.disabled = false;
     updateHUD();
   }
 
   function apiErrorMessage(error) {
-    return ({ LOGIN: 'Please sign in again to play.', INSUFFICIENT: 'Your Fetan Bet wallet does not have enough balance.', ACTIVE_ROUND: 'An active Chicken Road round already exists; it has been restored.', STALE_ACTION: 'The round changed in another window. Its latest server state has been restored.', PAYOUT_LIMIT: 'This payout exceeds the safe settlement limit. Cash out the current round.' })[error?.message] || 'The server could not complete that action. Check the round status and retry.';
+    const code = error?.code || error?.message;
+    return ({
+      NETWORK: 'Cannot reach the local Fetan Bet server. Check that it is running, then reload.',
+      LOGIN: 'Your customer session is missing or expired. Sign in to Fetan Bet, then reopen the game.',
+      ENDPOINT_NOT_FOUND: 'The Chicken Road Dash API is unavailable. Restart the server and reload.',
+      SCHEMA_NOT_READY: 'Chicken Road Dash tables are missing. The required migration must be applied to the authorized test database.',
+      SERVICE_UNAVAILABLE: 'The server cannot reach its database. The wallet was not changed.',
+      GENERIC: 'The server could not complete that request. Check server logs; no local balance fallback was used.',
+      INSUFFICIENT: 'Your Fetan Bet wallet does not have enough balance.',
+      INSUFFICIENT_DEMO: 'Not enough DEMO ETB for this bet.',
+      ACTIVE_ROUND: 'An active Chicken Road round already exists; it has been restored.',
+      STALE_ACTION: 'The round changed in another window. Its latest server state has been restored.',
+      PAYOUT_LIMIT: 'This payout exceeds the safe settlement limit. Cash out the current round.',
+    })[code] || (error?.name === 'TypeError'
+      ? 'Cannot reach the local Fetan Bet server. Check that it is running, then reload.'
+      : `The game API request failed${error?.status ? ` (HTTP ${error.status})` : ''}. No local balance fallback was used.`);
+  }
+
+  function showGameServiceError(error) {
+    state.remoteReady = false;
+    state.remoteBusy = false;
+    state.remoteError = apiErrorMessage(error);
+    if (integrationBlocker) integrationBlocker.hidden = false;
+    const heading = integrationBlocker?.querySelector('strong');
+    if (heading) heading.textContent = `${realWalletMode ? 'WALLET' : 'DEMO BALANCE'} UNAVAILABLE`;
+    if (integrationWalletStatus) integrationWalletStatus.textContent = state.remoteError;
+    if (menuReset) menuReset.disabled = true;
+    updateHUD();
   }
 
   // ---------------------------------------------------------------- UI
@@ -320,7 +382,9 @@
   }
 
   function updateHUD() {
-    balanceEl.textContent = integrated ? fmtMoney(state.balance).replace(' ETB', ' DEMO ETB') : `${fmtInt(state.balance)} ETB`;
+    balanceEl.textContent = integrated
+      ? (state.remoteReady ? fmtMoney(state.balance) : state.remoteError ? `Unavailable · ${realWalletMode ? 'ETB' : 'DEMO ETB'}` : `Loading ${realWalletMode ? 'ETB' : 'DEMO ETB'}…`)
+      : `${fmtInt(state.balance)} ETB`;
     betAmountEl.textContent = fmtInt(state.bet);
     const active = state.phase === 'playing';
     const settling = state.phase === 'crashed' || state.phase === 'cashed' || state.phase === 'finished';
@@ -341,7 +405,9 @@
     nextMultEl.textContent = nextText;
     nextMultEl.parentElement.classList.toggle('muted', settling);
     const previewMultiplier = state.pos >= finishPosition() - 1 ? state.mult * 1.5 : state.mult;
-    cashValueEl.textContent = fmtMoney(grossPreviewBirr(state.bet, previewMultiplier));
+    if (integrated && active) {
+      cashValueEl.textContent = fmtMoney(Math.round(Math.round(state.bet * 100) * previewMultiplier) / 100);
+    } else cashValueEl.textContent = fmtMoney(grossPreviewBirr(state.bet, previewMultiplier));
     playBtn.classList.toggle('hidden', active || settling);
     playActions.classList.toggle('hidden', !active);
     if (active) {
@@ -358,7 +424,7 @@
     }
 
     if (state.phase === 'idle') {
-      stageHint.textContent = integrated ? 'DEMO MODE · Play with a separate demo balance' : 'Press Play, then hop across the road';
+      stageHint.textContent = integrated ? (realWalletMode ? 'Play with your Fetan Bet wallet' : 'DEMO MODE · Play with a separate demo balance') : 'Press Play, then hop across the road';
       stageHint.classList.remove('fade');
     } else if (active) {
       if (state.hop) stageHint.textContent = 'Jumping…';
@@ -378,6 +444,11 @@
     resultAmount.textContent = amount;
     resultSub.textContent = sub;
     resultBtn.textContent = 'Play again';
+    if (verifyRoundBtn) {
+      verifyRoundBtn.classList.toggle('hidden', !integrated || !state.serverRoundId);
+      verifyRoundBtn.disabled = false;
+      verifyRoundBtn.textContent = 'Verify committed round';
+    }
     resultOverlay.classList.add('show');
     updateHUD();
   }
@@ -426,34 +497,29 @@
   // ---------------------------------------------------------------- Round flow
   function startRound() {
     startAudio();
-    if (integrated && realWalletMode) return;
-    if (integrated && realWalletMode) {
+    if (integrated) {
       if (!state.remoteReady || state.remoteBusy) return;
       state.remoteBusy = true;
       updateHUD();
-      fetanApi('/start', {
-        bet: Math.round(state.bet * 100), difficulty: state.difficulty,
-        client_seed: `fetan_cr2_${Date.now().toString(36)}`
-      }).then((data) => {
-        useRoadState(data);
+      state.pendingStartActionId ||= nextActionId();
+      fetanApi('/start', { bet_santim: Math.round(state.bet * 100), difficulty: state.difficulty, action_id: state.pendingStartActionId }).then((round) => {
+        state.pendingStartActionId = null;
+        useServerRound(round);
         state.phase = 'playing';
-        state.pos = 0;
-        state.mult = 0;
-        state.remoteBusy = false;
+        state.pos = state.lane = 0;
+        state.mult = 1;
         state.particles = [];
         state.shake = 0;
         state.resultTimer = 0;
         state.lastOutcome = null;
-        state.cameraX = 0;
-        state.cameraTarget = 0;
+        state.cameraX = state.cameraTarget = 0;
         hideResult();
-        resetTraffic();
+        saveStore();
         updateHUD();
-        stageHint.textContent = 'Round started · tap GO to cross';
+      stageHint.textContent = realWalletMode ? 'Server-committed outcomes; traffic is visual only.' : 'DEMO · Outcomes are committed before play; traffic is visual only.';
         play('click');
       }).catch(async (error) => {
-        state.remoteBusy = false;
-        try { useRoadState(await fetanApi('/')); } catch { state.remoteReady = false; }
+        try { useServerRound(await fetanApi('')); } catch { showGameServiceError(error); }
         toast(apiErrorMessage(error), 'bad');
         updateHUD();
       });
@@ -490,24 +556,18 @@
 
   function hop() {
     if (state.phase !== 'playing' || state.hop) return;
-    if (integrated && realWalletMode) return;
-    if (state.pos >= finishPosition()) return;
-    if (integrated && realWalletMode) {
-      if (state.remoteBusy) return;
+    if (integrated) {
+      if (state.remoteBusy || !state.serverRoundId) return;
       state.remoteBusy = true;
       state.pendingActionId ||= nextActionId();
       const actionId = state.pendingActionId;
-      const expectedStep = state.pos;
       updateHUD();
-      fetanApi('/step', { action_id: actionId, expected_step: expectedStep }).then((result) => {
+      fetanApi('/cross', { round_id: state.serverRoundId, action_id: actionId }).then((result) => {
         state.remoteAction = result;
         state.pendingActionId = null;
         state.remoteBusy = false;
-        state.hop = {
-          from: state.pos, to: state.pos + 1,
-          x0: posX(state.pos), x1: posX(state.pos + 1), t: 0,
-          dur: DIFFICULTY[state.difficulty]?.hopTime || 0.3,
-        };
+        state.hop = { from: state.pos, to: result.lane, x0: posX(state.pos), x1: posX(result.lane), t: 0,
+          dur: DIFFICULTY[state.difficulty]?.hopTime || 0.3 };
         play('hop');
         addDust(posX(state.pos), roadCenterY() + 24);
         updateHUD();
@@ -515,11 +575,34 @@
         state.remoteBusy = false;
         if (error.message === 'STALE_ACTION') {
           state.pendingActionId = null;
-          try { useRoadState(await fetanApi('/')); } catch { /* Keep the last confirmed screen state. */ }
+          try { useServerRound(await fetanApi('')); } catch { /* preserve the last confirmed state */ }
         }
         toast(apiErrorMessage(error), 'bad');
         updateHUD();
       });
+      return;
+    }
+    if (state.pos >= finishPosition()) return;
+    if (integrated) {
+      const result = state.remoteAction;
+      state.remoteAction = null;
+      if (!result) { toast('The committed server result is missing. Reloading the round.', 'bad'); return; }
+      state.balance = Number(result.balance_santim ?? state.balance * 100) / 100;
+      state.pos = Number(result.step || to);
+      state.lane = Math.min(LANES, state.pos);
+      state.mult = Number(result.multiplier || 0);
+      if (result.crashed) {
+        state.lastOutcome = { type: 'crash', payout: 0 };
+        crash(null);
+        return;
+      }
+      play('coin');
+      if (result.finished) {
+        finishRound(result);
+        return;
+      }
+      updateHUD();
+      stageHint.textContent = realWalletMode ? 'Safe crossing · traffic is visual only; accept next crossing or cash out.' : 'DEMO · Crossing was safe. Traffic is visual only; accept next crossing or cash out.';
       return;
     }
     const fromPos = state.pos;
@@ -541,16 +624,21 @@
     const to = state.hop.to;
     state.hop = null;
     state.pos = to;
-    if (integrated && realWalletMode) {
+    if (integrated) {
       const result = state.remoteAction;
       state.remoteAction = null;
-      if (!result) { toast('The server result is missing. Reloading the round state.', 'bad'); return; }
-      state.balance = Number(result.balance || 0) / 100;
+      if (!result) {
+        toast('The committed server result is missing. Reloading the round.', 'bad');
+        fetanApi('').then(useServerRound).catch(showGameServiceError);
+        return;
+      }
+      state.balance = Number(result.balance_santim ?? state.balance * 100) / 100;
+      state.pos = Number(result.step ?? to);
+      state.lane = Math.min(LANES, state.pos);
       state.mult = Number(result.multiplier || 0);
-      state.serverLadder = Array.isArray(result.ladder) ? result.ladder : state.serverLadder;
-      state.lane = Number(result.step || to);
       if (result.crashed) {
-        crash({ server: true });
+        state.lastOutcome = { type: 'crash', payout: 0 };
+        crash(null);
         return;
       }
       play('coin');
@@ -558,8 +646,11 @@
         finishRound(result);
         return;
       }
+      multBadge.classList.remove('pulse');
+      void multBadge.offsetWidth;
+      multBadge.classList.add('pulse');
       updateHUD();
-      stageHint.textContent = 'Safe crossing · hop again or cash out';
+      stageHint.textContent = realWalletMode ? 'Safe crossing · traffic is visual only; accept next crossing or cash out.' : 'DEMO · Crossing was safe. Traffic is visual only; accept next crossing or cash out.';
       return;
     }
     if (to <= laneLimit()) {
@@ -580,31 +671,30 @@
 
   function cashOut() {
     if (state.phase !== 'playing' || state.hop) return;
-    if (integrated && realWalletMode) return;
-    if (integrated && realWalletMode) {
-      if (state.remoteBusy || state.pos < 1) return;
+    if (integrated) {
+      if (state.remoteBusy || state.pos < 1 || !state.serverRoundId) return;
       state.remoteBusy = true;
       state.pendingActionId ||= nextActionId();
       const actionId = state.pendingActionId;
       updateHUD();
-      fetanApi('/cashout', { action_id: actionId, expected_step: state.pos }).then((result) => {
+      fetanApi('/cashout', { round_id: state.serverRoundId, action_id: actionId }).then((result) => {
         state.pendingActionId = null;
         state.remoteBusy = false;
-        state.balance = Number(result.balance || 0) / 100;
+        state.balance = Number(result.balance_santim) / 100;
         state.phase = 'cashed';
-        state.lastOutcome = { type: 'cash', payout: Number(result.payout || 0) / 100, net: Number(result.net || 0) / 100 };
+        state.lastOutcome = { type: 'cash', payout: Number(result.payout_santim) / 100 };
         state.resultTimer = 0.8;
         state.cameraTarget = state.cameraX;
         saveStore();
         play('cash');
         addConfetti(posX(state.pos), roadCenterY(), 48, false);
         updateHUD();
-        stageHint.textContent = integrated ? 'DEMO MODE · Banked it!' : 'Banked through Fetan Bet';
+        stageHint.textContent = realWalletMode ? 'Banked it!' : 'DEMO MODE · Banked it!';
       }).catch(async (error) => {
         state.remoteBusy = false;
         if (error.message === 'STALE_ACTION') {
           state.pendingActionId = null;
-          try { useRoadState(await fetanApi('/')); } catch { /* Preserve last confirmed state. */ }
+          try { useServerRound(await fetanApi('')); } catch { /* preserve confirmed state */ }
         }
         toast(apiErrorMessage(error), 'bad');
         updateHUD();
@@ -625,9 +715,9 @@
   }
 
   function finishRound(serverResult = null) {
-    const payout = integrated && realWalletMode ? Number(serverResult?.payout || 0) / 100 : round2(state.bet * state.mult * 1.5);
+    const payout = integrated ? Number(serverResult?.payout_santim || 0) / 100 : round2(state.bet * state.mult * 1.5);
     state.phase = 'finished';
-    state.balance = integrated && realWalletMode ? Number(serverResult?.balance || 0) / 100 : round2(state.balance + payout);
+    state.balance = integrated ? Number(serverResult?.balance_santim ?? state.balance * 100) / 100 : round2(state.balance + payout);
     state.pos = finishPosition();
     state.lastOutcome = { type: 'finish', payout };
     state.resultTimer = 0.95;
@@ -668,7 +758,7 @@
         `14 lanes crossed · ${fmtMult(state.mult)} + 1.5x finish bonus`, 'CLEAN CROSSING');
     } else {
       showResult('bad', 'CRASHED!', fmtMoney(0),
-        'A car got you. Try a safer lane timing.', 'ROUND OVER');
+        integrated ? 'The server-committed crossing crashed. Traffic is visual only.' : 'A car got you. Try a safer crossing.', 'ROUND OVER');
     }
   }
 
@@ -1504,7 +1594,7 @@
   }
 
   function checkCollision() {
-    if (integrated && realWalletMode) return;
+    if (integrated) return; // Model C outcomes come only from the server; traffic is decorative.
     if (state.phase !== 'playing') return;
     const x = chickenX();
     const y = roadCenterY();
@@ -1600,6 +1690,19 @@
       hideResult();
       startRound();
     });
+    verifyRoundBtn?.addEventListener('click', async () => {
+      if (!state.serverRoundId) return;
+      verifyRoundBtn.disabled = true;
+      try {
+        const proof = await fetanApi(`/verify/${encodeURIComponent(state.serverRoundId)}`);
+        if (!proof.seed_commit_valid || !proof.outcomes_match_seed || !proof.merkle_proofs_valid) throw new Error('INVALID_PROOF');
+        toast('Committed seed and all 14 lane proofs verified.', 'good');
+        verifyRoundBtn.textContent = 'Round verified';
+      } catch {
+        toast('Could not verify this round proof.', 'bad');
+        verifyRoundBtn.disabled = false;
+      }
+    });
 
     chipsEl.addEventListener('click', (e) => {
       const chip = e.target.closest('.chip');
@@ -1653,18 +1756,27 @@
       setTimeout(() => openModal(howModal), 120);
     });
     menuReset.addEventListener('click', () => {
+      if (integrated && realWalletMode) return;
       if (state.phase !== 'idle') {
         toast('Finish the current round first', 'bad');
         return;
       }
+      if (integrated) {
+        state.remoteBusy = true;
+        updateHUD();
+        fetanApi('/reset', {}).then((result) => {
+          state.balance = Number(result.balance_santim) / 100;
+          state.bet = clamp(state.bet, MIN_BET, MAX_BET);
+          saveStore(); updateHUD(); play('coin');
+          toast('DEMO balance reset to 1 000 000 DEMO ETB', 'good');
+          closeModal(menuModal);
+        }).catch((error) => toast(apiErrorMessage(error), 'bad')).finally(() => { state.remoteBusy = false; updateHUD(); });
+        return;
+      }
       state.balance = START_BALANCE;
       state.bet = clamp(state.bet, MIN_BET, MAX_BET);
-      hideResult();
-      saveStore();
-      updateHUD();
-      play('coin');
-      toast('Demo balance reset to 1 000 000 ETB', 'good');
-      closeModal(menuModal);
+      hideResult(); saveStore(); updateHUD(); play('coin');
+      toast('Demo balance reset to 1 000 000 ETB', 'good'); closeModal(menuModal);
     });
 
     document.querySelectorAll('[data-close]').forEach((btn) => {
@@ -1749,7 +1861,6 @@
   }
 
   function updateLiveTicker() {
-    if (integrated && realWalletMode) return;
     const name = pick(TICKER_NAMES);
     const amount = rand(18, 420);
     tickerNameEl.textContent = name;
@@ -1761,34 +1872,41 @@
   function init() {
     if (integrated) {
       const wallet = balanceEl.closest('.balance-pill');
-      if (wallet) wallet.title = 'Demo balance only — not withdrawable';
-      balanceEl.textContent = fmtMoney(state.balance).replace(' ETB', ' DEMO ETB');
-      state.remoteReady = true;
+      if (wallet) wallet.title = realWalletMode ? 'Fetan Bet wallet balance' : 'Demo balance only — not withdrawable';
+      const betCurrency = document.querySelector('.bet-currency');
+      if (betCurrency) betCurrency.textContent = realWalletMode ? 'ETB' : 'DEMO ETB';
+      document.querySelector('.bet-input')?.setAttribute('aria-label', realWalletMode ? 'Bet amount in ETB' : 'Demo bet amount in DEMO ETB');
+      minBtn.setAttribute('aria-label', realWalletMode ? 'Minimum bet' : 'Minimum demo bet');
+      maxBtn.setAttribute('aria-label', realWalletMode ? 'Maximum bet' : 'Maximum demo bet');
+      chipsEl.setAttribute('aria-label', realWalletMode ? 'Quick bet amounts in Ethiopian Birr' : 'Quick bet amounts in demo Ethiopian Birr (DEMO ETB)');
+      state.remoteReady = false;
       integrationBlocker.hidden = true;
-      stageHint.textContent = 'DEMO MODE · Demo balance only';
-      integrationWalletStatus.textContent = 'No bet has been placed. Your balance is unchanged.';
-      menuReset.disabled = false;
+      if (modelCNote) modelCNote.hidden = false;
+      stageHint.textContent = realWalletMode ? 'Fetan Bet wallet · server-committed outcomes' : 'DEMO MODE · Demo balance only';
+      integrationWalletStatus.textContent = realWalletMode ? 'Server-committed outcomes · traffic is visual only' : 'Server-committed demo outcomes. Traffic animation is visual only; no real wallet or ledger is used.';
+      menuReset.disabled = realWalletMode;
       setBetControls(true);
       const howTitle = $('howTitle');
       const howDescription = document.querySelector('#howModal .modal-card > p');
       const howRules = document.querySelector('#howModal .modal-card > ul');
-      if (howTitle) howTitle.textContent = 'Demo mode';
-      if (howDescription) howDescription.textContent = 'Play Chicken Road Dash using a separate demo balance. Demo balance has no cash value and cannot be withdrawn.';
+      if (howTitle) howTitle.textContent = realWalletMode ? 'How to play' : 'Demo mode';
+      if (howDescription) howDescription.textContent = realWalletMode ? 'Play Chicken Road Dash with your Fetan Bet wallet. Outcomes are committed by the server before play; traffic is visual presentation only.' : 'Play Chicken Road Dash using a separate DEMO ETB balance. Each lane outcome is committed by the server before play. Traffic animation is visual presentation and does not reveal the hidden outcome. Demo credits have no cash value and cannot be withdrawn.';
       if (howRules) howRules.hidden = false;
     }
     syncSoundUI();
     if (saved.difficulty && DIFFICULTY[saved.difficulty]) difficultyEl.value = saved.difficulty;
     else difficultyEl.value = state.difficulty;
     if (integrated) {
-      menuReset.disabled = false;
-      const backLink = document.querySelector('[data-fetan-back]');
-      backLink?.addEventListener('click', (event) => {
-        event.preventDefault();
-        parent.postMessage({ type: 'fetan-game-close' }, location.origin);
+      menuReset.disabled = realWalletMode;
+      document.querySelectorAll('[data-fetan-back]').forEach((backLink) => {
+        backLink.addEventListener('click', (event) => {
+          event.preventDefault();
+          parent.postMessage({ type: 'fetan-game-close' }, location.origin);
+        });
       });
     }
     updateHUD();
-    if (integrated) stageHint.textContent = 'DEMO MODE · Demo balance only';
+    if (integrated) stageHint.textContent = realWalletMode ? 'Fetan Bet wallet · server-committed crossings' : 'DEMO MODE · Server-committed crossings · Traffic is visual only';
     resize();
     resetTraffic();
     bindEvents();
@@ -1807,15 +1925,15 @@
       // Audio is unlocked by the first pointer/key interaction.
       state.started = false;
     }
-    if (integrated && realWalletMode) {
-      fetch('/api/me', { credentials: 'same-origin' }).then(async (response) => {
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !Number.isSafeInteger(Number(data.balance))) throw new Error('WALLET_UNAVAILABLE');
-        state.balance = Number(data.balance) / 100;
-        balanceEl.textContent = fmtMoney(state.balance);
-      }).catch(() => {
-        balanceEl.textContent = '— ETB';
-        integrationWalletStatus.textContent = 'Your wallet could not be verified. Sign in again; no bet has been placed.';
+    if (integrated) {
+      fetanApi('').then((data) => {
+        useServerRound(data);
+        difficultyEl.value = state.difficulty;
+        integrationWalletStatus.textContent = realWalletMode ? 'ETB wallet · committed outcomes · traffic is visual only' : 'DEMO ETB only · committed outcomes · traffic is visual only';
+        updateHUD();
+      }).catch((error) => {
+        showGameServiceError(error);
+        toast(apiErrorMessage(error), 'bad');
       });
     }
   }

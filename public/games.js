@@ -149,16 +149,24 @@ window.Games = (function () {
     app.innerHTML = `
       <!-- FETAN BET HERO BANNER -->
       <div class="lobby-hero">
+        <div class="lobby-hero-art" aria-hidden="true">
+          <div class="hero-art-orbit"></div>
+          <img class="hero-art-main" src="/img/roulette.webp.jpg" alt="" fetchpriority="high" decoding="async">
+          <img class="hero-art-secondary" src="/img/plinko.webp.jpg" alt="" loading="eager" decoding="async">
+          <span class="hero-art-caption">FETAN BET <i></i> GAME LOBBY</span>
+        </div>
         <div class="lobby-hero-content">
           <div class="lobby-hero-badge">WELCOME TO FETAN BET</div>
           <h1 class="lobby-hero-title">${lang === 'am' ? 'የእርስዎ ጨዋታ። የእርስዎ ቅጽበት።' : 'Your game. Your moment.'}</h1>
           <p class="lobby-hero-sub">${lang === 'am' ? 'ጨዋታዎቹን ይመልከቱና የሚወዱትን ይምረጡ።' : 'Explore the games and discover your next favourite.'}</p>
           <div class="lobby-hero-pills">
-            <span class="hero-pill">🎮 ${lang === 'am' ? 'ኦሪጅናል ጨዋታዎች' : 'Original games'}</span>
-            <span class="hero-pill">🛡️ ${lang === 'am' ? 'ፍትሃዊ ውጤቶች' : 'Provably fair'}</span>
+            <span class="hero-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.3 2.3 4.8-5"/></svg>${lang === 'am' ? 'ኦሪጅናል ጨዋታዎች' : 'Original games'}</span>
+            <span class="hero-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${lang === 'am' ? 'ፍትሃዊ ውጤቶች' : 'Provably fair'}</span>
           </div>
         </div>
       </div>
+
+      <div class="lobby-section-head"><div><span class="lobby-section-eyebrow">${lang === 'am' ? 'የጨዋታ ማዕከል' : 'GAME LOBBY'}</span><h2>${lang === 'am' ? 'ጨዋታ ይምረጡ' : 'Browse games'}</h2></div><span class="lobby-section-count">8 ${lang === 'am' ? 'ጨዋታዎች' : 'games'}</span></div>
 
       <!-- GAME DISCOVERY & CATEGORY TABS -->
       <div class="lobby-nav-bar">
@@ -166,7 +174,7 @@ window.Games = (function () {
           <button type="button" class="gfilter on" data-cat="all">${esc(t('cat_all'))} <span class="gcount">8</span></button>
           <button type="button" class="gfilter" data-cat="originals">${esc(t('cat_originals'))} <span class="gcount">4</span></button>
           <button type="button" class="gfilter" data-cat="table">${esc(t('cat_classic'))} <span class="gcount">2</span></button>
-          <button type="button" class="gfilter" data-cat="lottery">🎱 ${lang === 'am' ? 'ኬኖ እና ቢንጎ' : 'Keno & Bingo'} <span class="gcount">2</span></button>
+          <button type="button" class="gfilter" data-cat="lottery"><span class="keno-filter-icon" aria-hidden="true">8</span>${lang === 'am' ? 'ኬኖ እና ቢንጎ' : 'Keno & Bingo'} <span class="gcount">2</span></button>
         </div>
         <div class="lobby-sound-slot" id="sbtn"></div>
       </div>

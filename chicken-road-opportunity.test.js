@@ -1,0 +1,38 @@
+'use strict';
+const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
+const { makeTraffic } = require('./chicken-road-engine');
+const { PrototypeOpportunityRound, issueOpportunity } = require('./chicken-road-opportunity');
+
+assert.throws(() => issueOpportunity('r', 1, 0, 0));
+let now = 0;
+const clock = () => now;
+const round = new PrototypeOpportunityRound({ id: 'test-round', traffic: makeTraffic(Buffer.alloc(32, 5), 'easy'), difficulty: 'easy', windowSeconds: 1, clock });
+const first = round.state().opportunity;
+assert.equal(round.state().opportunity.id, first.id, 'refresh/state read preserves one issued opportunity');
+assert.throws(() => round.submit({ actionId: 'wrong-lane', lane: 2 }), /OUT_OF_ORDER/);
+now = 0.5;
+const actionId = crypto.randomUUID();
+const result = round.submit({ actionId, lane: 1 });
+assert.deepEqual(round.submit({ actionId, lane: 1 }), result);
+assert.throws(() => round.submit({ actionId: crypto.randomUUID(), lane: 1 }), /OPPORTUNITY_ALREADY_RESOLVED/);
+assert.equal(round.state().opportunity.id, first.id, 'resolution does not mint another opportunity');
+
+now = 1.01;
+const late = new PrototypeOpportunityRound({ id: 'late-round', traffic: makeTraffic(Buffer.alloc(32, 6), 'medium'), difficulty: 'medium', windowSeconds: 1, clock });
+assert.equal(late.submit({ actionId: 'late', lane: 1 }).source, 'deadline');
+assert.equal(late.state().resolved.lateAction, true);
+const timeout = new PrototypeOpportunityRound({ id: 'timeout', traffic: makeTraffic(Buffer.alloc(32, 7), 'hard'), difficulty: 'hard', windowSeconds: 1, clock });
+now = 0.99;
+assert.equal(timeout.expire(), null);
+now = 1;
+assert.equal(timeout.expire().source, 'deadline');
+now = 2;
+assert.equal(timeout.expire(), timeout.state().resolved, 'deadline resolution is idempotent');
+now = 0.999;
+const edge = new PrototypeOpportunityRound({ id: 'edge', traffic: makeTraffic(Buffer.alloc(32, 8), 'easy'), difficulty: 'easy', windowSeconds: 1, clock });
+assert.equal(edge.submit({ actionId: 'before-expiry', lane: 1 }).source, 'action');
+now = 1.001;
+const after = new PrototypeOpportunityRound({ id: 'after', traffic: makeTraffic(Buffer.alloc(32, 9), 'easy'), difficulty: 'easy', windowSeconds: 1, clock });
+assert.equal(after.submit({ actionId: 'after-expiry', lane: 1 }).source, 'deadline');
+console.log('chicken-road-opportunity.test.js: one-shot and deadline checks passed');

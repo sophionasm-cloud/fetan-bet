@@ -8,12 +8,14 @@
     "test": "node --no-warnings scripts/run-integration-tests.js",
     "test:integration:check": "node --no-warnings scripts/run-integration-tests.js --check",
     "test:payout": "node --no-warnings payout.test.js && node --no-warnings payout-rules.test.js",
-    "test:static": "node --no-warnings payout.test.js && node --no-warnings payout-rules.test.js && node --no-warnings road-ui.test.js && node --no-warnings games-integration.test.js && node --no-warnings scripts/test-db-safety.test.js && node --no-warnings operations.test.js"
+    "test:static": "node --no-warnings payout.test.js && node --no-warnings payout-rules.test.js && node --no-warnings road-ui.test.js && node --no-warnings chicken-road-engine.test.js && node --no-warnings chicken-road-opportunity.test.js && node --no-warnings chicken-road-model-c.test.js && node --no-warnings chicken-road-committed.test.js && node --no-warnings chicken-road-demo-service.test.js && node --no-warnings chicken-road-real-service.test.js && node --no-warnings games-integration.test.js && node --no-warnings scripts/test-db-safety.test.js && node --no-warnings scripts/production-safety.test.js && node --no-warnings operations.test.js",
+    "test:browser:chicken-road-dash": "node --no-warnings scripts/chicken-road-dash.browser.test.js"
   },
   "engines": {
     "node": ">=22.13"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1161.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "dotenv": "^18.0.8",
@@ -21,5 +23,8 @@
     "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
   }
 }

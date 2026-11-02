@@ -20,6 +20,9 @@
 
   <div class="app" id="app">
     <header class="topbar">
+      <a class="home-btn" href="../" data-fetan-back aria-label="Return to the Games page">
+        <span aria-hidden="true">←</span><span>Home</span>
+      </a>
       <a class="brand" href="../" data-fetan-back aria-label="Back to Fetan Bet games">
         <span class="brand-icon" aria-hidden="true">
           <svg viewBox="0 0 64 64" fill="none">
@@ -68,9 +71,10 @@
     <main class="stage-wrap">
       <div class="stage" id="stage">
         <canvas id="game" aria-label="Chicken Road Dash game area"></canvas>
+        <div class="model-c-note" id="modelCNote" hidden>DEMO · Server commits each lane result before play. Traffic animation is visual only and does not reveal the outcome.</div>
         <aside class="integration-blocker" id="integrationBlocker" role="status" hidden>
           <strong>DEMO MODE</strong>
-          <p>Demo balance only. It has no cash value and cannot be withdrawn.</p>
+          <p>DEMO ETB only. It has no cash value and cannot be withdrawn.</p>
           <p id="integrationWalletStatus">Real wallet gameplay is not enabled.</p>
         </aside>
         <div class="mult-badge" id="multBadge">
@@ -85,6 +89,7 @@
             <h2 id="resultTitle">CRASHED!</h2>
             <div class="result-amount" id="resultAmount">0.00 ETB</div>
             <div class="result-sub" id="resultSub">A car got you. Try again!</div>
+            <button class="btn btn-ghost hidden" id="verifyRoundBtn" type="button">Verify committed round</button>
             <button class="btn btn-primary" id="resultBtn">Play again</button>
           </div>
         </div>
@@ -156,7 +161,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>
-      <p>Place a bet and guide the chicken across 14 lanes of traffic. Every successful hop raises your multiplier. Cash out before a car hits you — or reach the far side for a clean-crossing bonus.</p>
+      <p>Place a bet and guide the chicken across 14 lanes of traffic. Every successful hop raises your multiplier. Cash out or reach the far side for a clean-crossing bonus. In integrated demo play, the server commits each lane result before the round; traffic animation is visual presentation and does not reveal the result.</p>
       <ul>
         <li><b>Play</b> starts the round and deducts your bet.</li>
         <li><b>GO</b> (or Space) hops one lane forward.</li>
