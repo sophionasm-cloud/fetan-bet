@@ -2,6 +2,7 @@
 'use strict';
 let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0, promoCredits = 0,
     limits = { min: 100, max: 100000 }, tab = 'games', agentSubtab = 'deposits';
+let promoSliderCleanup = null;
 
 const $ = (id) => document.getElementById(id);
 const t = (k) => T[k] ?? k;
@@ -52,6 +53,11 @@ function scrollPublicTarget(target) {
   node.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 }
 
+function clearPromoSlider() {
+  promoSliderCleanup?.();
+  promoSliderCleanup = null;
+}
+
 function syncPublicNavigation(enabled) {
   const nav = $('publicPrimaryNav');
   if (!nav) return;
@@ -61,13 +67,201 @@ function syncPublicNavigation(enabled) {
   const links = lang === 'am'
     ? [['top', 'መነሻ'], ['ggrid', 'ጨዋታዎች'], ['guestPromo', 'የሪፈራል ኮድ'], ['publicInfo', 'ስለ እኛ'], ['publicHelp', 'እገዛ']]
     : [['top', 'Home'], ['ggrid', 'Games'], ['guestPromo', 'Promo code'], ['publicInfo', 'About'], ['publicHelp', 'Help']];
-  nav.innerHTML = links.map(([target, label], index) => `<button type="button" data-public-target="${target}"${index === 0 ? ' class="is-active"' : ''}>${label}</button>`).join('');
+  nav.innerHTML = links.map(([target, label], index) => `<button type="button" data-public-target="${target}"${index === 0 ? ' class="is-active"' : ''}>${esc(label)}</button>`).join('') +
+    `<button type="button" class="public-login-link" data-public-action="login">${esc(t('login'))}</button>`;
   nav.querySelectorAll('[data-public-target]').forEach((button) => {
     button.addEventListener('click', () => {
       nav.querySelectorAll('[data-public-target]').forEach((item) => item.classList.toggle('is-active', item === button));
       scrollPublicTarget(button.dataset.publicTarget);
     });
   });
+  nav.querySelector('[data-public-action="login"]')?.addEventListener('click', () => $('headerLoginBtn')?.click());
+}
+
+function mountPromoSlider(app) {
+  clearPromoSlider();
+  const gameCount = app.querySelectorAll('.gcard').length;
+  const currentCustomer = me?.role === 'user';
+  const slides = [
+    {
+      key: 'daily-winning', image: '/images/promotions/daily-winning.svg',
+      title: 'WIN UP TO 1,000,000 ETB DAILY',
+      copy: 'Enjoy exciting games and discover daily winning opportunities at Fetan Bet.',
+      note: 'Demo play uses virtual credits only. No real-money prizes or cash-out.',
+      action: 'games', cta: 'Explore Games'
+    },
+    {
+      key: 'six-games', image: '/images/promotions/six-games.svg',
+      title: `${gameCount} DIFFERENT TYPES OF GAMES`,
+      copy: `Explore ${gameCount} different game experiences, all in one place.`,
+      note: 'Browse the current Fetan Bet game catalog.',
+      action: 'games', cta: 'Explore Games'
+    },
+    {
+      key: 'fast-withdrawals', image: '/images/promotions/fast-withdrawals.svg',
+      title: 'FAST WITHDRAWALS',
+      copy: 'Submit a withdrawal request and follow its status in your wallet. Review and processing times vary.',
+      note: 'Demo platform balances are virtual and cannot be cashed out. Request status is shown in your wallet.',
+      action: 'wallet', cta: 'View Wallet'
+    },
+    ...(!currentCustomer ? [{
+      key: 'registration-bonus', image: '/images/promotions/registration-bonus.svg',
+      title: 'REGISTER WITH A PROMO CODE',
+      offer: 'GET 2,000 PROMO CREDITS',
+      copy: 'New customer accounts using an active agent promo code receive 2,000 promotional credits.',
+      note: 'Once per eligible new account. Promotional credits are separate from and cannot be withdrawn as cash from your wallet.',
+      action: 'register', cta: 'Register Now'
+    }] : [])
+  ];
+
+  const slider = document.createElement('section');
+  slider.className = 'promo-slider';
+  slider.id = 'promoSlider';
+  slider.setAttribute('aria-label', 'Fetan Bet promotions');
+  slider.setAttribute('aria-roledescription', 'carousel');
+  const slideMarkup = (slide, index, copy = false) => `
+    <article class="promo-slide promo-slide--${slide.key}" role="group" aria-roledescription="slide" aria-label="${index + 1} of ${slides.length}" data-slide-key="${slide.key}"${copy ? ' data-slide-clone="true" inert aria-hidden="true"' : ''}>
+      <div class="promo-slide-copy">
+        <span class="promo-slide-kicker">FETAN BET <i></i> ${currentCustomer ? 'FOR YOU' : 'PROMOTIONS'}</span>
+        <h2>${esc(slide.title)}</h2>
+        ${slide.offer ? `<strong class="promo-slide-offer">${esc(slide.offer)}</strong>` : ''}
+        <p>${esc(slide.copy)}</p>
+        <small class="promo-slide-note">${esc(slide.note)}</small>
+        <button type="button" class="promo-slide-cta" data-promo-action="${slide.action}">${esc(slide.cta)} <span aria-hidden="true">→</span></button>
+      </div>
+      <div class="promo-slide-art" aria-hidden="true"><span class="promo-art-glow"></span><img src="${slide.image}" alt="" loading="eager" decoding="async"></div>
+    </article>`;
+  const copies = [slides[slides.length - 1], ...slides, slides[0]];
+  slider.innerHTML = `
+    <div class="promo-slider-frame">
+      <div class="promo-slider-track">${copies.map((slide, index) => {
+        const isClone = index === 0 || index === copies.length - 1;
+        const logicalIndex = index === 0 ? slides.length - 1 : index === copies.length - 1 ? 0 : index - 1;
+        return slideMarkup(slide, logicalIndex, isClone);
+      }).join('')}</div>
+    </div>
+    <div class="promo-slider-bar">
+      <span class="promo-slider-counter" aria-hidden="true">01 / ${String(slides.length).padStart(2, '0')}</span>
+      <div class="promo-slider-controls">
+        <button type="button" class="promo-slider-arrow" data-promo-prev aria-label="Previous promotion">‹</button>
+        <div class="promo-slider-dots" role="group" aria-label="Choose a promotion">${slides.map((slide, i) => `<button type="button" data-promo-dot="${i}" aria-label="Show promotion ${i + 1}" aria-pressed="${i === 0}"${i === 0 ? ' class="is-active"' : ''}></button>`).join('')}</div>
+        <button type="button" class="promo-slider-arrow" data-promo-next aria-label="Next promotion">›</button>
+      </div>
+    </div>`;
+
+  const hero = app.querySelector('.lobby-hero');
+  if (hero) hero.before(slider);
+  else app.prepend(slider);
+
+  const track = slider.querySelector('.promo-slider-track');
+  const panels = [...track.children];
+  const realCount = slides.length;
+  let index = 1;
+  let timer = null;
+  let transitionTimer = null;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const setTrack = () => { track.style.transform = `translate3d(-${index * 100}%, 0, 0)`; };
+  const realIndex = () => index === 0 ? realCount - 1 : index === realCount + 1 ? 0 : index - 1;
+  const paint = () => {
+    const active = realIndex();
+    panels.forEach((panel, panelIndex) => {
+      const isActive = panelIndex === index;
+      panel.setAttribute('aria-hidden', String(!isActive));
+      panel.inert = !isActive;
+    });
+    slider.querySelectorAll('[data-promo-dot]').forEach((dot) => {
+      const selected = Number(dot.dataset.promoDot) === active;
+      dot.classList.toggle('is-active', selected);
+      dot.setAttribute('aria-pressed', String(selected));
+    });
+    slider.querySelector('.promo-slider-counter').textContent = `${String(active + 1).padStart(2, '0')} / ${String(realCount).padStart(2, '0')}`;
+  };
+  const snap = (nextIndex) => {
+    track.classList.add('is-snapping');
+    index = nextIndex;
+    setTrack();
+    paint();
+    requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('is-snapping')));
+  };
+  const move = (nextIndex) => {
+    clearTimeout(transitionTimer);
+    index = nextIndex;
+    setTrack();
+    paint();
+    transitionTimer = setTimeout(() => {
+      if (index === 0) snap(realCount);
+      else if (index === realCount + 1) snap(1);
+    }, 720);
+  };
+  const next = () => move(index >= realCount ? realCount + 1 : index + 1);
+  const previous = () => move(index <= 1 ? 0 : index - 1);
+  const startAuto = () => {
+    clearInterval(timer);
+    timer = null;
+    if (!reduceMotion.matches && !slider.matches(':hover') && document.visibilityState === 'visible') {
+      timer = setInterval(() => {
+        if (!slider.isConnected) { cleanup(); return; }
+        next();
+      }, 6000);
+    }
+  };
+  const pauseAuto = () => { clearInterval(timer); timer = null; };
+  const onMouseEnter = () => pauseAuto();
+  const onMouseLeave = () => startAuto();
+  const onFocusIn = () => pauseAuto();
+  const onFocusOut = (event) => { if (!slider.contains(event.relatedTarget)) startAuto(); };
+  const onVisibility = () => document.visibilityState === 'visible' ? startAuto() : pauseAuto();
+  const onMotionChange = () => startAuto();
+  track.addEventListener('transitionend', (event) => {
+    if (event.target !== track || event.propertyName !== 'transform') return;
+    if (index === 0) snap(realCount);
+    else if (index === realCount + 1) snap(1);
+  });
+  slider.querySelector('[data-promo-next]').addEventListener('click', () => { next(); startAuto(); });
+  slider.querySelector('[data-promo-prev]').addEventListener('click', () => { previous(); startAuto(); });
+  slider.querySelectorAll('[data-promo-dot]').forEach((dot) => dot.addEventListener('click', () => {
+    const target = Number(dot.dataset.promoDot) + 1;
+    if (target !== index) move(target);
+    startAuto();
+  }));
+  slider.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-promo-action]');
+    if (!button) return;
+    const action = button.dataset.promoAction;
+    if (action === 'games') scrollPublicTarget('ggrid');
+    if (action === 'wallet') {
+      if (me?.role === 'user') { tab = 'wallet'; render(); }
+      else $('headerLoginBtn')?.click();
+    }
+    if (action === 'register') {
+      const code = String($('guest-promo-code')?.value || '').trim();
+      authView(app, 'register', code);
+    }
+  });
+  if (hoverCapable) {
+    slider.addEventListener('mouseenter', onMouseEnter);
+    slider.addEventListener('mouseleave', onMouseLeave);
+  }
+  slider.addEventListener('focusin', onFocusIn);
+  slider.addEventListener('focusout', onFocusOut);
+  document.addEventListener('visibilitychange', onVisibility);
+  reduceMotion.addEventListener?.('change', onMotionChange);
+  index = 1;
+  setTrack();
+  paint();
+  startAuto();
+  const cleanup = () => {
+    pauseAuto();
+    clearTimeout(transitionTimer);
+    document.removeEventListener('visibilitychange', onVisibility);
+    reduceMotion.removeEventListener?.('change', onMotionChange);
+    slider.removeEventListener('mouseenter', onMouseEnter);
+    slider.removeEventListener('mouseleave', onMouseLeave);
+    slider.removeEventListener('focusin', onFocusIn);
+    slider.removeEventListener('focusout', onFocusOut);
+  };
+  promoSliderCleanup = cleanup;
 }
 
 function applyCustomerTheme(theme = localStorage.getItem('fetan-theme') || 'dark') {
@@ -352,6 +546,7 @@ function nav() {
 }
 
 async function render(subMode = '') {
+  clearPromoSlider();
   const gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
   await refreshMe();
   if ((!me || !['agent', 'superadmin'].includes(me.role)) && window.FetanWorkspace) {
@@ -486,6 +681,7 @@ window.addEventListener('popstate', () => { Games.cleanupCurrent(); render(); })
 // Reference: Dark green-black & antique-gold split card
 // =====================================================
 function authView(app, initialMode = 'login', promoPrefill = '') {
+  clearPromoSlider();
   const existing = $('auth-modal');
   if (existing) existing.remove();
   const modal = document.createElement('div');
@@ -805,6 +1001,7 @@ function guestView(app) {
     minesState: { active: false, mines: 5 }, guest: true,
     onLogin: () => authView(app, 'login'),
   });
+  mountPromoSlider(app);
 
   const urlPromo = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code');
 
@@ -896,6 +1093,7 @@ async function gamesView(app, gameRoute = null) {
     roadState, minesState,
     reload: () => render()
   });
+  if (!gameRoute) mountPromoSlider(app);
   if (gameRoute) {
     const requestedGame = gameRoute[1] === 'road-dash' ? 'road' : gameRoute[1];
     Games.openRoute(app, requestedGame);

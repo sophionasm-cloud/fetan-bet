@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 360" fill="none">
+  <defs>
+    <linearGradient id="box" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F7B173"/><stop offset=".52" stop-color="#E77C63"/><stop offset="1" stop-color="#B75648"/></linearGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF4D7"/><stop offset="1" stop-color="#F0C16D"/></linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF4C7"/><stop offset=".45" stop-color="#F5BE55"/><stop offset="1" stop-color="#C66C39"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#FFF2D1" stop-opacity=".88"/><stop offset="1" stop-color="#EA8E77" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="76" y="12" width="418" height="348" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feGaussianBlur in="SourceAlpha" stdDeviation="11"/><feOffset dy="13"/><feColorMatrix values="0 0 0 0 .33 0 0 0 0 .13 0 0 0 0 .1 0 0 0 .23 0"/><feBlend in2="SourceGraphic" result="shadow"/><feComposite in="SourceGraphic" in2="shadow" operator="over"/></filter>
+  </defs>
+  <circle cx="296" cy="170" r="173" fill="url(#halo)"/>
+  <circle cx="123" cy="92" r="6" fill="#FFF8E7"/><circle cx="448" cy="92" r="8" fill="#FFF9EB" fill-opacity=".9"/><circle cx="430" cy="284" r="6" fill="#D96E5B" fill-opacity=".7"/>
+  <ellipse cx="293" cy="315" rx="184" ry="23" fill="#6E4434" fill-opacity=".17"/>
+  <g filter="url(#shadow)">
+    <ellipse cx="178" cy="239" rx="44" ry="15" fill="#A85B3C"/>
+    <path d="M134 211v28c0 9 20 16 44 16s44-7 44-16v-28" fill="#A85B3C"/>
+    <ellipse cx="178" cy="211" rx="44" ry="15" fill="url(#coin)" stroke="#FFF0BF" stroke-width="4"/>
+    <ellipse cx="400" cy="244" rx="42" ry="14" fill="#A85B3C"/>
+    <path d="M358 218v26c0 8 19 15 42 15s42-7 42-15v-26" fill="#A85B3C"/>
+    <ellipse cx="400" cy="218" rx="42" ry="14" fill="url(#coin)" stroke="#FFF0BF" stroke-width="4"/>
+    <path d="m194 129 91-37 95 38v106H194V129Z" fill="#A95346"/>
+    <path d="m194 128 91-38 95 38-94 43-92-43Z" fill="#FFF3DF" stroke="#FFF7E9" stroke-width="5"/>
+    <path d="M194 128v106h92V171l-92-43Z" fill="url(#box)" stroke="#FFF2E4" stroke-width="5"/>
+    <path d="M286 171v63h94V128l-94 43Z" fill="#E47B61" stroke="#FFF2E4" stroke-width="5"/>
+    <path d="M270 100c-14-17-3-38 13-38 15 0 19 19 3 39m-3 0c-15-18-30-21-37-10-8 12 10 25 37 24m0-14c16-18 32-20 39-8 7 12-11 24-39 22" fill="url(#ribbon)" stroke="#B7654D" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M270 151h31v83h-31z" fill="url(#ribbon)"/><path d="M194 151h92v23h-92z" fill="url(#ribbon)"/>
+    <path d="m287 190 6 12 13 2-10 9 2 13-11-6-12 6 3-13-10-9 13-2 6-12Z" fill="#A85B3C"/>
+  </g>
+  <path d="m444 143 6 12 13 2-9 9 2 13-12-6-11 6 2-13-9-9 13-2 5-12Z" fill="#FFF8E9" fill-opacity=".82"/>
+</svg>

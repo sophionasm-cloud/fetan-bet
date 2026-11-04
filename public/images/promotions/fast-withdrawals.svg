@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 360" fill="none">
+  <defs>
+    <linearGradient id="wallet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF5E5"/><stop offset=".54" stop-color="#E9A56B"/><stop offset="1" stop-color="#B95F49"/></linearGradient>
+    <linearGradient id="walletSide" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8A513E"/><stop offset="1" stop-color="#5C3D34"/></linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF4C7"/><stop offset=".5" stop-color="#F4B951"/><stop offset="1" stop-color="#C66F39"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#FFF0D1" stop-opacity=".9"/><stop offset="1" stop-color="#EF9984" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="55" y="25" width="450" height="330" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feGaussianBlur in="SourceAlpha" stdDeviation="11"/><feOffset dy="13"/><feColorMatrix values="0 0 0 0 .3 0 0 0 0 .13 0 0 0 0 .1 0 0 0 .2 0"/><feBlend in2="SourceGraphic" result="shadow"/><feComposite in="SourceGraphic" in2="shadow" operator="over"/></filter>
+  </defs>
+  <circle cx="302" cy="167" r="177" fill="url(#glow)"/>
+  <circle cx="115" cy="83" r="7" fill="#FFF9EA"/><circle cx="447" cy="93" r="6" fill="#D97662" fill-opacity=".65"/>
+  <ellipse cx="302" cy="313" rx="188" ry="22" fill="#6E4434" fill-opacity=".15"/>
+  <g filter="url(#shadow)">
+    <path d="M115 122c0-19 15-34 34-34h229c13 0 24 11 24 24v152c0 16-13 29-29 29H146c-17 0-31-14-31-31V122Z" fill="url(#walletSide)"/>
+    <path d="M115 123c0-20 16-36 36-36h214c14 0 25 11 25 25v20H142c-15 0-27 12-27 27v-36Z" fill="url(#wallet)" stroke="#FFF4E1" stroke-width="5"/>
+    <path d="M115 159c0-15 12-27 27-27h267v99H142c-15 0-27-12-27-27v-45Z" fill="#C87550" stroke="#FFF1DF" stroke-width="5"/>
+    <path d="M331 157h82v57h-82c-16 0-29-13-29-29s13-28 29-28Z" fill="#FFF4E3" stroke="#B86A4D" stroke-width="5"/>
+    <circle cx="345" cy="185" r="8" fill="#8B5340"/>
+    <circle cx="186" cy="105" r="28" fill="url(#coin)" stroke="#FFF2C4" stroke-width="4"/>
+    <circle cx="186" cy="105" r="18" stroke="#BC763D" stroke-width="3"/>
+    <path d="M178 105h16m-8-8v16" stroke="#A95F38" stroke-width="3" stroke-linecap="round"/>
+    <path d="M420 79c17 11 28 27 32 47m-4-18 5 19 18-7M107 267c-17-11-28-27-32-47m4 18-5-19-18 7" stroke="#B65F49" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <path d="m457 238 6 12 13 2-9 9 2 13-12-6-11 6 2-13-10-9 13-2 6-12Z" fill="#FFF7E8" fill-opacity=".8"/>
+</svg>

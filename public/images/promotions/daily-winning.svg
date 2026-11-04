@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 360" fill="none">
+  <defs>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF1B8"/><stop offset=".38" stop-color="#F9BE58"/><stop offset="1" stop-color="#C97536"/></linearGradient>
+    <linearGradient id="coinSide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#B76A37"/><stop offset="1" stop-color="#7E4936"/></linearGradient>
+    <linearGradient id="trophy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF6D5"/><stop offset=".48" stop-color="#F6BD58"/><stop offset="1" stop-color="#DC8241"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#FFF3D1" stop-opacity=".9"/><stop offset="1" stop-color="#F28C62" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="130" y="32" width="390" height="330" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feGaussianBlur in="SourceAlpha" stdDeviation="12"/><feOffset dy="13"/><feColorMatrix values="0 0 0 0 .37 0 0 0 0 .18 0 0 0 0 .1 0 0 0 .24 0"/><feBlend in2="SourceGraphic" mode="normal" result="shadow"/><feComposite in="SourceGraphic" in2="shadow" operator="over"/></filter>
+  </defs>
+  <circle cx="330" cy="174" r="166" fill="url(#halo)"/>
+  <circle cx="426" cy="72" r="25" fill="#FFF7E6" fill-opacity=".5"/>
+  <circle cx="168" cy="98" r="7" fill="#FFF8E9"/>
+  <circle cx="452" cy="265" r="9" fill="#E87664" fill-opacity=".5"/>
+  <ellipse cx="332" cy="308" rx="169" ry="22" fill="#7E4936" fill-opacity=".16"/>
+  <g filter="url(#shadow)">
+    <ellipse cx="217" cy="270" rx="69" ry="24" fill="url(#coinSide)"/>
+    <path d="M148 245v25c0 13 31 24 69 24s69-11 69-24v-25" fill="url(#coinSide)"/>
+    <ellipse cx="217" cy="245" rx="69" ry="24" fill="url(#coin)" stroke="#FFF3C8" stroke-width="4"/>
+    <ellipse cx="217" cy="245" rx="54" ry="16" stroke="#BE733A" stroke-opacity=".58" stroke-width="3"/>
+    <ellipse cx="335" cy="280" rx="83" ry="25" fill="url(#coinSide)"/>
+    <path d="M252 251v29c0 14 37 25 83 25s83-11 83-25v-29" fill="url(#coinSide)"/>
+    <ellipse cx="335" cy="251" rx="83" ry="25" fill="url(#coin)" stroke="#FFF3C8" stroke-width="4"/>
+    <ellipse cx="335" cy="251" rx="67" ry="17" stroke="#BE733A" stroke-opacity=".58" stroke-width="3"/>
+    <path d="M284 90c0-18 22-32 50-32s50 14 50 32v13c0 20-16 37-36 39l13 81h-52l13-81c-21-2-38-19-38-39V90Z" fill="url(#trophy)" stroke="#FFF3CD" stroke-width="5"/>
+    <path d="M284 88h-30c-2 31 11 49 40 54M384 88h30c2 31-11 49-40 54" stroke="#D9884A" stroke-width="12" stroke-linecap="round"/>
+    <path d="M323 225h23l10 34h-43l10-34ZM296 260h77v13h-77z" fill="#9E5939"/>
+    <path d="m334 91 6 13 14 2-10 10 3 14-13-7-13 7 3-14-10-10 14-2 6-13Z" fill="#FFF7DB"/>
+  </g>
+  <path d="m454 142 6 11 12 2-9 8 2 12-11-6-11 6 2-12-9-8 12-2 6-11Z" fill="#FFF8E9" fill-opacity=".72"/>
+</svg>
