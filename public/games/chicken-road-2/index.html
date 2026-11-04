@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#1b2036" />
-  <title>Chicken Road Dash — Recreated</title>
+  <title>Chicken Road 2.0 — Fetan Bet</title>
   <script>if (new URLSearchParams(location.search).get('fetan') === '1') document.documentElement.classList.add('fetan-integrated');</script>
   <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../../shared/fonts.css" />
@@ -38,9 +38,9 @@
         <span class="brand-text">CHICKEN <em>ROAD</em> <b>DASH</b></span>
       </a>
       <div class="top-actions">
-        <div class="balance-pill" title="Demo balance only — not withdrawable">
+        <div class="balance-pill" title="Fetan Bet wallet balance">
           <span class="coin-dot"></span>
-          <span id="balance">1 000 000.00 DEMO ETB</span>
+          <span id="balance">Loading ETB…</span>
         </div>
         <button class="icon-btn" id="soundBtn" aria-label="Toggle sound" title="Sound">
           <svg id="soundOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -71,11 +71,15 @@
     <main class="stage-wrap">
       <div class="stage" id="stage">
         <canvas id="game" aria-label="Chicken Road Dash game area"></canvas>
-        <div class="model-c-note" id="modelCNote" hidden>DEMO · Server commits each lane result before play. Traffic animation is visual only and does not reveal the outcome.</div>
+        <div class="mult-ladder" id="multLadder" aria-label="Approved multiplier ladder">
+          <span class="mult-ladder-title">LEVELS</span>
+          <div class="mult-ladder-track" id="multLadderTrack" tabindex="0" aria-label="Scrollable level multipliers"></div>
+        </div>
+        <div class="model-c-note" id="modelCNote" hidden>Server commits each level result before play. Traffic animation is visual only and does not reveal the outcome.</div>
         <aside class="integration-blocker" id="integrationBlocker" role="status" hidden>
-          <strong>DEMO MODE</strong>
-          <p>DEMO ETB only. It has no cash value and cannot be withdrawn.</p>
-          <p id="integrationWalletStatus">Real wallet gameplay is not enabled.</p>
+          <strong>WALLET UNAVAILABLE</strong>
+          <p>Chicken Road uses your Fetan Bet wallet. A wallet or database error blocks play; no local balance is used.</p>
+          <p id="integrationWalletStatus">Loading your Fetan Bet wallet…</p>
         </aside>
         <div class="mult-badge" id="multBadge">
           <span class="mult-value" id="multiplier">1.18x</span>
@@ -147,8 +151,7 @@
     </section>
 
     <p class="disclaimer">
-      Independent recreation for personal use. Not affiliated with the original publisher.
-      Demo Birr (ETB) only — no real money. All artwork and sounds are original.
+      Chicken Road 2.0 uses your Fetan Bet wallet. Server-committed outcomes; traffic animation is visual only.
     </p>
   </div>
 
@@ -161,13 +164,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>
-      <p>Place a bet and guide the chicken across 14 lanes of traffic. Every successful hop raises your multiplier. Cash out or reach the far side for a clean-crossing bonus. In integrated demo play, the server commits each lane result before the round; traffic animation is visual presentation and does not reveal the result.</p>
+      <p>Place a bet and guide the chicken across the road. Every successful hop raises your multiplier through the approved Easy, Medium or Hard levels. The server commits each level result before the round; traffic animation is visual presentation and does not reveal the result.</p>
       <ul>
-        <li><b>Play</b> starts the round and deducts your bet.</li>
-        <li><b>GO</b> (or Space) hops one lane forward.</li>
-        <li><b>Cash out</b> (or C) banks bet × multiplier at any time.</li>
-        <li>Harder difficulty means faster traffic and a bigger multiplier step.</li>
-        <li>Balance is demo-only and saved in this browser.</li>
+        <li><b>Play</b> starts the round and deducts your bet from your Fetan Bet wallet.</li>
+        <li><b>GO</b> (or Space) advances one level.</li>
+        <li><b>Cash out</b> (or C) banks bet × current multiplier at any time after the first level.</li>
+        <li>Finishing the road pays bet × the final multiplier. There is no extra completion bonus.</li>
+        <li>Harder difficulty has fewer, riskier levels and larger approved multipliers.</li>
       </ul>
       <div class="modal-actions">
         <button class="btn btn-primary" data-close="howModal">Got it</button>
@@ -184,7 +187,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>
-      <p>Settings and info for this local recreation.</p>
+      <p>Settings and information for Chicken Road 2.0.</p>
       <div class="menu-list">
         <button class="menu-item" id="menuSound">
           <span>Sound effects</span><b id="menuSoundState">On</b>
@@ -194,9 +197,6 @@
         </button>
         <button class="menu-item" id="menuHow">
           <span>How to play</span><span>›</span>
-        </button>
-        <button class="menu-item" id="menuReset">
-          <span>Reset demo balance</span><span>↺</span>
         </button>
         <a class="menu-item" href="../">
           <span>Back to arcade hub</span><span>›</span>

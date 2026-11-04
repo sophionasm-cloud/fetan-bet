@@ -49,8 +49,8 @@ async function main() {
   process.env.TEST_DATABASE_BRANCH_ID = EXPECTED.branch;
   const db = require('../db');
   const { createChickenRoadRealService } = require('../chicken-road-real-service');
-  const { laneOutcomes, commitSeed, verifyProof } = require('../chicken-road-committed');
-  const { ladderFor } = require('../chicken-road-demo-service');
+  const { laneOutcomesV2, commitSeed, verifyProof } = require('../chicken-road-committed');
+  const { MODES, payoutFor } = require('../chicken-road-2-config');
   const service = createChickenRoadRealService({ query: db.query, withTx: db.withTx, ledger: db.postLedger });
   const results = [];
 
@@ -73,9 +73,9 @@ async function main() {
   }
 
   function seedFor(roundId, difficulty, predicate) {
-    for (let n = 0; n < 100000; n++) {
+    for (let n = 0; n < 2000000; n++) {
       const seed = Buffer.alloc(32); seed.writeUInt32BE(n, 28);
-      const outcomes = laneOutcomes(seed, roundId, difficulty);
+      const outcomes = laneOutcomesV2(seed, roundId, difficulty);
       if (predicate(outcomes)) return seed;
     }
     throw new Error(`Could not find deterministic synthetic seed for ${difficulty}.`);
@@ -137,7 +137,7 @@ async function main() {
     const key=crypto.randomUUID();
     const [paid,retried]=await Promise.all([x.g.cashout(x.userId,x.roundId,key),x.g.cashout(x.userId,x.roundId,key)]);
     assert.deepEqual(retried,paid);
-    assert.equal(paid.payout_santim,Math.round(x.bet*ladderFor(difficulty)[0]));
+    assert.equal(paid.payout_santim,payoutFor(x.bet,MODES[difficulty].multiplierCents[0]));
     assert.equal((await x.g.current(x.userId)).balance_santim,500000-x.bet+paid.payout_santim);
     await assert.rejects(x.g.cashout(x.userId,x.roundId,crypto.randomUUID()),/ROUND_SETTLED/);
     await reconcile(x.userId,500000-x.bet+paid.payout_santim);
@@ -152,22 +152,22 @@ async function main() {
     assert.equal(crashed.crashed,true);assert.equal(crashed.payout_santim,0);
     const led=await db.query("SELECT count(*)::int n FROM ledger WHERE user_id=$1 AND ref_type='game_round'",[x.userId]);
     assert.equal(led.rows[0].n,1);
-    const proof=await x.g.verify(x.userId,x.roundId);assert.equal(proof.seed_commit_valid,true);assert.equal(proof.outcomes_match_seed,true);assert.equal(proof.merkle_proofs_valid,true);
+    const proof=await x.g.verify(x.userId,x.roundId);assert.equal(proof.seed_commit_valid,true);assert.equal(proof.outcomes_match_seed,true);assert.equal(proof.probabilities_match_config,true);assert.equal(proof.merkle_proofs_valid,true);
     await reconcile(x.userId,500000-x.bet);
     results.push('crash/no payout/fairness proof');
   }
 
-  // Full finish applies exactly the existing final ladder × 1.5 rule.
+  // Full finish pays exactly the approved final multiplier; there is no bonus.
   console.log('Integration phase: finish');
   {
     const x=await newRound({requireAllSafe:true,bet:2000});
-    for(let lane=1;lane<=14;lane++){const r=await x.g.cross(x.userId,x.roundId,crypto.randomUUID());assert.equal(r.crashed,false);assert.equal(r.step,lane);}
+    for(let lane=1;lane<=MODES.easy.lanes;lane++){const r=await x.g.cross(x.userId,x.roundId,crypto.randomUUID());assert.equal(r.crashed,false);assert.equal(r.step,lane);}
     const finish=await x.g.cross(x.userId,x.roundId,crypto.randomUUID());
-    const expected=Math.round(x.bet*ladderFor('easy')[13]*1.5);
+    const expected=payoutFor(x.bet,MODES.easy.multiplierCents[MODES.easy.lanes-1]);
     assert.equal(finish.outcome,'finish');assert.equal(finish.payout_santim,expected);
-    const proof=await x.g.verify(x.userId,x.roundId);assert.equal(proof.seed_commit_valid,true);assert.equal(proof.merkle_proofs_valid,true);
+    const proof=await x.g.verify(x.userId,x.roundId);assert.equal(proof.seed_commit_valid,true);assert.equal(proof.probabilities_match_config,true);assert.equal(proof.merkle_proofs_valid,true);
     await reconcile(x.userId,500000-x.bet+expected);
-    results.push('14 lanes + finish bonus + fairness verification + ledger reconciliation');
+    results.push('15 Easy levels + exact final multiplier + fairness verification + ledger reconciliation');
   }
 
   // Failure after a real postLedger credit must roll back wallet and ledger in the real tx.

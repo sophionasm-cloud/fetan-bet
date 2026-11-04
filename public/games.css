@@ -3288,17 +3288,22 @@ body.game-open {
   touch-action: manipulation;
 }
 body.game-open > .top,
-body.game-open > .stripe,
-body.game-open > #nav { display: none !important; }
+body.game-open > .stripe { display: none !important; }
+/* Keep the four customer destinations reachable during play. The game shell
+   stops above the fixed navigation so controls are never covered. */
+body.game-open > #nav.app-bottom-tabs {
+  display: grid !important;
+  z-index: 300;
+}
 body.game-open #app {
   position: fixed;
-  inset: 0;
+  inset: 0 0 var(--app-nav-height, 0px);
   z-index: 200;
   width: 100%;
-  height: var(--app-height, 100dvh);
+  height: auto;
   max-width: none;
   margin: 0;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
   overflow: hidden;
 }
 body.game-open .mobile-game-shell {

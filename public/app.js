@@ -512,37 +512,42 @@ document.addEventListener('click', (event) => {
 // ---------- NAV ----------
 function nav() {
   const tabs = [];
-  const mobileUserTabs = me.role === 'user' && window.matchMedia('(max-width: 1024px)').matches;
+  const mobileUserTabs = me?.role === 'user' && window.matchMedia('(max-width: 1024px)').matches;
   if (me.role === 'admin' || me.role === 'superadmin') {
     tabs.push(['admin', '⚙', 'admin']);
   } else if (me.role === 'agent') {
     tabs.push(['agent', '🔑', 'agent']);
   } else {
-    if (mobileUserTabs) {
-      tabs.push(['games', uiIcon('games'), t('games')]);
-      tabs.push(['wallet', uiIcon('wallet'), t('wallet')]);
-      tabs.push(['deposit', uiIcon('deposit'), t('deposit')]);
-      tabs.push(['profile', uiIcon('profile'), lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
-    } else {
-      tabs.push(['games', uiIcon('games'), 'games']);
-      tabs.push(['wallet', uiIcon('wallet'), 'wallet']);
-      tabs.push(['deposit', uiIcon('deposit'), 'deposit']);
-      tabs.push(['withdraw', uiIcon('withdraw'), 'withdraw']);
-      tabs.push(['history', uiIcon('history'), 'history']);
-      tabs.push(['profile', uiIcon('profile'), lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
-      tabs.push(['support', uiIcon('support'), 'support']);
-    }
+    // Customers always get the same four primary destinations. Secondary
+    // destinations remain available from the header menu on small screens.
+    tabs.push(['games', uiIcon('games'), t('games')]);
+    tabs.push(['wallet', uiIcon('wallet'), t('wallet')]);
+    tabs.push(['deposit', uiIcon('deposit'), t('deposit')]);
+    tabs.push(['profile', uiIcon('profile'), lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
   }
 
   const n = $('nav');
-  if (me && me.role !== 'user') { n.hidden = true; return; }
+  if (!me || me.role !== 'user') {
+    n.hidden = true;
+    document.body.classList.remove('has-app-nav');
+    return;
+  }
   n.hidden = false;
+  n.setAttribute('aria-label', 'Customer navigation');
   n.className = mobileUserTabs ? 'tabs app-bottom-tabs' : 'tabs';
   document.body.classList.toggle('has-app-nav', mobileUserTabs);
   n.innerHTML = tabs.map(([k, icon, label]) =>
-    `<button type="button" data-k="${k}" class="${tab === k ? 'on' : ''}"${tab === k ? ' aria-current="page"' : ''}><span class="nav-icon" aria-hidden="true">${icon}</span><span class="nav-label">${esc(mobileUserTabs ? label : t(label))}</span></button>`
+    `<button type="button" data-k="${k}" class="${tab === k ? 'on' : ''}"${tab === k ? ' aria-current="page"' : ''}><span class="nav-icon" aria-hidden="true">${icon}</span><span class="nav-label">${esc(label)}</span></button>`
   ).join('');
-  n.querySelectorAll('button').forEach((b) => (b.onclick = () => { tab = b.dataset.k; render(); }));
+  n.querySelectorAll('button').forEach((b) => (b.onclick = () => {
+    tab = b.dataset.k;
+    if (/^#\/game\//.test(location.hash)) {
+      document.body.classList.remove('game-open');
+      window.Games?.cleanupCurrent?.();
+      history.pushState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);
+    }
+    render();
+  }));
 }
 
 async function render(subMode = '') {
@@ -579,7 +584,7 @@ async function render(subMode = '') {
   // Rebuild role-aware navigation on every render so tab contents, active state,
   // and responsive classes stay in sync after login, route changes, and resize.
   nav();
-  $('nav').hidden = me.role !== 'user' || Boolean(gameRoute && matchMedia('(max-width: 1024px)').matches);
+  $('nav').hidden = me.role !== 'user';
   syncTelegramShell(Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches));
   const views = {
     games: (root) => gamesView(root, gameRoute),

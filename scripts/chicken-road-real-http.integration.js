@@ -10,8 +10,8 @@ const { Client } = require('pg');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { assertExpectedNeonTestEndpoint } = require('./test-db-safety');
-const { laneOutcomes, commitSeed, merkleTree, ENGINE_VERSION, PROBABILITY_VERSION } = require('../chicken-road-committed');
-const { ladderFor, PAYOUT_VERSION } = require('../chicken-road-demo-service');
+const { laneOutcomesV2, commitSeed, merkleTreeV2, ENGINE_VERSION_V2, PROBABILITY_VERSION_V2 } = require('../chicken-road-committed');
+const { MODES, CONFIG_VERSION, PAYOUT_VERSION, payoutFor } = require('../chicken-road-2-config');
 
 const EXPECTED = Object.freeze({
   project: 'muddy-dew-45860324', branch: 'br-patient-recipe-b58ey3ge',
@@ -174,22 +174,22 @@ async function main() {
         request(`${real}/cashout`, { method: 'POST', body: { round_id: started.json.id, action_id: payoutKey } }),
       ]);
       assert.equal(paid.status, 200); assert.deepEqual(retried, paid);
-      assert.equal(paid.json.payout_santim, Math.round(1000 * ladderFor('easy')[0]));
+      assert.equal(paid.json.payout_santim, payoutFor(1000, MODES.easy.multiplierCents[0]));
     }
     results.push('round ownership enforced; cash-out after safe crossing settles once (when committed safe)');
 
     async function createFixture({ mode, difficulty = 'easy', bet = 200, finish = false }) {
       const id = crypto.randomUUID();
       let seed;
-      for (let n = 0; n < 100000; n++) {
+      for (let n = 0; n < 2000000; n++) {
         const candidate = Buffer.alloc(32); candidate.writeUInt32BE(n, 28);
-        const outcomes = laneOutcomes(candidate, id, difficulty);
+        const outcomes = laneOutcomesV2(candidate, id, difficulty);
         if (finish ? outcomes.every((x) => x.outcome === 'safe') : outcomes[0].outcome === mode) { seed = candidate; break; }
       }
       assert.ok(seed, `could not prepare ${mode || 'all-safe'} committed fixture`);
-      const outcomes = laneOutcomes(seed, id, difficulty); const tree = merkleTree(id, outcomes);
-      const detail = { seed: seed.toString('hex'), outcomes, tree };
-      const startAction = crypto.randomUUID(); const gameDetail = JSON.stringify({ round_id: id });
+      const outcomes = laneOutcomesV2(seed, id, difficulty); const tree = merkleTreeV2(id, outcomes);
+      const detail = { seed: seed.toString('hex'), outcomes, tree, configVersion: CONFIG_VERSION, payoutVersion: PAYOUT_VERSION, lanes: MODES[difficulty].lanes, lines: [...MODES[difficulty].lines] };
+      const startAction = crypto.randomUUID(); const gameDetail = JSON.stringify({ round_id: id, config_version: CONFIG_VERSION });
       await db.withTx(async (c) => {
         const game = await c.query("INSERT INTO game_rounds(user_id,game,bet,payout,step,status,detail,server_seed,server_seed_hash,difficulty) VALUES($1,'chicken-road-dash',$2,0,0,'active',$3,$4,$5,$6) RETURNING id",
           [player, bet, gameDetail, seed.toString('hex'), commitSeed(seed), difficulty]);
@@ -198,7 +198,7 @@ async function main() {
         await c.query(`INSERT INTO chicken_road_dash_rounds
           (id,user_id,difficulty,status,progress,bet_santim,payout_santim,seed_commitment,outcome_root,detail,engine_version,probability_version,payout_version,start_action_id,start_request,game_round_id)
           VALUES($1,$2,$3,'active',0,$4,0,$5,$6,$7::jsonb,$8,$9,$10,$11,$12::jsonb,$13)`,
-        [id, player, difficulty, bet, commitSeed(seed), tree.root, JSON.stringify(detail), ENGINE_VERSION, PROBABILITY_VERSION, PAYOUT_VERSION, startAction, JSON.stringify({ difficulty, bet_santim: bet }), gameId]);
+        [id, player, difficulty, bet, commitSeed(seed), tree.root, JSON.stringify(detail), ENGINE_VERSION_V2, PROBABILITY_VERSION_V2, PAYOUT_VERSION, startAction, JSON.stringify({ difficulty, bet_santim: bet }), gameId]);
       });
       return { id, bet, difficulty };
     }
@@ -218,7 +218,7 @@ async function main() {
       request(`${real}/cashout`, { method: 'POST', body: { round_id: safeRound.id, action_id: cashKey } }),
     ]);
     assert.equal(cash.status, 200); assert.deepEqual(cashRetry, cash);
-    assert.equal(cash.json.payout_santim, Math.round(safeRound.bet * ladderFor('easy')[0]));
+    assert.equal(cash.json.payout_santim, payoutFor(safeRound.bet, MODES.easy.multiplierCents[0]));
     assert.equal((await db.query("SELECT status FROM chicken_road_dash_rounds WHERE id=$1", [safeRound.id])).rows[0].status, 'cashed_out');
     results.push('safe crossing, replay protection, concurrent duplicate crossing/cash-out and exact cash-out payout');
 
@@ -231,23 +231,23 @@ async function main() {
     results.push('crash is settled with no credit and only the original bet ledger row');
 
     const finishRound = await createFixture({ finish: true, bet: 200 });
-    for (let lane = 1; lane <= 14; lane++) {
+    for (let lane = 1; lane <= MODES.easy.lanes; lane++) {
       const crossing = await request(`${real}/cross`, { method: 'POST', body: { round_id: finishRound.id, action_id: crypto.randomUUID() } });
       assert.equal(crossing.status, 200); assert.equal(crossing.json.crashed, false); assert.equal(crossing.json.step, lane);
     }
     const finish = await request(`${real}/cross`, { method: 'POST', body: { round_id: finishRound.id, action_id: crypto.randomUUID() } });
-    const expectedFinish = Math.round(finishRound.bet * ladderFor('easy')[13] * 1.5);
+    const expectedFinish = payoutFor(finishRound.bet, MODES.easy.multiplierCents[MODES.easy.lanes - 1]);
     assert.equal(finish.status, 200); assert.equal(finish.json.outcome, 'finish'); assert.equal(finish.json.payout_santim, expectedFinish);
     const proof = await request(`${real}/verify/${finishRound.id}`);
-    assert.equal(proof.status, 200); assert.ok(proof.json.seed_commit_valid && proof.json.outcomes_match_seed && proof.json.merkle_proofs_valid);
-    results.push('all 14 crossings plus finish bonus and fairness verification through authenticated HTTP routes');
+    assert.equal(proof.status, 200); assert.ok(proof.json.seed_commit_valid && proof.json.outcomes_match_seed && proof.json.probabilities_match_config && proof.json.merkle_proofs_valid);
+    results.push('all 15 Easy crossings, exact final multiplier and fairness verification through authenticated HTTP routes');
 
     for (const uid of [player, poor]) {
       const reconciliation = await db.query('SELECT w.balance,COALESCE(SUM(l.amount),0)::bigint total FROM wallets w LEFT JOIN ledger l ON l.user_id=w.user_id WHERE w.user_id=$1 GROUP BY w.balance', [uid]);
       assert.equal(Number(reconciliation.rows[0].balance), Number(reconciliation.rows[0].total));
     }
     console.log(JSON.stringify({ identity: { ...identity, hostname: EXPECTED.hostname }, results, syntheticUserCount: 3,
-      playerReconciliation: 'wallet balance equals signed ledger sum', realWalletModeSourceRemainsDisabled: true }, null, 2));
+      playerReconciliation: 'wallet balance equals signed ledger sum', realWalletModeEnabled: true }, null, 2));
   } finally {
     if (app && app.exitCode === null) { app.kill(); await Promise.race([once(app, 'exit'), new Promise((resolve) => setTimeout(resolve, 3000))]); }
     if (db?.pool) await db.pool.end().catch(() => {});

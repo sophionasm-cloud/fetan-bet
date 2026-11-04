@@ -1480,8 +1480,8 @@ app.post('/api/games/penalty/shoot', ...g((req) => games.penaltyShoot(req.user.i
 app.post('/api/games/penalty/cashout', ...g((req) => games.penaltyCashout(req.user.id, req.body.action_id, Number(req.body.expected_step))));
 app.get('/api/games/road/history', ...g((req) => games.roadHistory(req.user.id)));
 app.post('/api/games/road/verify', ...g((req) => Promise.resolve(games.roadVerify(req.body))));
-// Chicken Road Dash Model C is demo-only. Its balance and rounds are stored
-// outside the financial wallet, game_rounds, and ledger tables.
+// Chicken Road 2.0 real-wallet rounds settle through wallets, game_rounds and
+// ledger. The demo endpoints remain as an isolated, non-financial fallback.
 app.get('/api/games/chicken-road-dash/demo', ...g((req) => chickenRoadDemo.current(req.user.id)));
 app.post('/api/games/chicken-road-dash/demo/start', ...g((req) => chickenRoadDemo.start(req.user.id, req.body)));
 app.post('/api/games/chicken-road-dash/demo/cross', ...g((req) => chickenRoadDemo.cross(req.user.id, req.body.round_id, req.body.action_id)));

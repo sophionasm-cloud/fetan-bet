@@ -238,6 +238,81 @@ body {
   margin-top: 2px;
 }
 
+/* Approved multiplier path. It sits over the sky area so it never reduces the
+   playable road or covers the bet/cash-out controls. */
+.mult-ladder {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid rgba(72, 169, 255, 0.22);
+  border-radius: 11px;
+  background: rgba(9, 13, 18, 0.8);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(8px);
+}
+.mult-ladder-title {
+  flex: 0 0 auto;
+  color: #9ba7b5;
+  font: 800 7px/1 var(--font-ui);
+  letter-spacing: 1px;
+}
+.mult-ladder-track {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+.mult-ladder-track::-webkit-scrollbar { display: none; }
+.mult-ladder-item {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 3px 6px;
+  border: 1px solid rgba(160, 176, 220, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #aeb9d8;
+  line-height: 1;
+}
+.mult-ladder-item .ladder-line {
+  color: #7f8aa6;
+  font: 700 7px/1 var(--font-ui);
+  letter-spacing: .35px;
+}
+.mult-ladder-item b {
+  margin-top: 2px;
+  color: #e7edf9;
+  font: 800 10px/1 var(--font-display);
+  white-space: nowrap;
+}
+.mult-ladder-item.passed { opacity: .55; }
+.mult-ladder-item.current {
+  border-color: rgba(255, 211, 41, 0.85);
+  background: var(--cr-yellow);
+  box-shadow: 0 0 12px rgba(255, 211, 41, 0.2);
+}
+.mult-ladder-item.current .ladder-line,
+.mult-ladder-item.current b { color: #241600; }
+.mult-ladder-item.next {
+  border-color: rgba(255, 211, 41, 0.55);
+  background: rgba(255, 211, 41, 0.1);
+}
+.mult-ladder-item.next b { color: var(--cr-yellow); }
+
 .stage-hint {
   position: absolute;
   left: 50%;
@@ -580,7 +655,6 @@ body {
 .menu-item:hover { color: #ffd329; }
 html.fetan-integrated .ticker-row,
 html.fetan-integrated .disclaimer { display: none !important; }
-html.fetan-integrated #menuReset { display: initial !important; }
 html.fetan-integrated .model-c-note {
   position: absolute; z-index: 7; top: 8px; left: 50%; transform: translateX(-50%);
   width: max-content; max-width: calc(100% - 20px); padding: 5px 10px;

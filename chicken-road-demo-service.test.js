@@ -119,7 +119,7 @@ test('Model C demo: starts, persists, completes all 14 lanes and finish, then ve
   }
   const finish = await service.cross(11, start.id, crypto.randomUUID());
   assert.equal(finish.finished, true);
-  assert.equal(finish.payout_santim, Math.round(300 * ladderFor('easy')[13] * 1.5));
+  assert.equal(finish.payout_santim, Math.round(300 * ladderFor('easy')[13]));
   const proof = await service.verify(11, start.id);
   assert.equal(proof.seed_commit_valid, true);
   assert.equal(proof.payout_version, 1);

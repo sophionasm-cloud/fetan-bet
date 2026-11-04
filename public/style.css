@@ -1808,6 +1808,7 @@ body.mobile-app:not(.game-open) .mobile-header-menu-panel button {
 body.mobile-app:not(.game-open) .mobile-header-menu-panel button:hover { background: var(--surface-hover); color: var(--gold-bright); }
 body.mobile-app:not(.game-open) .stripe { display: none; }
 body.mobile-app:not(.game-open) main { padding: 14px 12px 28px; }
+body.mobile-app.has-app-nav { --app-nav-height: calc(68px + env(safe-area-inset-bottom)); }
 body.mobile-app.has-app-nav:not(.game-open) main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 body.mobile-app.has-app-nav #nav.app-bottom-tabs {
   position: fixed;

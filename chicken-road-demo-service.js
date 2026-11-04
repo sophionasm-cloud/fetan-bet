@@ -104,7 +104,7 @@ function createChickenRoadDemoService({ query, withTx, generateSeed = generateRo
       const seed = generateSeed(id, difficulty);
       const outcomes = laneOutcomes(seed, id, difficulty);
       const tree = merkleTree(id, outcomes);
-      const detail = { seed: seed.toString('hex'), outcomes, tree, payoutVersion: PAYOUT_VERSION, finishBonusBps: 15000 };
+      const detail = { seed: seed.toString('hex'), outcomes, tree, payoutVersion: PAYOUT_VERSION };
       await client.query('UPDATE chicken_road_dash_demo_balances SET balance_santim=balance_santim-$2, updated_at=NOW() WHERE user_id=$1', [userId, bet]);
       const r = await client.query(`INSERT INTO chicken_road_dash_demo_rounds
         (id,user_id,difficulty,status,progress,bet_santim,payout_santim,seed_commitment,outcome_root,detail,engine_version,probability_version,payout_version)
@@ -142,7 +142,7 @@ function createChickenRoadDemoService({ query, withTx, generateSeed = generateRo
         if (lane > LANES + 1) throw new Error(ERRORS.STALE);
         if (lane === LANES + 1) {
           if (step !== LANES) throw new Error(ERRORS.STALE);
-          const mult = ladder[LANES - 1] * 1.5;
+          const mult = ladder[LANES - 1];
           const payout = cents(Number(row.bet_santim), mult);
           await client.query(`UPDATE chicken_road_dash_demo_balances SET balance_santim=balance_santim+$2,updated_at=NOW() WHERE user_id=$1`, [userId, payout]);
           await client.query(`UPDATE chicken_road_dash_demo_rounds SET status='finished',progress=$2,payout_santim=$3,settled_at=NOW(),updated_at=NOW() WHERE id=$1`, [roundId, lane, payout]);

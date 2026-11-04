@@ -1,8 +1,13 @@
 'use strict';
 
-// Model C outcome primitives. Not wired to an API or settlement path.
+// Model C outcome primitives. Version 1 remains the legacy 14-lane demo
+// protocol. Version 2 is the approved Chicken Road 2.0 configuration and is
+// used by the real-wallet settlement service.
 const crypto = require('node:crypto');
 const { LANES } = require('./chicken-road-engine');
+const config = require('./chicken-road-2-config');
+const ENGINE_VERSION_V2 = config.ENGINE_VERSION;
+const PROBABILITY_VERSION_V2 = config.PROBABILITY_VERSION;
 
 const ENGINE_VERSION = 1;
 const PROBABILITY_VERSION = 1;
@@ -42,4 +47,42 @@ function verifyProof(roundId,lane,outcome,salt,proof,root){
   for(const siblingHex of proof){const sibling=Buffer.from(siblingHex,'hex');node=crypto.createHash('sha256').update(Buffer.concat(index%2?[sibling,node]:[node,sibling])).digest();index=Math.floor(index/2);}
   return node.toString('hex')===root;
 }
-module.exports={ENGINE_VERSION,PROBABILITY_VERSION,DIFFICULTIES,SCALE,generateRoundSeed,commitSeed,laneUniform,laneOutcomes,merkleTree,verifyProof};
+
+function laneUniformV2(seed,roundId,difficulty,lane){
+  const mode=config.MODES[difficulty];
+  if(!Buffer.isBuffer(seed)||seed.length!==32||!roundId||!mode||!Number.isInteger(lane)||lane<1||lane>mode.lanes)throw new TypeError('Invalid committed-outcome inputs');
+  const msg=`chicken-road-dash|engine:${ENGINE_VERSION_V2}|config:${PROBABILITY_VERSION_V2}|round:${roundId}|difficulty:${difficulty}|lane:${lane}`;
+  const bytes=crypto.createHmac('sha256',seed).update(msg).digest();
+  return bytes.readUInt32BE(0);
+}
+function laneOutcomesV2(seed,roundId,difficulty){
+  const mode=config.modeConfig(difficulty);
+  return mode.lines.map((line,index)=>{
+    const lane=index+1;
+    const cumulativeProbabilityPpb=mode.cumulativeProbabilityPpb[index];
+    const survival=config.conditionalSurvivalForLevel(difficulty,lane);
+    const uniform=laneUniformV2(seed,roundId,difficulty,lane);
+    return {
+      lane,line,cumulativeProbabilityPpb,
+      survivalNumerator:survival.numerator,
+      survivalDenominator:survival.denominator,
+      uniform,
+      outcome:config.survivesStep(survival.numerator,survival.denominator,uniform)?'safe':'collision',
+    };
+  });
+}
+function merkleTreeV2(roundId,outcomes){
+  const mode=Object.values(config.MODES).find((candidate)=>candidate.lanes===outcomes.length);
+  if(!Array.isArray(outcomes)||!mode)throw new TypeError('Expected the configured playable level count');
+  if(!outcomes.every((entry,index)=>entry&&entry.lane===index+1&&entry.line===mode.lines[index]))throw new TypeError('Invalid level outcome');
+  const salts=outcomes.map(()=>crypto.randomBytes(32).toString('hex'));
+  let level=outcomes.map((x,i)=>outcomeLeaf(roundId,x.lane,x.outcome,salts[i]));
+  for(let i=outcomes.length;i<16;i++)level.push(crypto.createHash('sha256').update(`chicken-road-dash-pad|${roundId}|${i+1}`).digest());
+  const proofPaths=outcomes.map(()=>[]),indices=outcomes.map((_,i)=>i);
+  while(level.length>1){
+    for(let i=0;i<indices.length;i++){const index=indices[i],sibling=index^1;proofPaths[i].push(level[sibling].toString('hex'));indices[i]=Math.floor(index/2);}
+    const next=[];for(let i=0;i<level.length;i+=2)next.push(crypto.createHash('sha256').update(Buffer.concat([level[i],level[i+1]])).digest());level=next;
+  }
+  return {root:level[0].toString('hex'),salts,proofs:proofPaths};
+}
+module.exports={ENGINE_VERSION,PROBABILITY_VERSION,ENGINE_VERSION_V2,PROBABILITY_VERSION_V2,DIFFICULTIES,SCALE,generateRoundSeed,commitSeed,laneUniform,laneOutcomes,merkleTree,verifyProof,laneUniformV2,laneOutcomesV2,merkleTreeV2};
