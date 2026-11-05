@@ -16,3 +16,9 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      # Fail-closed server-side wagering policy. Keep "demo" until legal,
+      # licensing, certification and payment approvals are documented. Real
+      # mode additionally requires REAL_MONEY_AUTHORIZATION (an approval
+      # reference, not a boolean) in the Render environment.
+      - key: WAGERING_MODE
+        value: demo

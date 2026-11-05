@@ -350,6 +350,7 @@
       SERVICE_UNAVAILABLE: 'The server cannot reach its database. The wallet was not changed.',
       GENERIC: 'The server could not complete that request. Check server logs; your wallet was not changed.',
       INSUFFICIENT: 'Your Fetan Bet wallet does not have enough balance.',
+      WAGERING_DISABLED: 'New wagers are currently disabled. Any active Chicken Road round can still be finished or cashed out.',
       ACTIVE_ROUND: 'An active Chicken Road round already exists; it has been restored.',
       STALE_ACTION: 'The round changed in another window. Its latest server state has been restored.',
       PAYOUT_LIMIT: 'This payout exceeds the safe settlement limit. Cash out the current round.',

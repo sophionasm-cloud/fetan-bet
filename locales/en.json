@@ -151,6 +151,7 @@
   "err_SETTLEMENT_GAP": "A previous commission week is missing. Close weeks in order.",
   "err_SCHEMA_NOT_READY": "The database is not ready yet. Apply the pending migrations, then try again.",
   "err_SERVICE_UNAVAILABLE": "The service is temporarily unavailable. Please try again shortly.",
+  "err_WAGERING_DISABLED": "New wagers are currently disabled. Any active round can still be finished or cashed out.",
   "err_FORBIDDEN": "You do not have permission.",
   "err_SUSPENDED": "This account is suspended.",
   "err_RATE": "Too many attempts. Please wait a few minutes.",

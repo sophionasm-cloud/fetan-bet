@@ -1,5 +1,5 @@
 // Monte Carlo Simulation for Plinko across all Rows (8-16) and Risk levels (Low, Medium, High)
-// Simulates 200,000 balls per configuration, validates measured RTP and top bucket hit rate.
+// Simulates 200,000 balls per configuration, validates measured ~30% RTP and top bucket hit rate.
 const crypto = require('crypto');
 const { PLINKO_PAYOUTS, generatePlinkoPath } = require('./games');
 
@@ -64,5 +64,5 @@ for (const rows of ROWS_LIST) {
 }
 
 console.log('='.repeat(80));
-console.log('SIMULATION COMPLETE: All 27 combinations tested successfully with ~99% RTP!');
+console.log('SIMULATION COMPLETE: All 27 combinations tested successfully with ~30% RTP!');
 console.log('='.repeat(80));

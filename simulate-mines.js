@@ -1,5 +1,5 @@
 // Simulate Mines RTP across different grid sizes and mine counts
-// Validates that measured RTP is ~99% (within statistical variance)
+// Validates that measured RTP is ~30% (within statistical variance)
 const { generateMinesLayout, getMinesMultiplier, MINES_GRIDS } = require('./games');
 
 const ROUNDS_PER_CONFIG = 100000;
@@ -59,8 +59,8 @@ for (const cfg of TEST_CONFIGS) {
 
   console.log(`Grid: ${grid}x${grid} (N=${N}) | Mines: ${M} | Picks: ${picks} | Mult: ${targetMultiplier.toFixed(2)}x`);
   console.log(`  - Win Rate: ${measuredWinRate.toFixed(2)}% (Theoretical: ${(theoreticalProb * 100).toFixed(2)}%)`);
-  console.log(`  - Measured RTP: ${measuredRTP.toFixed(2)}% (Target: ${(theoreticalRTP * 100).toFixed(2)}% ~ 99%)`);
+  console.log(`  - Measured RTP: ${measuredRTP.toFixed(2)}% (Target: ${(theoreticalRTP * 100).toFixed(2)}% ~ 30%)`);
   console.log('-'.repeat(70));
 }
 
-console.log('Simulation complete! All configurations yield ~99% RTP as expected.');
+console.log('Simulation complete! All configurations yield ~30% RTP as expected.');

@@ -52,7 +52,9 @@
   const STORE_KEY = 'fetanbet.penalty.v1';
   const integrated = new URLSearchParams(location.search).get('fetan') === '1';
   const AIMS = ['left', 'center', 'right'];
-  const BASE_LADDER = [0, 1.8, 3.37, 6.32, 11.86, 22.24];
+  // Version 3 ladder: optimal play at a 30% return target. Reading the tell
+  // and shooting away gives 0.91 / 0.79 / 0.67 goal probabilities.
+  const GOAL_BPS = { easy: 9100n, medium: 7900n, hard: 6700n };
   const LADDER_NODES = 7;
 
   const DIFFICULTY = {
@@ -110,10 +112,14 @@
   }
   function ladderValue(index) {
     if (index <= 0) return 0;
-    if (index < BASE_LADDER.length) return BASE_LADDER[index];
-    let v = BASE_LADDER[BASE_LADDER.length - 1];
-    for (let i = BASE_LADDER.length - 1; i < index; i++) v = Math.round(v * 1.875 * 100) / 100;
-    return v;
+    const goalBps = GOAL_BPS[state.difficulty] || GOAL_BPS.medium;
+    let numerator = 30n;
+    let denominator = 1n;
+    for (let i = 0; i < index; i++) {
+      numerator *= 10000n;
+      denominator *= goalBps;
+    }
+    return Number((numerator + denominator / 2n) / denominator) / 100;
   }
   function fmtLadder(index) {
     if (integrated && state.serverLadder?.[index] !== undefined) {
@@ -164,7 +170,7 @@
   }
 
   function apiErrorMessage(error) {
-    return ({ LOGIN: 'Please sign in again to play.', INSUFFICIENT: 'Your Fetan Bet wallet does not have enough balance.', ACTIVE_ROUND: 'An active Penalty round already exists; it has been restored.', STALE_ACTION: 'The round changed in another window. Its latest server state has been restored.', PAYOUT_LIMIT: 'The current stake has reached the safe settlement limit. Claim the current payout to finish this round.' })[error?.message] || 'The server could not complete that action. Check the round status and retry.';
+    return ({ LOGIN: 'Please sign in again to play.', INSUFFICIENT: 'Your Fetan Bet wallet does not have enough balance.', WAGERING_DISABLED: 'New wagers are currently disabled. You can finish or cash out the active Penalty round.', ACTIVE_ROUND: 'An active Penalty round already exists; it has been restored.', STALE_ACTION: 'The round changed in another window. Its latest server state has been restored.', PAYOUT_LIMIT: 'The current stake has reached the safe settlement limit. Claim the current payout to finish this round.' })[error?.message] || 'The server could not complete that action. Check the round status and retry.';
   }
 
   // ---------------------------------------------------------------- State

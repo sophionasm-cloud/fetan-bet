@@ -11,6 +11,12 @@ const games = require('./games');
 const { query, pool, withTx, createUser, postLedger } = require('./db');
 const { utcWeekBounds } = require('./agent-finance');
 
+function binomial(n, k) {
+  let result = 1;
+  for (let i = 1; i <= k; i++) result = result * (n - k + i) / i;
+  return result;
+}
+
 async function prepareSyntheticFixtures() {
   const digits = () => String(crypto.randomInt(10000000, 99999999));
   const fixtures = { agentPhone: '09' + digits(), adminPhone: '09' + digits(), superPhone: '09' + digits(), agentPassword: 'isolated-agent-test-password', adminPassword: 'isolated-admin-test-password', superPassword: 'isolated-superadmin-test-password', agentPromo: 'TEST-' + digits(), agentBPromo: 'OTHER-' + digits() };
@@ -287,10 +293,10 @@ const server = app.listen(0, async () => {
     // Mines
     const mState = await user('/games/mines');
     ok('mines state retrieves', mState.status === 200 && typeof mState.data.balance === 'number');
-    ok('multiplier 3x3 k=1 is correct', games.getMinesMultiplier(9, 1, 1) === 1.03);
-    ok('multiplier 5x5 k=1 is correct', games.getMinesMultiplier(25, 1, 1) === 0.95);
-    ok('multiplier 7x7 k=1 is correct', games.getMinesMultiplier(49, 1, 1) === 0.93);
-    ok('multiplier 9x9 k=1 is correct', games.getMinesMultiplier(81, 1, 1) === 0.93);
+    ok('multiplier 3x3 k=1 is correct', games.getMinesMultiplier(9, 1, 1) === 0.34);
+    ok('multiplier 5x5 k=1 is correct', games.getMinesMultiplier(25, 1, 1) === 0.31);
+    ok('multiplier 7x7 k=1 is correct', games.getMinesMultiplier(49, 1, 1) === 0.31);
+    ok('multiplier 9x9 k=1 is correct', games.getMinesMultiplier(81, 1, 1) === 0.30);
     ok('mine count 0 rejected', (await user('/games/mines/start', { bet: 1000, mines: 0, grid: 5 })).data.error === 'INVALID');
     ok('mine count >= N rejected', (await user('/games/mines/start', { bet: 1000, mines: 25, grid: 5 })).data.error === 'INVALID');
     ok('invalid grid size rejected', (await user('/games/mines/start', { bet: 1000, mines: 3, grid: 4 })).data.error === 'INVALID');
@@ -309,7 +315,10 @@ const server = app.listen(0, async () => {
     ok('duplicate tile reveal rejected', (await user('/games/mines/step', { cell: safeCell })).data.error === 'INVALID');
 
     const mCashout = await user('/games/mines/cashout', {});
-    ok('cash-out pays correctly through ledger', mCashout.status === 200 && mCashout.data.payout >= 1000);
+    const expectedMinesPayout = require('./payout').grossPayoutFromMultiplierCents(
+      1000, games.getMinesMultiplierCents(9, 1, 1), games.MINES_MAX_WIN
+    );
+    ok('cash-out pays correctly through ledger', mCashout.status === 200 && mCashout.data.payout === expectedMinesPayout);
     ok('cash-out reveals server_seed and mines', mCashout.data.server_seed && Array.isArray(mCashout.data.mines));
     ok('no reveal after round ended', (await user('/games/mines/step', { cell: 0 })).data.error === 'NOT_FOUND');
     ok('no cash-out after round ended', (await user('/games/mines/cashout', {})).data.error === 'NOT_FOUND');
@@ -339,9 +348,13 @@ const server = app.listen(0, async () => {
         for (let i = 0; i < Math.floor(arr.length / 2); i++) {
           if (arr[i] !== arr[arr.length - 1 - i]) allSymm = false;
         }
+        if (arr[Math.floor(r / 2)] >= 1) allSymm = false;
+        const rtp = arr.reduce((sum, multiplier, bucket) =>
+          sum + multiplier * binomial(r, bucket) / (2 ** r), 0);
+        if (Math.abs(rtp - games.TARGET_RTP) > 0.0031) allSymm = false;
       }
     }
-    ok('every plinko table is symmetric, has rows+1 entries, and rtp between 0.97 and 0.995', allSymm);
+    ok('every plinko table is symmetric, has rows+1 entries, no 1.00x center, and ~30% RTP', allSymm);
     ok('plinko invalid rows rejected', (await user('/games/plinko', { bet: 1000, rows: 5, risk: 'low' })).data.error === 'INVALID');
     ok('plinko invalid risk rejected', (await user('/games/plinko', { bet: 1000, rows: 10, risk: 'extreme' })).data.error === 'INVALID');
 
@@ -357,7 +370,8 @@ const server = app.listen(0, async () => {
       client_seed: plRes.data.client_seed,
       nonce: 5,
       rows: 10,
-      risk: 'medium'
+      risk: 'medium',
+      payout_version: plRes.data.payout_version
     });
     ok('plinko fairness check reproduces path and bucket', plVer.status === 200 && plVer.data.bucket === plRes.data.bucket && JSON.stringify(plVer.data.path) === JSON.stringify(plRes.data.path));
 

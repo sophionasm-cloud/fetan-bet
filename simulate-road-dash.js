@@ -5,7 +5,7 @@
 // 3. Median lanes crossed
 
 const crypto = require('crypto');
-const { ROAD_CONFIG } = require('./games');
+const { ROAD_CONFIG, getLadder } = require('./games');
 
 const ROUNDS_PER_DIFF = 100000;
 const BET = 100; // 1 credit
@@ -13,19 +13,6 @@ const BET = 100; // 1 credit
 function getLaneCrashChance(diff, lane) {
   const cfg = ROAD_CONFIG.difficulties[diff];
   return Math.min(0.99, cfg.p0 + cfg.step * (lane - 1));
-}
-
-function getLadder(diff) {
-  const cfg = ROAD_CONFIG.difficulties[diff];
-  let prod = 1;
-  const ladder = [];
-  for (let i = 1; i <= cfg.lanes; i++) {
-    const pi = getLaneCrashChance(diff, i);
-    prod *= (1 - pi);
-    const m = Math.max(1.01, Math.floor((ROAD_CONFIG.rtp / prod) * 100) / 100);
-    ladder.push(m);
-  }
-  return ladder;
 }
 
 function simulateDifficulty(diff) {

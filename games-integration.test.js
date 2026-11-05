@@ -138,23 +138,44 @@ assert.match(gameServer, /const saved = aim === cue\.dive/,
 assert.match(gameServer, /async function penaltyCashout[\s\S]*?UPDATE game_rounds SET status='done', payout=\$1, detail=\$2 WHERE id=\$3 AND status='active' AND step=\$4[\s\S]*?postLedger\(\{ client, userId, delta: payout, type: 'win'/,
   'Penalty cashout conditionally settles once through the existing ledger');
 
-// Server and UI share the standalone Penalty ladder values and recurrence.
-assert.deepEqual(
-  Array.from({ length: 6 }, (_, step) => Number(games.penaltyMultiplierCents(step))),
-  [0, 180, 337, 632, 1186, 2224]
-);
-let previous = 2224n;
-for (let step = 6; step <= 24; step++) {
-  previous = (previous * 1875n + 500n) / 1000n;
-  assert.equal(games.penaltyMultiplierCents(step), previous, `Penalty ladder step ${step}`);
+// Server and UI share the version-3 difficulty-specific Penalty ladders.
+const penaltyLadders = {
+  easy: [0.33, 0.36, 0.40, 0.44, 0.48, 0.53],
+  medium: [0.38, 0.48, 0.61, 0.77, 0.97, 1.23],
+  hard: [0.45, 0.67, 1.00, 1.49, 2.22, 3.32],
+};
+for (const [difficulty, expected] of Object.entries(penaltyLadders)) {
+  assert.deepEqual(
+    Array.from({ length: 6 }, (_, step) => Number(games.penaltyMultiplierCents(step + 1, difficulty, 3)) / 100),
+    expected,
+    `Penalty ${difficulty} version-3 ladder`
+  );
 }
+assert.deepEqual(
+  Array.from({ length: 6 }, (_, step) => Number(games.penaltyMultiplierCents(step, 'medium', 1))),
+  [0, 180, 337, 632, 1186, 2224],
+  'Penalty version 1 retains the legacy ladder'
+);
+assert.deepEqual(
+  Array.from({ length: 6 }, (_, step) => Number(games.penaltyMultiplierCents(step, 'medium', 2))),
+  [0, 180, 337, 632, 1186, 2224],
+  'Penalty version 2 retains the legacy ladder'
+);
 
-for (const betCents of [100, 50000]) {
-  const step = games.penaltyMaxSafeStep(betCents);
-  const settled = BigInt(betCents) * games.penaltyMultiplierCents(step) / 100n;
-  assert.ok(settled <= BigInt(Number.MAX_SAFE_INTEGER), `Penalty ${betCents} santim payout fits safe integer`);
-  assert.ok(BigInt(betCents) * games.penaltyMultiplierCents(step + 1) / 100n > BigInt(Number.MAX_SAFE_INTEGER),
-    `Penalty ${betCents} santim next step is safely blocked`);
+const penaltyCaps = {
+  easy: { 100: 353, 50000: 287 },
+  medium: { 100: 141, 50000: 115 },
+  hard: { 100: 83, 50000: 67 },
+};
+for (const [difficulty, caps] of Object.entries(penaltyCaps)) {
+  for (const betCents of [100, 50000]) {
+    const step = games.penaltyMaxSafeStep(betCents, difficulty, 3);
+    assert.equal(step, caps[betCents], `Penalty ${difficulty} ${betCents} santim cap step`);
+    const settled = BigInt(betCents) * games.penaltyMultiplierCents(step, difficulty, 3) / 100n;
+    assert.ok(settled <= BigInt(Number.MAX_SAFE_INTEGER), `Penalty ${difficulty} ${betCents} santim payout fits safe integer`);
+    assert.ok(BigInt(betCents) * games.penaltyMultiplierCents(step + 1, difficulty, 3) / 100n > BigInt(Number.MAX_SAFE_INTEGER),
+      `Penalty ${difficulty} ${betCents} santim next step is safely blocked`);
+  }
 }
 
 const { grossPayoutFromMultiplierCents } = require('./payout');

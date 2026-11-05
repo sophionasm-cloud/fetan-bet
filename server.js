@@ -19,6 +19,7 @@ const { getAiResponse } = require('./ai-support');
 const { hasPermission } = require('./permissions');
 const { createHealthHandler } = require('./health-check');
 const { createReceiptStorage } = require('./receipt-storage');
+const { resolveWageringPolicy, createWageringGuard } = require('./wagering-safety');
 const { commissionForWeek, utcWeekBounds, completedWeekBounds, addDays, DEFAULT_COMMISSION_BPS, WEEK_TIME_ZONE } = require('./agent-finance');
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
@@ -1466,6 +1467,14 @@ app.post('/api/admin/ai-settings', auth, need('admin.manage'), wrap(async (req) 
 }));
 
 // ---------- games (STRICTLY RESTRICTED TO USERS ONLY) ----------
+// Wallet-backed stakes are gated by WAGERING_MODE. Settlement, continuation,
+// history, verification and Chicken Road demo routes remain available.
+const wageringPolicy = resolveWageringPolicy(process.env);
+if (!wageringPolicy.stakesAllowed) {
+  console.warn(`[wagering] New stakes are blocked (${wageringPolicy.reason}); existing rounds can still settle.`);
+}
+const wageringGuard = createWageringGuard(wageringPolicy);
+app.use('/api/games', wageringGuard);
 const g = (fn) => [auth, need('customer'), wrap((req) => fn(req))];
 app.post('/api/games/roulette', ...g((req) => games.roulette(req.user.id, Number(req.body.bet), req.body.kind,
   req.body.kind === 'number' ? Number(req.body.value) : req.body.value)));
