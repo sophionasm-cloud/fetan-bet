@@ -82,6 +82,20 @@ function mountPromoSlider(app) {
   clearPromoSlider();
   const gameCount = app.querySelectorAll('.gcard').length;
   const currentCustomer = me?.role === 'user';
+  const gameTokens = [
+    ['road', 'Chicken Road Dash'],
+    ['mines', 'Mines'],
+    ['plinko', 'Plinko'],
+    ['keno', 'Keno'],
+    ['bingo', 'Ethiopian Bingo'],
+    ['roulette', 'Roulette'],
+    ['star', 'Star Spin'],
+    ['penalty', 'Penalty'],
+  ];
+  const tokenMarkup = () => gameTokens.map(([key, label], index) => `
+    <span class="promo-game-token promo-game-token--${key}" style="--token-index:${index}" title="${esc(label)}">
+      <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><use href="/images/promotions/game-tokens.svg#token-${key}"></use></svg>
+    </span>`).join('');
   const slides = [
     {
       key: 'daily-winning', image: '/images/promotions/daily-winning.svg',
@@ -93,8 +107,8 @@ function mountPromoSlider(app) {
     {
       key: 'six-games', image: '/images/promotions/six-games.svg',
       title: `${gameCount} DIFFERENT TYPES OF GAMES`,
-      copy: `Explore ${gameCount} different game experiences, all in one place.`,
-      note: 'Browse the current Fetan Bet game catalog.',
+      copy: 'Explore eight different game experiences, all in one place.',
+      note: 'Illustrative artwork. No cash reward is implied.',
       action: 'games', cta: 'Explore Games'
     },
     {
@@ -129,7 +143,16 @@ function mountPromoSlider(app) {
         <small class="promo-slide-note">${esc(slide.note)}</small>
         <button type="button" class="promo-slide-cta" data-promo-action="${slide.action}">${esc(slide.cta)} <span aria-hidden="true">→</span></button>
       </div>
-      <div class="promo-slide-art" aria-hidden="true"><span class="promo-art-glow"></span><img src="${slide.image}" alt="" loading="eager" decoding="async"></div>
+      ${slide.key === 'six-games' ? `
+      <div class="promo-slide-art promo-slide-art--showcase" aria-hidden="true">
+        <span class="promo-art-glow"></span>
+        <div class="promo-showcase">
+          <div class="promo-game-orbit">${tokenMarkup()}</div>
+          <img class="promo-showcase-woman" src="/images/promotions/habesha-promo-woman.svg" width="520" height="620" alt="" loading="eager" decoding="async">
+        </div>
+      </div>
+      <div class="promo-game-strip" aria-hidden="true">${tokenMarkup()}</div>` : `
+      <div class="promo-slide-art" aria-hidden="true"><span class="promo-art-glow"></span><img src="${slide.image}" alt="" loading="eager" decoding="async"></div>`}
     </article>`;
   const copies = [slides[slides.length - 1], ...slides, slides[0]];
   slider.innerHTML = `

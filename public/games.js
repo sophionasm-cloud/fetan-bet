@@ -148,8 +148,10 @@ window.Games = (function () {
   function mount(app, ctx) {
     C = ctx;
     const { t, esc } = C;
-    app.innerHTML = `
-      <!-- FETAN BET HERO BANNER -->
+    // The customer homepage goes straight from the promotional slider to the
+    // game gallery. Guests keep the welcome hero as their registration entry.
+    const welcomeHero = C.guest ? `
+      <!-- FETAN BET HERO BANNER (guest entry only) -->
       <div class="lobby-hero">
         <div class="lobby-hero-art" aria-hidden="true">
           <div class="hero-art-orbit"></div>
@@ -166,7 +168,10 @@ window.Games = (function () {
             <span class="hero-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${lang === 'am' ? 'ፍትሃዊ ውጤቶች' : 'Provably fair'}</span>
           </div>
         </div>
-      </div>
+      </div>` : '';
+
+    app.innerHTML = `
+      ${welcomeHero}
 
       <div class="lobby-section-head"><div><span class="lobby-section-eyebrow">${lang === 'am' ? 'የጨዋታ ማዕከል' : 'GAME LOBBY'}</span><h2>${lang === 'am' ? 'ጨዋታ ይምረጡ' : 'Browse games'}</h2></div><span class="lobby-section-count">8 ${lang === 'am' ? 'ጨዋታዎች' : 'games'}</span></div>
 
