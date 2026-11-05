@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#1b2036" />
+  <meta name="theme-color" content="#08090b" />
   <title>Chicken Road 2.0 — Fetan Bet</title>
   <script>if (new URLSearchParams(location.search).get('fetan') === '1') document.documentElement.classList.add('fetan-integrated');</script>
   <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
@@ -35,7 +35,7 @@
             <path d="M22 50l-3 8M35 50l2 8" stroke="#ffb020" stroke-width="3" stroke-linecap="round"/>
           </svg>
         </span>
-        <span class="brand-text">CHICKEN <em>ROAD</em> <b>DASH</b></span>
+        <span class="brand-text">FETAN <em>BET</em> <b>⚡</b></span>
       </a>
       <div class="top-actions">
         <div class="balance-pill" title="Fetan Bet wallet balance">
@@ -70,9 +70,13 @@
 
     <main class="stage-wrap">
       <div class="stage" id="stage">
-        <canvas id="game" aria-label="Chicken Road Dash game area"></canvas>
+        <canvas id="game" aria-label="Chicken Road Dash racing circuit"></canvas>
+        <div class="race-title" aria-hidden="true">
+          <span class="race-title-kicker">GRAND PRIX</span>
+          <strong>CHICKEN <em>ROAD</em> DASH</strong>
+        </div>
         <div class="mult-ladder" id="multLadder" aria-label="Approved multiplier ladder">
-          <span class="mult-ladder-title">LEVELS</span>
+          <span class="mult-ladder-title">ODDS</span>
           <div class="mult-ladder-track" id="multLadderTrack" tabindex="0" aria-label="Scrollable level multipliers"></div>
         </div>
         <div class="model-c-note" id="modelCNote" hidden>Server commits each level result before play. Traffic animation is visual only and does not reveal the outcome.</div>

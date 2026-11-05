@@ -599,68 +599,410 @@ body {
   .mult-value { font-size: 18px; }
 }
 
-/* Premium night-city palette — color only; the original game layout stays intact. */
+/* =====================================================================
+   RACING THEME — premium F1-inspired circuit
+   Fixed black / racing-yellow / white / asphalt / controlled-red palette.
+   Opaque surfaces keep contrast identical in bright or dim environments.
+   ===================================================================== */
 :root {
-  --cr-bg: #07090d;
-  --cr-panel: #121923;
-  --cr-panel-2: #0d1118;
-  --cr-line: rgba(72, 169, 255, 0.2);
-  --cr-muted: #9ba7b5;
-  --cr-yellow: #ffd329;
-  --cr-red: #48a9ff;
-  --cr-green: #35b779;
+  color-scheme: dark;
+  --cr-bg: #07080a;
+  --cr-panel: #101216;
+  --cr-panel-2: #15181d;
+  --cr-line: rgba(255, 196, 0, 0.22);
+  --cr-muted: #b9bec7;
+  --cr-yellow: #ffc400;
+  --cr-yellow-hot: #ffe066;
+  --cr-red: #e5323b;
+  --cr-green: #3ddc8a;
+  --race-black: #08090b;
+  --race-ink: #111318;
+  --race-asphalt: #24272c;
+  --race-white: #f7f5ec;
 }
 body {
-  color: #f5f7fa;
+  color: var(--race-white);
   background:
-    radial-gradient(740px 430px at 10% 0%, rgba(255, 211, 41, 0.055), transparent 66%),
-    radial-gradient(820px 540px at 92% 100%, rgba(72, 169, 255, 0.075), transparent 68%),
-    #07090d;
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px) 0 0 / 100% 7px,
+    radial-gradient(760px 460px at 10% 0%, rgba(255, 196, 0, 0.05), transparent 68%),
+    radial-gradient(740px 500px at 92% 100%, rgba(229, 50, 59, 0.045), transparent 70%),
+    #050607;
 }
 .app {
   background:
-    radial-gradient(620px 260px at 50% 0%, rgba(72, 169, 255, 0.07), transparent 72%),
-    linear-gradient(180deg, #111720 0%, #0d1118 52%, #090b10 100%);
+    linear-gradient(180deg, #101216 0%, #0a0b0d 52%, #07080a 100%);
 }
 @media (min-width: 640px) and (min-height: 720px) {
-  .app { border-color: rgba(72, 169, 255, 0.2); box-shadow: 0 40px 90px rgba(0,0,0,.72), 0 0 24px rgba(72,169,255,.06), inset 0 0 0 1px rgba(255,211,41,.025); }
+  .app {
+    border-color: rgba(255, 196, 0, 0.24);
+    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.025) inset, 0 0 32px rgba(255, 196, 0, 0.04);
+  }
 }
-.brand-icon { background: linear-gradient(180deg, #202a35, #111923); border-color: rgba(72,169,255,.24); }
-.brand-text em { color: #48a9ff; }
-.balance-pill { background: #171f29; border-color: rgba(72,169,255,.24); color: #f5f7fa; box-shadow: 0 0 14px rgba(72,169,255,.055); }
-.ticker-row, .difficulty-row, .disclaimer { color: #9ba7b5; }
-.ticker-label, .online b { color: #c3ccd6; }
-.live-dot { background: #48a9ff; box-shadow: 0 0 0 3px rgba(72,169,255,.16); }
-.stage { background: #101720; border-color: rgba(72,169,255,.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), inset 0 -30px 60px rgba(0,0,0,.24), 0 0 18px rgba(72,169,255,.045); }
-.mult-badge { background: radial-gradient(circle at 38% 30%, #293440 0%, #17212b 58%, #101720 100%); border-color: rgba(72,169,255,.48); }
-.mult-label { color: #9ba7b5; }
-.stage-hint { color: #e7edf3; background: rgba(9,13,18,.82); border-color: rgba(72,169,255,.18); }
-.bet-panel { background: linear-gradient(180deg, #171f29 0%, #10161e 100%); border-color: rgba(72,169,255,.2); box-shadow: 0 -12px 30px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.035), 0 0 18px rgba(72,169,255,.035); }
-.bet-field, .select-wrap select { background: #0b1118; border-color: rgba(72,169,255,.19); color: #f5f7fa; }
-.bet-input { color: #f5f7fa; }
-.bet-currency { color: #c7a92f; font-size: 10px; }
-.mini-btn { color: #aeb9c5; background: rgba(255,255,255,.055); }
-.chip { background: #1a242e; border-color: rgba(72,169,255,.17); color: #e4eaf0; }
-.chip:hover { background: #24313d; border-color: rgba(72,169,255,.36); }
-.chip.active { background: #ffd329; border-color: #ffd329; color: #141414; }
-.select-wrap select { border-color: rgba(72,169,255,.2); }
-.next-payout b { color: #ffd329; }
-.play-btn, .go-btn, .result-card .btn-primary { background: linear-gradient(180deg, #202b36, #121a22); border: 1px solid rgba(255,211,41,.65); color: #ffd329; box-shadow: 0 5px 18px rgba(0,0,0,.3), 0 0 15px rgba(255,211,41,.08); }
-.cash-btn { background: linear-gradient(180deg, #ffe46b, #d9ad32); border: 1px solid rgba(255,228,107,.7); color: #171717; box-shadow: 0 7px 20px rgba(217,173,50,.18); }
-.panel-foot { color: #85919d; }
-.panel-foot kbd { color: #d9e1e8; background: rgba(255,255,255,.055); border-color: rgba(72,169,255,.14); }
-.result-card, .modal-card { background: linear-gradient(180deg, #18212a, #0f151c); border-color: rgba(72,169,255,.22); box-shadow: 0 18px 50px rgba(0,0,0,.52), 0 0 20px rgba(72,169,255,.06); }
-.menu-list { border-color: rgba(72,169,255,.15); }
-.menu-item { color: #e4eaf0; border-color: rgba(72,169,255,.12); }
-.menu-item:hover { color: #ffd329; }
+@media (min-width: 900px) and (min-height: 700px) {
+  .app { width: min(720px, 100%); }
+}
+
+/* Header / brand ---------------------------------------------------- */
+.topbar {
+  background: linear-gradient(180deg, #111318 0%, #08090b 100%);
+  border-bottom: 1px solid rgba(255, 196, 0, 0.22);
+  padding-bottom: 8px;
+}
+.brand-icon {
+  background: linear-gradient(180deg, #ffe066 0%, #ffc400 100%);
+  border: 2px solid #0b0c0e;
+  box-shadow: 0 0 0 1px rgba(255, 196, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.brand-icon svg { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3)); }
+.brand-text { color: #fff; font-weight: 900; letter-spacing: 0.65px; }
+.brand-text em { color: var(--cr-yellow); }
+.brand-text b {
+  background: var(--cr-red);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 9px rgba(229, 50, 59, 0.35);
+}
+.home-btn {
+  color: #ffe9a3;
+  background: linear-gradient(180deg, #1a1d22, #0a0b0d);
+  border-color: rgba(255, 196, 0, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.32);
+}
+.balance-pill {
+  background: #111318;
+  border-color: rgba(255, 196, 0, 0.38);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 14px rgba(255, 196, 0, 0.045);
+}
+.top-actions .icon-btn {
+  background: #15181d;
+  border: 1px solid rgba(255, 196, 0, 0.26);
+  color: #ffe8a1;
+  border-radius: 10px;
+}
+.top-actions .icon-btn:hover { background: #20242a; border-color: rgba(255, 196, 0, 0.56); }
+
+/* Live ticker ------------------------------------------------------ */
+.ticker-row, .difficulty-row, .disclaimer { color: var(--cr-muted); }
+.ticker-label, .online b { color: #e1e4e9; }
+.live-dot { background: var(--cr-red); box-shadow: 0 0 0 3px rgba(229, 50, 59, 0.16), 0 0 8px rgba(229, 50, 59, 0.5); }
+.ticker-amount { color: var(--cr-yellow-hot); }
+.online-dot { background: var(--cr-green); box-shadow: 0 0 8px rgba(61, 220, 138, 0.65); }
+
+/* Stage / circuit -------------------------------------------------- */
+.stage {
+  background: #0b0c0e;
+  border: 1px solid rgba(255, 196, 0, 0.48);
+  border-radius: 18px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.025), inset 0 -34px 70px rgba(0, 0, 0, 0.28);
+}
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  box-shadow: inset 0 0 44px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255, 196, 0, 0.1);
+  pointer-events: none;
+}
+.race-title {
+  position: absolute;
+  z-index: 7;
+  top: 8px;
+  left: 10px;
+  width: calc(100% - 110px);
+  pointer-events: none;
+  line-height: 1;
+  text-shadow: 0 2px 0 #000, 0 6px 16px rgba(0, 0, 0, 0.55);
+}
+.race-title-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+  color: var(--cr-yellow);
+  font: 900 7px/1 var(--font-ui);
+  letter-spacing: 2px;
+}
+.race-title-kicker::before {
+  content: '';
+  width: 17px;
+  height: 8px;
+  border-radius: 1px;
+  background: repeating-conic-gradient(#fff 0 25%, #111 0 50%) 0 0 / 6px 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.race-title strong {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font: 900 clamp(14px, 4.4vw, 22px)/0.95 var(--font-display);
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.race-title em { font-style: normal; color: var(--cr-yellow); }
+
+/* Vertical race ladder -------------------------------------------- */
+.mult-ladder {
+  top: 52px;
+  right: 8px;
+  bottom: 50px;
+  left: auto;
+  width: 86px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid rgba(255, 196, 0, 0.58);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15, 17, 20, 0.98) 0%, rgba(8, 9, 11, 0.97) 100%);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 18px rgba(255, 196, 0, 0.05);
+  backdrop-filter: none;
+  z-index: 8;
+}
+.mult-ladder-title {
+  flex: 0 0 auto;
+  padding: 2px 0 4px;
+  border-bottom: 1px solid rgba(255, 196, 0, 0.24);
+  color: var(--cr-yellow);
+  text-align: center;
+  font: 900 8px/1 var(--font-ui);
+  letter-spacing: 1.8px;
+}
+.mult-ladder-track {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  padding: 2px 1px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-block: contain;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+.mult-ladder-track::-webkit-scrollbar { display: none; }
+.mult-ladder-item {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  min-height: 23px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  background: #171a1f;
+  color: #d8dbe1;
+  line-height: 1;
+}
+.mult-ladder-item .ladder-line {
+  color: #8f959f;
+  font: 800 7px/1 var(--font-ui);
+  letter-spacing: 0.25px;
+}
+.mult-ladder-item b {
+  margin-top: 0;
+  color: #f2f3f5;
+  font: 800 10px/1 var(--font-display);
+  white-space: nowrap;
+}
+.mult-ladder-item.passed { opacity: 0.46; background: #111317; }
+.mult-ladder-item.passed b { color: #aeb4bd; }
+.mult-ladder-item.passed .ladder-line::after { content: ' ✓'; color: var(--cr-green); font-size: 7px; }
+.mult-ladder-item.next {
+  border-color: rgba(255, 196, 0, 0.62);
+  background: rgba(255, 196, 0, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 196, 0, 0.07);
+}
+.mult-ladder-item.next b { color: var(--cr-yellow-hot); }
+.mult-ladder-item.current {
+  border-color: var(--cr-yellow-hot);
+  background: linear-gradient(180deg, #ffe066 0%, #ffc400 100%);
+  box-shadow: 0 0 14px rgba(255, 196, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: scale(1.015);
+}
+.mult-ladder-item.current .ladder-line,
+.mult-ladder-item.current b { color: #0b0c0e; }
+
+/* Current multiplier badge ---------------------------------------- */
+.mult-badge {
+  top: 74px;
+  left: 10px;
+  right: auto;
+  transform: none;
+  width: 70px;
+  height: 70px;
+  border: 2px solid rgba(255, 196, 0, 0.78);
+  background: radial-gradient(circle at 38% 30%, #2c2f35 0%, #15181d 54%, #090a0c 100%);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.08), 0 0 18px rgba(255, 196, 0, 0.06);
+}
+.mult-badge::before { inset: 5px; border-color: rgba(255, 196, 0, 0.22); }
+.mult-badge.pulse { animation: raceMultPulse 0.4s ease; }
+@keyframes raceMultPulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.mult-badge.hot { border-color: var(--cr-yellow-hot); box-shadow: 0 0 28px rgba(255, 196, 0, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.08); }
+.mult-badge.hot .mult-value { color: var(--cr-yellow-hot); }
+.mult-badge.crash { border-color: rgba(229, 50, 59, 0.9); box-shadow: 0 0 28px rgba(229, 50, 59, 0.35); }
+.mult-badge.crash .mult-value { color: #ff6b72; }
+.mult-value { font-size: 20px; color: #fff; }
+.mult-label { color: #c3c8d0; font-size: 5.5px; letter-spacing: 1.2px; }
+
+/* Stage hint ------------------------------------------------------- */
+.stage-hint {
+  left: 10px;
+  right: 98px;
+  transform: none;
+  max-width: none;
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 196, 0, 0.48);
+  background: rgba(8, 9, 11, 0.92);
+  color: #fff7dc;
+  text-align: left;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: none;
+  z-index: 7;
+}
+
+/* Bet panel / controls -------------------------------------------- */
+.bet-panel {
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
+  padding: 13px 12px 8px;
+  border: 1px solid rgba(255, 196, 0, 0.48);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #15181d 0%, #0b0c0f 100%);
+  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 0 20px rgba(255, 196, 0, 0.035);
+}
+.bet-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: repeating-conic-gradient(#f7f5ec 0 25%, #101216 0 50%) 0 0 / 10px 10px;
+  opacity: 0.8;
+}
+.bet-top { gap: 8px; }
+.bet-field {
+  height: 42px;
+  padding: 3px;
+  background: #171a1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.32);
+}
+.mini-btn {
+  color: #fff;
+  background: #292d33;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+}
+.mini-btn:hover { background: #3a3f47; color: var(--cr-yellow-hot); }
+.bet-input { color: #fff; font-size: 19px; letter-spacing: 0.3px; }
+.bet-currency { color: var(--cr-yellow); font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+.chip {
+  width: 40px;
+  height: 34px;
+  background: #1a1d22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f0f2f5;
+  border-radius: 8px;
+}
+.chip:hover { background: #2a2e35; border-color: rgba(255, 196, 0, 0.42); }
+.chip.active {
+  background: linear-gradient(180deg, #ffe066, #ffc400);
+  border-color: #ffe066;
+  color: #0a0b0d;
+  box-shadow: 0 0 12px rgba(255, 196, 0, 0.22);
+}
+.difficulty-row { margin-top: 8px; color: #b9bec7; font-weight: 600; }
+.select-wrap select {
+  height: 31px;
+  background: #171a1f;
+  border: 1px solid rgba(255, 196, 0, 0.3);
+  color: #fff;
+  font-weight: 800;
+}
+.select-wrap svg { color: var(--cr-yellow); }
+.next-payout b { color: var(--cr-yellow); }
+.action-row { margin-top: 9px; }
+.play-btn, .go-btn, .result-card .btn-primary {
+  background: linear-gradient(180deg, #ffe066 0%, #ffc400 100%);
+  border: 1px solid #ffe587;
+  color: #090a0c;
+  box-shadow: 0 8px 22px rgba(255, 196, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.52);
+}
+.play-btn:hover, .go-btn:hover, .result-card .btn-primary:hover { filter: brightness(1.06); }
+.play-btn, .play-actions .btn { height: 48px; border-radius: 11px; }
+.go-btn { flex-basis: 40%; font-size: 18px; }
+.cash-btn {
+  background: linear-gradient(180deg, #2a2e35 0%, #15181d 100%);
+  border: 1px solid rgba(255, 196, 0, 0.6);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.cash-btn b { color: var(--cr-yellow-hot); }
+.cash-btn:hover { border-color: var(--cr-yellow-hot); background: linear-gradient(180deg, #343941 0%, #1b1e24 100%); }
+.panel-foot { color: #8e949e; }
+.panel-foot kbd { color: #e6e8eb; background: #20242a; border-color: rgba(255, 255, 255, 0.1); }
+.disclaimer { color: #7f858e; }
+
+/* Result / menus --------------------------------------------------- */
+.result-card, .modal-card {
+  background: linear-gradient(180deg, #171a20 0%, #090a0c 100%);
+  border: 1px solid rgba(255, 196, 0, 0.48);
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.66), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 24px rgba(255, 196, 0, 0.05);
+}
+.result-card::before {
+  content: '';
+  display: block;
+  height: 5px;
+  margin: -20px -20px 14px;
+  background: repeating-conic-gradient(#f7f5ec 0 25%, #111318 0 50%) 0 0 / 10px 10px;
+  opacity: 0.8;
+}
+.menu-list { border-color: rgba(255, 196, 0, 0.16); }
+.menu-item { color: #eceef1; border-color: rgba(255, 255, 255, 0.07); }
+.menu-item:hover { color: var(--cr-yellow); }
+.result-kicker { color: var(--cr-yellow); }
+.result-card.good h2 { color: var(--cr-yellow-hot); }
+.result-card.bad h2 { color: #ff6b72; }
+
+/* Integrated fairness note / blocker ------------------------------ */
 html.fetan-integrated .ticker-row,
 html.fetan-integrated .disclaimer { display: none !important; }
 html.fetan-integrated .model-c-note {
-  position: absolute; z-index: 7; top: 8px; left: 50%; transform: translateX(-50%);
-  width: max-content; max-width: calc(100% - 20px); padding: 5px 10px;
-  border: 1px solid rgba(255,211,41,.24); border-radius: 10px;
-  color: #f2dfa0; background: rgba(8,12,17,.8); text-align: center;
-  font-size: clamp(9px, 1.6vw, 11px); line-height: 1.35; pointer-events: none;
+  position: absolute;
+  z-index: 7;
+  top: auto;
+  right: auto;
+  bottom: 42px;
+  left: 10px;
+  transform: none;
+  width: calc(100% - 112px);
+  max-width: none;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 196, 0, 0.24);
+  border-radius: 8px;
+  color: #e9dba5;
+  background: rgba(8, 9, 11, 0.9);
+  text-align: left;
+  font-size: 8.5px;
+  line-height: 1.3;
+  pointer-events: none;
 }
 html.fetan-integrated .model-c-note[hidden] { display: none; }
 html.fetan-integrated .integration-blocker {
@@ -672,15 +1014,123 @@ html.fetan-integrated .integration-blocker {
   justify-items: center;
   gap: 12px;
   padding: clamp(18px, 5vw, 32px);
-  border: 1px solid rgba(255,211,41,.32);
-  border-radius: 18px;
-  background: rgba(8,12,17,.94);
-  box-shadow: 0 16px 42px rgba(0,0,0,.5), 0 0 22px rgba(255,211,41,.08);
-  color: #f5f7fa;
+  border: 1px solid rgba(255, 196, 0, 0.45);
+  border-radius: 16px;
+  background: rgba(6, 7, 9, 0.96);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.6), 0 0 24px rgba(255, 196, 0, 0.06);
+  color: #f7f5ec;
   text-align: center;
-  backdrop-filter: blur(10px);
 }
 html.fetan-integrated .integration-blocker[hidden] { display: none; }
-html.fetan-integrated .integration-blocker strong { color: #ffd329; font-size: clamp(17px, 4vw, 24px); }
-html.fetan-integrated .integration-blocker p { max-width: 620px; margin: 0; color: #b7c0ca; line-height: 1.55; font-size: clamp(13px, 2.6vw, 16px); }
+html.fetan-integrated .integration-blocker strong { color: var(--cr-yellow); font-size: clamp(17px, 4vw, 24px); }
+html.fetan-integrated .integration-blocker p { max-width: 620px; margin: 0; color: #c3c8d0; line-height: 1.55; font-size: clamp(13px, 2.6vw, 16px); }
 html.fetan-integrated .integration-blocker p:last-child { color: #f0d67a; }
+
+/* Responsive ------------------------------------------------------- */
+@media (max-width: 520px) {
+  .topbar { gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .home-btn { min-height: 30px; padding: 0 7px; font-size: 10px; }
+  .brand { gap: 4px; }
+  .brand-icon { display: none; }
+  .brand-text { font-size: 12px; letter-spacing: 0.2px; }
+  .balance-pill { gap: 4px; font-size: 10px; padding: 0 7px; letter-spacing: 0; }
+  .balance-pill .coin-dot { display: none; }
+  .top-actions .icon-btn { width: 31px; height: 31px; }
+  .top-actions { gap: 4px; }
+  .mult-ladder { width: 80px; right: 7px; }
+  .mult-badge { width: 64px; height: 64px; left: 9px; top: 70px; }
+  .mult-value { font-size: 18px; }
+  .stage-hint { left: 9px; right: 92px; font-size: 9.5px; }
+  .race-title { width: calc(100% - 100px); }
+  .race-title strong { font-size: clamp(13px, 4.5vw, 18px); }
+}
+@media (max-width: 400px) {
+  .topbar { gap: 5px; padding-left: 9px; padding-right: 9px; }
+  .home-btn { min-height: 30px; padding: 0 7px; font-size: 10px; }
+  .brand { gap: 4px; }
+  .brand-text { display: none; }
+  .brand-icon { display: grid; }
+  .balance-pill { gap: 4px; font-size: 9.5px; padding: 0 5px; height: 30px; letter-spacing: 0; }
+  .balance-pill .coin-dot { width: 13px; height: 13px; }
+  .balance-pill .coin-dot::after { font-size: 7px; }
+  .top-actions .icon-btn { width: 29px; height: 29px; }
+  .top-actions { gap: 3px; }
+  .chip { width: 33px; height: 32px; font-size: 11.5px; }
+  .bet-input { font-size: 17px; }
+  .mult-ladder { width: 72px; right: 6px; top: 48px; bottom: 46px; }
+  .mult-ladder-item { min-height: 21px; padding: 2px 5px; }
+  .mult-ladder-item b { font-size: 9px; }
+  .mult-ladder-item .ladder-line { font-size: 6.5px; }
+  .mult-badge { width: 58px; height: 58px; left: 8px; top: 64px; }
+  .mult-value { font-size: 16.5px; }
+  .mult-label { font-size: 5px; }
+  .play-btn, .play-actions .btn { height: 44px; }
+  .go-btn { font-size: 16px; }
+  .cash-btn { font-size: 10px; }
+  .cash-btn b { font-size: 12.5px; }
+  .stage-hint {
+    left: 8px;
+    right: 82px;
+    font-size: 8.8px;
+    line-height: 1.2;
+    padding: 4px 7px;
+    white-space: normal;
+  }
+  .race-title { width: calc(100% - 88px); top: 7px; left: 8px; }
+  .race-title-kicker { font-size: 6px; letter-spacing: 1.4px; }
+  .race-title strong { font-size: 12.5px; }
+  html.fetan-integrated .model-c-note { width: calc(100% - 88px); font-size: 8px; bottom: 40px; }
+}
+@media (max-width: 360px) {
+  .brand-text { display: none; }
+  .brand-icon { display: grid; }
+  .topbar { padding-left: 8px; padding-right: 8px; }
+}
+@media (max-height: 700px) {
+  .topbar { padding-top: 7px; padding-bottom: 4px; }
+  .ticker-row { padding-bottom: 4px; }
+  .bet-panel { margin-top: 5px; padding-top: 10px; }
+  .disclaimer { display: none; }
+  .panel-foot { display: none; }
+  .mult-ladder { top: 46px; bottom: 42px; }
+  .mult-badge { top: 62px; width: 60px; height: 60px; }
+  .mult-value { font-size: 17px; }
+  .race-title strong { font-size: clamp(12px, 4vw, 18px); }
+}
+@media (max-height: 570px) {
+  .ticker-row { display: none; }
+  .brand-icon { display: none; }
+  .bet-panel { margin: 4px 6px 4px; padding: 10px 9px 6px; }
+  .stage-wrap { padding: 0 6px; }
+  .difficulty-row { margin-top: 5px; }
+  .action-row { margin-top: 5px; }
+  .play-btn, .play-actions .btn { height: 40px; }
+  .bet-field { height: 34px; }
+  .mini-btn { height: 26px; }
+  .mult-ladder { top: 40px; bottom: 38px; width: 68px; right: 5px; }
+  .mult-ladder-item { min-height: 19px; padding: 2px 4px; }
+  .mult-ladder-item b { font-size: 8.5px; }
+  .mult-ladder-item .ladder-line { font-size: 6px; }
+  .mult-badge { width: 54px; height: 54px; top: 52px; left: 7px; }
+  .mult-value { font-size: 15px; }
+  .stage-hint { bottom: 6px; left: 6px; right: 78px; font-size: 8px; padding: 3px 6px; }
+  .race-title { top: 5px; }
+  .race-title strong { font-size: 11px; }
+  .race-title-kicker { display: none; }
+  html.fetan-integrated .model-c-note { display: none; }
+}
+
+/* 320-class screens: a narrower two-line ladder keeps the first live traffic
+   lane and the next checkpoint clear on the shortest stage. */
+@media (max-width: 340px) {
+  .mult-ladder { width: 62px; right: 6px; }
+  .mult-ladder-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-height: 23px;
+    padding: 2px 4px;
+  }
+  .mult-ladder-item b { font-size: 8.5px; }
+  .mult-ladder-item .ladder-line { font-size: 6px; }
+}
