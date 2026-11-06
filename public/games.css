@@ -743,11 +743,14 @@
 /* ---- ROAD VIEWPORT & HORIZONTAL SCROLL CAMERA ---- */
 .road-viewport {
   position: relative;
-  background: #525357; /* Solid gray asphalt matching reference */
-  border: 2px solid #383c44;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.055), transparent 62%),
+    repeating-linear-gradient(116deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 9px),
+    #222429; /* Dark F1 asphalt */
+  border: 2px solid #3e444d;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 42px rgba(0, 0, 0, 0.58), 0 12px 34px rgba(0, 0, 0, 0.58);
 }
 .road-viewport.road-shake {
   animation: road-shake 0.32s cubic-bezier(.36,.07,.19,.97) both;
@@ -776,7 +779,12 @@
   display: flex;
   height: 350px;
   width: max-content;
-  background-color: #525357; /* Gray asphalt */
+  background-color: #26282d; /* Dark racing asphalt */
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 12%, transparent 88%, rgba(255, 255, 255, 0.035)),
+    repeating-linear-gradient(90deg, transparent 0 58px, rgba(255, 255, 255, 0.022) 58px 60px),
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.045), transparent 34%),
+    radial-gradient(circle at 82% 88%, rgba(0, 0, 0, 0.22), transparent 42%);
 }
 
 /* Sidewalk Start Zone */
@@ -787,9 +795,10 @@
   position: relative;
   z-index: 1;
   overflow: hidden;
-  background: linear-gradient(90deg, #123b2b 0 24%, #39434a 24% 100%);
-  border-right: 1px solid rgba(242, 217, 139, 0.32);
-  box-shadow: inset -8px 0 18px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(90deg, #123b2b 0 22%, #263039 22% 25%, #3a414a 25% 100%);
+  border-right: 1px solid rgba(248, 250, 252, 0.36);
+  box-shadow: inset -8px 0 18px rgba(0, 0, 0, 0.34), inset 0 0 24px rgba(0, 0, 0, 0.22);
+  container-type: inline-size;
 }
 .road-sidewalk-start::after {
   content: '';
@@ -811,29 +820,334 @@
   width: 90px;
   flex: none;
   height: 350px;
-  background: repeating-linear-gradient(
-    45deg,
-    #2a2e33, #2a2e33 12px,
-    #d6bd72 12px, #d6bd72 24px
-  );
-  border-left: 3px solid #F2D98B;
+  background:
+    linear-gradient(180deg, rgba(11, 13, 17, 0.62), rgba(11, 13, 17, 0.1) 34%, rgba(11, 13, 17, 0.1) 66%, rgba(11, 13, 17, 0.62)),
+    repeating-linear-gradient(45deg, #b91c1c 0 14px, #f8fafc 14px 28px);
+  border-left: 3px solid #f8fafc;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 0;
+  padding: 30px 0 34px;
   position: relative;
-  box-shadow: inset 4px 0 12px rgba(0,0,0,0.6);
+  box-shadow: inset 4px 0 12px rgba(0, 0, 0, 0.64), inset -2px 0 0 rgba(248, 250, 252, 0.35);
 }
+.road-finish-curb::before,
+.road-finish-curb::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18px;
+  background: repeating-conic-gradient(#f8fafc 0 25%, #111318 0 50%) 0 0 / 12px 12px;
+  opacity: 0.96;
+  z-index: 0;
+}
+.road-finish-curb::before { top: 0; border-bottom: 2px solid rgba(248, 250, 252, 0.35); }
+.road-finish-curb::after { bottom: 0; border-top: 2px solid rgba(248, 250, 252, 0.35); }
 .finish-text {
+  position: relative;
+  z-index: 1;
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 1.5px;
-  color: #F2D98B;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  color: #FFFFFF;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.75);
 }
 .finish-trophy {
+  position: relative;
+  z-index: 1;
   font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65));
+}
+
+/* ---- F1 RACING ENVIRONMENT ---- */
+.f1-track-edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+.f1-track-edge.top {
+  top: 0;
+  height: 26px;
+  background: linear-gradient(180deg, #0f1115 0 10px, #3b414a 10px 12px, #9aa3ad 12px 14px, #4b5563 14px 17px, #171a1f 17px 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.48);
+}
+.f1-track-edge.top::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 10px;
+  background: repeating-conic-gradient(#f8fafc 0 25%, #111318 0 50%) 0 0 / 16px 10px;
+  opacity: 0.96;
+}
+.f1-track-edge.top::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9px;
+  background: repeating-linear-gradient(90deg, #c81e28 0 16px, #f8fafc 16px 32px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.f1-track-edge.bottom {
+  bottom: 0;
+  height: 28px;
+  background: linear-gradient(180deg, #171a1f 0, #2b3037 26%, #121418 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 -7px 16px rgba(0, 0, 0, 0.5);
+}
+.f1-track-edge.bottom::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 18px;
+  background-color: #101216;
+  background-image:
+    radial-gradient(ellipse at 50% 46%, #070809 0 7px, #343a44 7px 9px, #111318 9px 11px, transparent 11px);
+  background-size: 26px 18px;
+  background-repeat: repeat-x;
+}
+.f1-track-edge.bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, #f8fafc 0 16px, #c81e28 16px 32px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Starting grid / pit-lane decoration */
+.f1-start-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  font-family: var(--font-heading, sans-serif);
+}
+.f1-pit-wall {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: repeating-linear-gradient(180deg, #b91c1c 0 14px, #f8fafc 14px 28px);
+  opacity: 0.9;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.45);
+}
+.f1-gantry {
+  position: absolute;
+  top: 30px;
+  left: 8px;
+  right: 12px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #2c3139, #0f1115);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.f1-gantry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  border-radius: 4px 4px 0 0;
+  background: repeating-conic-gradient(#f8fafc 0 25%, #111318 0 50%) 0 0 / 10px 8px;
+  opacity: 0.92;
+}
+.f1-gantry::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: repeating-linear-gradient(90deg, #c81e28 0 10px, #f8fafc 10px 20px);
+}
+.f1-light {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #3f0b0b;
+  border: 1px solid #08090b;
+  box-shadow: inset 0 0 3px #000, 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+.f1-light.on {
+  background: radial-gradient(circle at 35% 30%, #fecaca, #ef4444 55%, #991b1b);
+  box-shadow: 0 0 7px rgba(239, 68, 68, 0.85);
+}
+.f1-gantry-label {
+  margin-left: 2px;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: #0b0d10;
+  color: #f8fafc;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1.1;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.f1-flag-pole {
+  position: absolute;
+  left: 10px;
+  top: 66px;
+  width: 2px;
+  height: 52px;
+  background: linear-gradient(180deg, #e5e7eb, #64748b);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.f1-flag-pole::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 30px;
+  height: 20px;
+  background: repeating-conic-gradient(#f8fafc 0 25%, #111318 0 50%) 0 0 / 8px 8px;
+  clip-path: polygon(0 0, 100% 0, 86% 50%, 100% 100%, 0 100%);
+  transform-origin: left center;
+  animation: f1-flag-wave 2.6s ease-in-out infinite;
+  filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.45));
+}
+@keyframes f1-flag-wave {
+  0%, 100% { transform: skewY(0deg) scaleX(1); }
+  35% { transform: skewY(-3deg) scaleX(0.94); }
+  70% { transform: skewY(2deg) scaleX(1.03); }
+}
+.f1-pit-sign {
+  position: absolute;
+  right: 10px;
+  top: 66px;
+  width: 30px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f8fafc, #cbd5e1);
+  border: 2px solid #b91c1c;
+  border-radius: 3px;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.52);
+}
+.f1-bench {
+  position: absolute;
+  left: 10px;
+  bottom: 12px;
+  width: 28px;
+  height: 40px;
+}
+.f1-bench::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 9px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, #c81e28 0 8px, #f8fafc 8px 16px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.52);
+}
+.f1-bench::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 11px;
+  width: 22px;
+  height: 19px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #374151, #6b7280 45%, #374151);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+.f1-tire-stack {
+  position: absolute;
+  bottom: 10px;
+  width: 30px;
+  height: 64px;
+}
+.f1-tire-stack.left { left: 44px; }
+.f1-tire-stack.right { right: 10px; }
+.f1-tire-stack span {
+  position: absolute;
+  left: 0;
+  width: 30px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 38% 30%, #4b5563 0 18%, #1f2937 48%, #0b0d10 78%, #050607 100%);
+  border: 1.5px solid #08090b;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.58), inset 0 1px 1px rgba(255, 255, 255, 0.13);
+}
+.f1-tire-stack span:nth-child(1) { bottom: 0; }
+.f1-tire-stack span:nth-child(2) { bottom: 13px; }
+.f1-tire-stack span:nth-child(3) { bottom: 26px; }
+.f1-tire-stack span:nth-child(4) { bottom: 39px; }
+.f1-start-line {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  background: repeating-conic-gradient(#f8fafc 0 25%, #15171b 0 50%) 0 0 / 10px 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: inset 3px 0 7px rgba(0, 0, 0, 0.5);
+  opacity: 0.95;
+}
+/* Narrow fullscreen start zone: keep gantry, flag, sign, bench and tires separated. */
+@container (max-width: 105px) {
+  .f1-gantry {
+    left: 5px;
+    right: 12px;
+    top: 28px;
+    height: 26px;
+    gap: 2px;
+    padding: 0 2px;
+  }
+  .f1-gantry-label { display: none; }
+  .f1-light { width: 6px; height: 6px; }
+  .f1-flag-pole { left: 6px; top: 62px; height: 46px; }
+  .f1-flag-pole::before {
+    width: 26px;
+    height: 17px;
+    background-size: 7px 7px;
+  }
+  .f1-pit-sign {
+    right: 12px;
+    top: 62px;
+    width: 26px;
+    height: 20px;
+    font-size: 9px;
+    border-width: 1.5px;
+  }
+  .f1-bench { left: 6px; bottom: 10px; width: 24px; height: 34px; }
+  .f1-bench::before { width: 24px; height: 8px; }
+  .f1-bench::after { left: 3px; top: 10px; width: 18px; height: 17px; }
+  .f1-tire-stack.left { display: none; }
+  .f1-tire-stack.right { right: 13px; width: 26px; height: 52px; }
+  .f1-tire-stack span { width: 26px; height: 13px; }
+  .f1-tire-stack span:nth-child(2) { bottom: 12px; }
+  .f1-tire-stack span:nth-child(3) { bottom: 24px; }
 }
 
 /* Lanes container */
@@ -848,7 +1162,11 @@
   flex: none;
   height: 350px;
   position: relative;
-  border-right: 3px dashed rgba(245, 245, 245, 0.42); /* Dashed white lane dividers */
+  border-right: 3px dashed rgba(248, 250, 252, 0.78); /* Clear white lane dividers */
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 105px, rgba(0, 0, 0, 0.14) 105px 108px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022), transparent 30%, transparent 70%, rgba(0, 0, 0, 0.07));
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.42), inset 1px 0 0 rgba(255, 255, 255, 0.045);
   overflow: hidden;
   transition: background-color 0.2s ease;
 }
@@ -920,8 +1238,21 @@
   top: 0;
   z-index: 4;
   will-change: transform;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.62));
   transition: opacity 0.24s ease-out;
+}
+.traffic-car-wrap::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 74%;
+  height: 15px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.55), transparent 72%);
+  z-index: -1;
+  pointer-events: none;
 }
 .traffic-car-wrap.car-fade-out {
   opacity: 0 !important;
@@ -1129,7 +1460,7 @@
 
 /* Eye Blink */
 #eye {
-  transform-origin: 450px 108px;
+  transform-origin: 343px 158px;
   will-change: transform;
 }
 .chicken-hero:not(.is-dead) #eye {
@@ -1186,7 +1517,7 @@
 
 /* Wing flap during hop */
 #wing {
-  transform-origin: 230px 220px;
+  transform-origin: 330px 225px;
   will-change: transform;
 }
 .chicken-hero.is-hopping #wing {
