@@ -1924,48 +1924,93 @@
     return lerp(state.hop.x0, state.hop.x1, easeInOut(p));
   }
 
-  function drawChickenBoot(x, y, angle, front) {
-    ctx.save();
-    ctx.translate(x, y);
+  // The selected mascot artwork is split into layered SVG sprites so each
+  // part can still move independently. All layers share one crop, so their
+  // local coordinates line up exactly when drawn on top of each other.
+  const CHICKEN_ART = {
+    // The selected artwork is cropped to x=76.5, y=0, 391x427 SVG units.
+    drawH: 104,
+    drawW: 104 * 391 / 427,
+    offsetX: -(104 * 391 / 427) / 2,
+    offsetY: -60,
+    rasterScale: 3,
+    parts: {
+      tail: 'assets/chicken/tail.svg',
+      body: 'assets/chicken/body.svg',
+      legs: 'assets/chicken/legs.svg',
+      wing: 'assets/chicken/wing.svg',
+      head: 'assets/chicken/head.svg',
+      comb: 'assets/chicken/comb.svg',
+      beak: 'assets/chicken/beak.svg',
+      wattle: 'assets/chicken/wattle.svg',
+      eye: 'assets/chicken/eye.svg',
+    },
+    pivots: {
+      tail: { x: -23.6, y: -14.9 },
+      wing: { x: 14.1, y: -5.2 },
+      head: { x: 16.5, y: -16.2 },
+      eye: { x: 17.2, y: -21.5 },
+      legs: { x: 4.4, y: 20.4 },
+    },
+  };
+
+  const chickenSprites = Object.create(null);
+
+  function loadChickenSprites() {
+    const entries = Object.entries(CHICKEN_ART.parts);
+    const rasterW = Math.round(CHICKEN_ART.drawW * CHICKEN_ART.rasterScale);
+    const rasterH = Math.round(CHICKEN_ART.drawH * CHICKEN_ART.rasterScale);
+    for (const [part, src] of entries) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        try {
+          const off = document.createElement('canvas');
+          off.width = rasterW;
+          off.height = rasterH;
+          const octx = off.getContext('2d');
+          octx.imageSmoothingEnabled = true;
+          octx.imageSmoothingQuality = 'high';
+          octx.drawImage(img, 0, 0, rasterW, rasterH);
+          chickenSprites[part] = off;
+        } catch (err) {
+          // Leave this layer out rather than break the race.
+        }
+      };
+      img.src = src;
+    }
+  }
+
+  function drawChickenSprite(part) {
+    const sprite = chickenSprites[part];
+    if (!sprite) return;
+    ctx.drawImage(sprite, CHICKEN_ART.offsetX, CHICKEN_ART.offsetY, CHICKEN_ART.drawW, CHICKEN_ART.drawH);
+  }
+
+  function rotateChickenPart(pivot, angle) {
+    ctx.translate(pivot.x, pivot.y);
     ctx.rotate(angle);
-    ctx.strokeStyle = front ? '#f0a327' : '#c97f10';
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, -9);
-    ctx.lineTo(0, 0);
-    ctx.stroke();
-    ctx.fillStyle = front ? '#15171b' : '#101216';
-    ctx.strokeStyle = '#050608';
-    ctx.lineWidth = 1.3;
-    rr(-7, -3, 17, 8, 4);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = ART.yellow;
-    ctx.fillRect(-2, 0, 8, 2);
-    ctx.fillStyle = ART.white;
-    rr(-7, 4, 17, 2, 1);
-    ctx.fill();
-    ctx.restore();
+    ctx.translate(-pivot.x, -pivot.y);
   }
 
   function drawChicken(h) {
     const baseY = roadCenterY();
-    let x = chickenX();
+    const x = chickenX();
     let y = baseY;
     let hopLift = 0;
     let tilt = 0;
     let squash = 1;
     const flying = !!state.hop;
+    const victory = state.phase === 'cashed' || state.phase === 'finished';
+    const hopProgress = flying ? clamp(state.hop.t / state.hop.dur, 0, 1) : 0;
 
     if (state.hop) {
-      const p = clamp(state.hop.t / state.hop.dur, 0, 1);
-      hopLift = Math.sin(Math.PI * p) * 66;
-      tilt = Math.cos(Math.PI * p) * 0.1;
-      squash = 1 + Math.sin(Math.PI * p) * 0.06;
+      hopLift = Math.sin(Math.PI * hopProgress) * 66;
+      tilt = Math.cos(Math.PI * hopProgress) * 0.1;
+      squash = 1 + Math.sin(Math.PI * hopProgress) * 0.06;
     } else if (state.phase === 'idle') {
       y += Math.sin(state.time * 3.4) * 1.4;
-    } else if (state.phase === 'cashed' || state.phase === 'finished') {
+    } else if (victory) {
       y -= Math.abs(Math.sin(state.time * 8)) * 12;
     }
     y -= hopLift;
@@ -1976,7 +2021,7 @@
     ctx.globalAlpha = 0.38;
     ctx.fillStyle = '#040507';
     ctx.beginPath();
-    ctx.ellipse(x, baseY + 36, 32 * shadowScale, 8.5 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, baseY + 38, 34 * shadowScale, 8.5 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -1993,7 +2038,6 @@
 
     const t = state.time;
     const run = Math.sin(t * (flying ? 16 : 9.5));
-    const victory = state.phase === 'cashed' || state.phase === 'finished';
     const bob = flying ? 0 : Math.abs(Math.sin(t * 9.5)) * 1.5;
     ctx.translate(0, -bob + (victory ? -Math.abs(Math.sin(t * 8)) * 8 : 0));
 
@@ -2009,305 +2053,61 @@
       }
     }
 
+    const tailAngle = victory
+      ? Math.sin(t * 12) * 0.1
+      : Math.sin(t * 2.7) * 0.045 + (flying ? Math.sin(t * 18) * 0.02 : 0);
+    const headAngle = victory
+      ? Math.sin(t * 9) * 0.05
+      : Math.sin(t * 2.1 + 0.7) * 0.035 + (flying ? Math.sin(t * 14) * 0.02 : 0);
+    const wingAngle = victory
+      ? 0.2 + Math.sin(t * 10) * 0.1
+      : flying
+        ? 0.16 + Math.sin(t * 22) * 0.12
+        : Math.sin(t * 3.1) * 0.025;
+    const legTuck = flying ? -Math.sin(Math.PI * hopProgress) * 4.4 : 0;
+
     // Tail feathers.
-    const tailG = ctx.createLinearGradient(-42, -18, -14, 16);
-    tailG.addColorStop(0, '#ffffff');
-    tailG.addColorStop(1, '#e7dcc2');
-    ctx.fillStyle = tailG;
-    ctx.strokeStyle = '#2c2833';
-    ctx.lineWidth = 1.7;
-    ctx.beginPath();
-    ctx.ellipse(-30, -1, 13, 7.5, -0.5, 0, Math.PI * 2);
-    ctx.ellipse(-34, -10, 12, 6.5, -0.9, 0, Math.PI * 2);
-    ctx.ellipse(-29, 8, 11, 6.5, -0.16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(255,196,0,0.55)';
-    ctx.beginPath();
-    ctx.ellipse(-38, -8, 4, 2.2, -0.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Rear leg (behind the suit).
-    const legA = flying ? -0.75 : run * 0.6;
-    const legB = flying ? 0.55 : -run * 0.6;
-    drawChickenBoot(-8 + Math.sin(legA) * 7, 36 - Math.cos(legA) * 2 + (flying ? -7 : 0), legA * 0.35, false);
-
-    // Body in a black/yellow racing suit.
-    const bodyG = ctx.createRadialGradient(-8, -9, 4, -2, 4, 36);
-    bodyG.addColorStop(0, '#ffffff');
-    bodyG.addColorStop(0.52, '#fff8e9');
-    bodyG.addColorStop(1, '#dfd2b6');
-    ctx.fillStyle = bodyG;
-    ctx.strokeStyle = '#24212a';
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.ellipse(-2, 2, 28, 25, -0.08, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    const suitG = ctx.createLinearGradient(-24, -16, 18, 22);
-    suitG.addColorStop(0, '#292e36');
-    suitG.addColorStop(0.45, '#15181d');
-    suitG.addColorStop(1, '#090a0c');
-    ctx.fillStyle = suitG;
-    ctx.beginPath();
-    ctx.ellipse(-1, 2, 24, 21, -0.08, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#050608';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Yellow chest slash and red belt.
-    ctx.strokeStyle = ART.yellow;
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-19, -11);
-    ctx.lineTo(13, 11);
-    ctx.stroke();
-    ctx.strokeStyle = '#0b0c0e';
-    ctx.lineWidth = 1.3;
-    ctx.beginPath();
-    ctx.moveTo(-19, -11);
-    ctx.lineTo(13, 11);
-    ctx.stroke();
-    ctx.fillStyle = ART.red;
-    ctx.fillRect(-18, 10, 34, 4);
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fillRect(-18, 10, 34, 1);
-
-    // White feather bib and collar.
-    ctx.fillStyle = '#fff9eb';
-    ctx.strokeStyle = '#cdbf9f';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.ellipse(12, -10, 10, 8, 0.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = ART.red;
-    ctx.fillRect(8, -18, 13, 4);
-
-    // Suit sponsor badge and number.
-    ctx.fillStyle = ART.yellow;
-    ctx.beginPath();
-    ctx.arc(1, 4, 5.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#2a2100';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.strokeStyle = '#0b0c0e';
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.moveTo(-1, 1);
-    ctx.lineTo(3, 4);
-    ctx.lineTo(-1, 4);
-    ctx.lineTo(2, 8);
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(247,245,236,0.86)';
-    ctx.font = '900 7px Montserrat, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('07', -10, 8);
-
-    // Front leg.
-    drawChickenBoot(7 + Math.sin(legB) * 7, 36 - Math.cos(legB) * 2 + (flying ? -7 : 0), legB * 0.35, true);
-
-    // Wing / racing glove.
-    const wingAngle = victory ? -1.45 : flying ? -0.7 + Math.sin(t * 20) * 0.22 : run * 0.42;
     ctx.save();
-    ctx.translate(-4, -3);
-    ctx.rotate(wingAngle);
-    const wingG = ctx.createLinearGradient(-12, -12, 12, 14);
-    wingG.addColorStop(0, '#fffdf5');
-    wingG.addColorStop(1, '#e5d8bc');
-    ctx.fillStyle = wingG;
-    ctx.strokeStyle = '#a9946c';
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.ellipse(-4, 5, 16, 11, -0.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    // Black suit sleeve.
-    ctx.fillStyle = '#111318';
-    ctx.beginPath();
-    ctx.ellipse(-9, -2, 10, 8, -0.5, 0, Math.PI * 2);
-    ctx.fill();
-    // Glove.
-    ctx.fillStyle = '#090a0c';
-    ctx.strokeStyle = '#2b3037';
-    ctx.lineWidth = 1.2;
-    rr(-12, 13, 13, 8, 4);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = ART.yellow;
-    ctx.fillRect(-9, 15, 7, 2);
-    ctx.fillStyle = ART.red;
-    ctx.fillRect(-12, 19, 12, 2);
+    rotateChickenPart(CHICKEN_ART.pivots.tail, tailAngle);
+    drawChickenSprite('tail');
     ctx.restore();
 
-    // Head and neck.
-    const neckG = ctx.createLinearGradient(10, -20, 28, 0);
-    neckG.addColorStop(0, '#ffffff');
-    neckG.addColorStop(1, '#efe3ca');
-    ctx.fillStyle = neckG;
-    ctx.strokeStyle = '#2c2833';
-    ctx.lineWidth = 1.7;
-    ctx.beginPath();
-    ctx.ellipse(17, -17, 11, 14, 0.18, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // Body.
+    drawChickenSprite('body');
 
-    const headG = ctx.createRadialGradient(18, -36, 3, 21, -28, 24);
-    headG.addColorStop(0, '#ffffff');
-    headG.addColorStop(0.68, '#fff7e6');
-    headG.addColorStop(1, '#e6d9be');
-    ctx.fillStyle = headG;
-    ctx.strokeStyle = '#2c2833';
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.arc(20, -32, 19, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Yellow racing helmet shell.
-    const helmetG = ctx.createLinearGradient(2, -54, 38, -10);
-    helmetG.addColorStop(0, '#ffe066');
-    helmetG.addColorStop(0.58, ART.yellow);
-    helmetG.addColorStop(1, '#d79c00');
-    ctx.fillStyle = helmetG;
-    ctx.strokeStyle = '#0b0c0e';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(18, -35, 21, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Helmet stripes and vents.
-    ctx.strokeStyle = '#0b0c0e';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(1, -40);
-    ctx.quadraticCurveTo(16, -58, 35, -43);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(3, -38);
-    ctx.quadraticCurveTo(16, -53, 32, -41);
-    ctx.stroke();
-    ctx.fillStyle = '#0b0c0e';
-    for (let i = 0; i < 3; i++) {
-      ctx.fillRect(9 + i * 6, -50 + i * 1.5, 4, 2);
-    }
-
-    // Open visor and face.
+    // Legs and feet.
     ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(30, -27, 10.5, 12, 0.18, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.fillStyle = '#fff7e8';
-    ctx.beginPath();
-    ctx.ellipse(30, -27, 10.5, 12, 0.18, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.translate(0, legTuck);
+    rotateChickenPart(CHICKEN_ART.pivots.legs, run * 0.012);
+    drawChickenSprite('legs');
     ctx.restore();
 
-    // Black visor brim above the eye.
-    ctx.fillStyle = '#090a0c';
-    ctx.beginPath();
-    ctx.moveTo(20, -39);
-    ctx.lineTo(38, -35);
-    ctx.lineTo(39, -29);
-    ctx.lineTo(22, -32);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(23, -37);
-    ctx.lineTo(36, -33);
-    ctx.stroke();
-
-    // Confident eye.
-    const blink = state.blink > 0 ? 0.12 : 1;
+    // Wing.
     ctx.save();
-    ctx.translate(30, -27);
-    ctx.scale(1, blink);
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
-    ctx.fill();
-    if (state.phase === 'crashed') {
-      ctx.strokeStyle = '#20222d';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-3.6, -3.6); ctx.lineTo(3.6, 3.6);
-      ctx.moveTo(3.6, -3.6); ctx.lineTo(-3.6, 3.6);
-      ctx.stroke();
+    rotateChickenPart(CHICKEN_ART.pivots.wing, wingAngle);
+    drawChickenSprite('wing');
+    ctx.restore();
+
+    // Head, comb, beak, wattle and eyes move as one unit.
+    ctx.save();
+    rotateChickenPart(CHICKEN_ART.pivots.head, headAngle);
+    drawChickenSprite('head');
+    const blinkScale = state.blink > 0 ? 0.1 : 1;
+    if (blinkScale !== 1) {
+      const eye = CHICKEN_ART.pivots.eye;
+      ctx.save();
+      ctx.translate(eye.x, eye.y);
+      ctx.scale(1, blinkScale);
+      ctx.translate(-eye.x, -eye.y);
+      drawChickenSprite('eye');
+      ctx.restore();
     } else {
-      ctx.fillStyle = '#17191d';
-      ctx.beginPath();
-      ctx.arc(1.3, 0.6, 3.1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(2.4, -0.9, 1.1, 0, Math.PI * 2);
-      ctx.fill();
+      drawChickenSprite('eye');
     }
+    drawChickenSprite('comb');
+    drawChickenSprite('beak');
+    drawChickenSprite('wattle');
     ctx.restore();
-    ctx.strokeStyle = '#2a2420';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(24, -35);
-    ctx.lineTo(33, -33);
-    ctx.stroke();
-
-    // Beak and wattle.
-    ctx.fillStyle = '#ffb21d';
-    ctx.strokeStyle = '#a96500';
-    ctx.lineWidth = 1.3;
-    ctx.beginPath();
-    ctx.moveTo(37, -30);
-    ctx.lineTo(53, -22);
-    ctx.lineTo(37, -16);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.beginPath();
-    ctx.moveTo(39, -28);
-    ctx.lineTo(48, -23);
-    ctx.lineTo(39, -22);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#e5323b';
-    ctx.beginPath();
-    ctx.ellipse(40, -12, 4.5, 7, 0.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Chin strap.
-    ctx.strokeStyle = '#0b0c0e';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(5, -27);
-    ctx.quadraticCurveTo(16, -6, 31, -12);
-    ctx.stroke();
-
-    // Comb pokes through the helmet vent so the mascot stays a chicken.
-    ctx.fillStyle = ART.red;
-    ctx.strokeStyle = '#8f1e25';
-    ctx.lineWidth = 1.2;
-    for (const [cx, cy, r] of [[10, -54, 6], [18, -58, 7], [26, -54, 5.5]]) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // Subtle cheek highlight.
-    ctx.fillStyle = 'rgba(255,120,130,0.14)';
-    ctx.beginPath();
-    ctx.ellipse(24, -19, 6, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
 
     // Crash stars.
     if (state.phase === 'crashed') {
@@ -2796,11 +2596,12 @@
     if (integrated) stageHint.textContent = 'Fetan Bet wallet · server-committed crossings';
     resize();
     resetTraffic();
+    loadChickenSprites();
     bindEvents();
     updateLiveTicker();
     if (!integrated) setInterval(updateLiveTicker, 5200);
     if (new URLSearchParams(location.search).has('debug')) {
-      window.__chickenDebug = { state, hop, cashOut, startRound, updateHUD, resetTraffic, resetFences, confirmCheckpoint, collisionX, posX, confirmedCheckpoints };
+      window.__chickenDebug = { state, hop, cashOut, startRound, updateHUD, resetTraffic, resetFences, confirmCheckpoint, collisionX, posX, confirmedCheckpoints, chickenSprites, chickenX };
     }
     requestAnimationFrame(() => {
       resize();
