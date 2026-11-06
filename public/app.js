@@ -108,7 +108,7 @@ function mountPromoSlider(app) {
       key: 'six-games', image: '/images/promotions/six-games.svg',
       title: `${gameCount} DIFFERENT TYPES OF GAMES`,
       copy: 'Explore eight different game experiences, all in one place.',
-      note: 'Illustrative artwork. No cash reward is implied.',
+      note: 'Illustrative game artwork.',
       action: 'games', cta: 'Explore Games'
     },
     {
@@ -148,7 +148,7 @@ function mountPromoSlider(app) {
         <span class="promo-art-glow"></span>
         <div class="promo-showcase">
           <div class="promo-game-orbit">${tokenMarkup()}</div>
-          <img class="promo-showcase-woman" src="/images/promotions/habesha-promo-woman.svg" width="520" height="620" alt="" loading="eager" decoding="async">
+          <img class="promo-showcase-collage" src="/images/promotions/game-collage.svg" width="640" height="520" alt="" loading="eager" decoding="async">
         </div>
       </div>
       <div class="promo-game-strip" aria-hidden="true">${tokenMarkup()}</div>` : `
