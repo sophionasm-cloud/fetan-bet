@@ -26,7 +26,7 @@ for (const route of [
 assert.match(catalog, /data-g="chicken-road-2"[\s\S]*?Chicken Road Dash/);
 assert.match(catalog, /data-g="penalty"[\s\S]*?Penalty Unlimited/);
 assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1`/);
-for (const asset of ['public/img/chicken-road-2-card.png', 'public/img/penalty-unlimited-preview.png']) {
+for (const asset of ['public/img/chicken-road-2-card.jpg', 'public/img/penalty-unlimited-preview.jpg']) {
   assert.ok(fs.statSync(path.join(root, asset)).size > 0, `poster exists: ${asset}`);
 }
 for (const game of ['chicken-road-2', 'penalty']) {

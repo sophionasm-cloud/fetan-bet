@@ -26,8 +26,8 @@ window.Games = (function () {
   const GAME_TARGET_RTP_CENTS = 30n;
   const GAME_POSTERS = {
     road: '/img/road-dash.webp.jpg',
-    'chicken-road-2': '/img/chicken-road-2-card.png',
-    penalty: '/img/penalty-unlimited-preview.png',
+    'chicken-road-2': '/img/chicken-road-2-card.jpg',
+    penalty: '/img/penalty-unlimited-preview.jpg',
     mines: '/img/mines.webp.jpg',
     plinko: '/img/plinko.webp.jpg',
     keno: '/img/keno.webp.jpg',
