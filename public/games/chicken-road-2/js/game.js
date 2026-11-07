@@ -39,7 +39,6 @@
   const resultAmount = $('resultAmount');
   const resultSub = $('resultSub');
   const resultBtn = $('resultBtn');
-  const verifyRoundBtn = $('verifyRoundBtn');
   const toastWrap = $('toastWrap');
   const howModal = $('howModal');
   const menuModal = $('menuModal');
@@ -527,6 +526,22 @@
     renderLadder();
   }
 
+  let autoVerifiedRoundId = null;
+  function autoVerifySettledRound() {
+    const roundId = state.serverRoundId;
+    if (!integrated || !roundId || autoVerifiedRoundId === roundId) return;
+    autoVerifiedRoundId = roundId;
+    // Proof checking runs in the background; the result card stays clean and
+    // the next round is never blocked by it.
+    fetanApi(`/verify/${encodeURIComponent(state.serverRoundId)}`).then((proof) => {
+      if (!proof.seed_commit_valid || !proof.outcomes_match_seed || !proof.probabilities_match_config || !proof.merkle_proofs_valid) {
+        throw new Error('INVALID_PROOF');
+      }
+    }).catch((error) => {
+      console.warn('Chicken Road round verification failed:', error?.message || error);
+    });
+  }
+
   function showResult(kind, title, amount, sub, kicker) {
     state.resultShown = true;
     resultCard.classList.remove('good', 'bad', 'gold');
@@ -536,12 +551,8 @@
     resultAmount.textContent = amount;
     resultSub.textContent = sub;
     resultBtn.textContent = 'Play again';
-    if (verifyRoundBtn) {
-      verifyRoundBtn.classList.toggle('hidden', !integrated || !state.serverRoundId);
-      verifyRoundBtn.disabled = false;
-      verifyRoundBtn.textContent = 'Verify committed round';
-    }
     resultOverlay.classList.add('show');
+    if (integrated) autoVerifySettledRound();
     updateHUD();
   }
 
@@ -871,7 +882,7 @@
         `${levels} levels crossed · ${fmtMult(state.mult)} final multiplier`, 'CLEAN CROSSING');
     } else {
       showResult('bad', 'CRASHED!', fmtMoney(0),
-        integrated ? 'The server-committed crossing crashed. Traffic is visual only.' : 'A car got you. Try a safer crossing.', 'ROUND OVER');
+        'A car got you. Try a safer crossing.', 'ROUND OVER');
     }
   }
 
@@ -2416,19 +2427,6 @@
       startAudio();
       hideResult();
       resetToIdle();
-    });
-    verifyRoundBtn?.addEventListener('click', async () => {
-      if (!state.serverRoundId) return;
-      verifyRoundBtn.disabled = true;
-      try {
-        const proof = await fetanApi(`/verify/${encodeURIComponent(state.serverRoundId)}`);
-        if (!proof.seed_commit_valid || !proof.outcomes_match_seed || !proof.probabilities_match_config || !proof.merkle_proofs_valid) throw new Error('INVALID_PROOF');
-        toast(`Committed seed and all ${state.serverLadder.length || laneLimit()} level proofs verified.`, 'good');
-        verifyRoundBtn.textContent = 'Round verified';
-      } catch {
-        toast('Could not verify this round proof.', 'bad');
-        verifyRoundBtn.disabled = false;
-      }
     });
 
     chipsEl.addEventListener('click', (e) => {
