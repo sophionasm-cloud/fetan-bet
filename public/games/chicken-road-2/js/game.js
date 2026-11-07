@@ -506,7 +506,9 @@
       cashBtn.disabled = !!state.hop || state.remoteBusy;
       goBtn.title = last ? 'Reach the far sidewalk and bank the final multiplier' : 'Hop forward';
     }
-    setBetControls(state.phase === 'idle');
+    // A settled round is over, so the player may prepare the next round
+    // (difficulty and stake) while the result card is still on screen.
+    setBetControls(state.phase === 'idle' || settling);
     playBtn.disabled = integrated && (!state.remoteReady || state.remoteBusy);
     if (integrated && !state.remoteReady) {
       playBtn.querySelector('span')?.replaceChildren(document.createTextNode('Unavailable'));
@@ -546,6 +548,33 @@
   function hideResult() {
     state.resultShown = false;
     resultOverlay.classList.remove('show');
+  }
+
+  // Return a settled round to the ready-to-play state without starting a new
+  // one. This is what lets the player change difficulty or stake after a
+  // crash, cash-out or completed road.
+  function resetToIdle() {
+    state.phase = 'idle';
+    state.pos = state.lane = 0;
+    state.mult = 1;
+    state.hop = null;
+    state.pendingCheckpoint = null;
+    state.resultTimer = 0;
+    state.resultShown = false;
+    state.lastOutcome = null;
+    state.cameraX = state.cameraTarget = 0;
+    state.shake = 0;
+    state.particles = [];
+    state.serverLadder = [];
+    state.serverRoundId = null;
+    state.remoteAction = null;
+    state.pendingActionId = null;
+    resetFences(0);
+    resetTraffic();
+    saveStore();
+    updateHUD();
+    stageHint.textContent = integrated ? 'Play with your Fetan Bet wallet' : 'Press Play, then hop across the road';
+    stageHint.classList.remove('fade');
   }
 
   // ---------------------------------------------------------------- Betting
@@ -2386,7 +2415,7 @@
     resultBtn.addEventListener('click', () => {
       startAudio();
       hideResult();
-      startRound();
+      resetToIdle();
     });
     verifyRoundBtn?.addEventListener('click', async () => {
       if (!state.serverRoundId) return;
@@ -2413,7 +2442,9 @@
     maxBtn.addEventListener('click', () => { play('click'); setBet(Math.min(MAX_BET, state.balance)); });
 
     difficultyEl.addEventListener('change', () => {
-      if (state.phase !== 'idle') return;
+      // Locked only while a round is genuinely in progress. A crashed,
+      // cashed-out or completed round no longer owns the selector.
+      if (state.phase === 'playing') return;
       state.difficulty = DIFFICULTY[difficultyEl.value] ? difficultyEl.value : 'medium';
       resetTraffic();
       saveStore();
@@ -2498,7 +2529,7 @@
         startAudio();
         if (state.resultShown) {
           hideResult();
-          startRound();
+          resetToIdle();
         } else if (state.phase === 'playing') {
           hop();
         } else if (state.phase === 'idle') {
