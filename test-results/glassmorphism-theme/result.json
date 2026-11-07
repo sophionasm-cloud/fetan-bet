@@ -1,0 +1,214 @@
+{
+  "passed": [
+    "guest body has customer-theme",
+    "guest theme resolves to dark",
+    "customer-glass.css is linked",
+    "theme toggle is available for guests",
+    "dark body base is #0B0B0B",
+    "dark text is #D9D9D9",
+    "guest hero uses glass blur",
+    "game tile uses glass blur",
+    "game tile is rounded",
+    "button is pill shaped",
+    "light body base is #F2E9FF",
+    "light text is dark",
+    "light hero keeps glass blur",
+    "language toggle re-renders guest page",
+    "registered customer keeps customer-theme",
+    "registered customer theme persisted as dark",
+    "user lobby tile is rounded and glassy",
+    "game shell renders for customer",
+    "mines sidebar uses glass blur",
+    "mines tile is rounded",
+    "mines start button is pill-shaped",
+    "dark game primary action uses dark-theme accent",
+    "light mines sidebar uses glass blur",
+    "light mines start button uses purple accent",
+    "light bet chips use purple palette",
+    "mobile customer gets bottom app navigation",
+    "no customer server 5xx responses",
+    "admin workspace does not receive customer-theme",
+    "admin has no customer theme toggle",
+    "admin workspace keeps dashboard surfaces",
+    "agent workspace does not receive customer-theme",
+    "agent has no customer theme toggle",
+    "agent workspace keeps dashboard surfaces"
+  ],
+  "errors": [
+    "no browser console/page errors on customer pages — Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "dark": {
+    "bg": "rgb(11, 11, 11)",
+    "text": "rgb(217, 217, 217)",
+    "font": "Inter, \"Noto Sans Ethiopic\", system-ui, sans-serif",
+    "bodyBgImage": "radial-gradient(70% 55% at 12% -8%, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0) ",
+    "cardBg": null,
+    "cardBlur": null,
+    "cardRadius": null,
+    "gcardRadius": "32px",
+    "gcardBlur": "blur(18px) saturate(1.4)",
+    "heroRadius": "36px",
+    "heroBlur": "blur(28px) saturate(1.4)",
+    "btnRadius": "999px",
+    "pointer": "rgb(217, 217, 217)"
+  },
+  "light": {
+    "bg": "rgb(242, 233, 255)",
+    "text": "rgb(42, 22, 63)",
+    "font": "Inter, \"Noto Sans Ethiopic\", system-ui, sans-serif",
+    "bodyBgImage": "radial-gradient(70% 55% at 10% -8%, rgba(157, 113, 232, 0.26), rgba(0, 0, 0, 0) ",
+    "cardBg": null,
+    "cardBlur": null,
+    "cardRadius": null,
+    "gcardRadius": "32px",
+    "gcardBlur": "blur(18px) saturate(1.4)",
+    "heroRadius": "36px",
+    "heroBlur": "blur(28px) saturate(1.4)",
+    "btnRadius": "999px",
+    "pointer": "rgb(42, 22, 63)"
+  },
+  "gameChecks": {
+    "dark": {
+      "mines": {
+        "theme": "dark",
+        "minesSidebar": {
+          "backgroundColor": "rgba(26, 26, 26, 0.55)",
+          "backgroundImage": "none",
+          "color": "rgb(217, 217, 217)",
+          "borderColor": "rgba(255, 255, 255, 0.12)",
+          "borderRadius": "30px",
+          "backdropFilter": "blur(18px) saturate(1.4)"
+        },
+        "mineTile": {
+          "backgroundColor": "rgba(51, 51, 51, 0.72)",
+          "backgroundImage": "none",
+          "color": "rgba(255, 255, 255, 0.3)",
+          "borderColor": "rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.3) rgba(11, 11, 11, 0.55)",
+          "borderRadius": "20px",
+          "backdropFilter": "none"
+        },
+        "minesStart": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "backgroundImage": "none",
+          "color": "rgb(11, 11, 11)",
+          "borderColor": "rgba(255, 255, 255, 0.4)",
+          "borderRadius": "999px",
+          "backdropFilter": "none"
+        },
+        "chip": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "radial-gradient(circle at 35% 35%, rgb(74, 74, 74), rgb(38, 38, 38))",
+          "color": "rgb(255, 255, 255)",
+          "borderColor": "rgba(255, 255, 255, 0.2)",
+          "borderRadius": "50%",
+          "backdropFilter": "none"
+        },
+        "plinkoSidebar": null,
+        "roadPanel": null,
+        "kenoNumber": null,
+        "bingoCell": null,
+        "rouletteButton": null,
+        "slot": null
+      }
+    },
+    "light": {
+      "mines": {
+        "theme": "light",
+        "minesSidebar": {
+          "backgroundColor": "rgba(255, 255, 255, 0.55)",
+          "backgroundImage": "none",
+          "color": "rgb(42, 22, 63)",
+          "borderColor": "rgba(106, 47, 200, 0.16)",
+          "borderRadius": "30px",
+          "backdropFilter": "blur(18px) saturate(1.4)"
+        },
+        "mineTile": {
+          "backgroundColor": "rgba(255, 255, 255, 0.72)",
+          "backgroundImage": "none",
+          "color": "rgba(16, 16, 16, 0.3)",
+          "borderColor": "rgba(16, 16, 16, 0.3) rgba(16, 16, 16, 0.3) rgba(106, 47, 200, 0.18)",
+          "borderRadius": "20px",
+          "backdropFilter": "none"
+        },
+        "minesStart": {
+          "backgroundColor": "rgb(106, 47, 200)",
+          "backgroundImage": "none",
+          "color": "rgb(255, 255, 255)",
+          "borderColor": "rgba(106, 47, 200, 0.28)",
+          "borderRadius": "999px",
+          "backdropFilter": "none"
+        },
+        "chip": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "backgroundImage": "radial-gradient(circle at 35% 35%, rgb(106, 47, 200), rgb(75, 30, 150))",
+          "color": "rgb(255, 255, 255)",
+          "borderColor": "rgba(255, 255, 255, 0.72)",
+          "borderRadius": "50%",
+          "backdropFilter": "none"
+        },
+        "plinkoSidebar": null,
+        "roadPanel": null,
+        "kenoNumber": null,
+        "bingoCell": null,
+        "rouletteButton": null,
+        "slot": null
+      }
+    }
+  },
+  "staffResults": [
+    {
+      "role": "admin",
+      "state": {
+        "customer": false,
+        "workspace": true,
+        "themeValue": null,
+        "toggle": false,
+        "bodyBg": "rgb(5, 8, 13)",
+        "sidebarBlur": "none"
+      },
+      "staffErrors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "shot": "27-admin-workspace.png"
+    },
+    {
+      "role": "agent",
+      "state": {
+        "customer": false,
+        "workspace": true,
+        "themeValue": null,
+        "toggle": false,
+        "bodyBg": "rgb(5, 8, 13)",
+        "sidebarBlur": "none"
+      },
+      "staffErrors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "shot": "28-agent-workspace.png"
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "transientConsoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "requestFailures": [
+    "HTTP 401 http://127.0.0.1:3100/api/me",
+    "HTTP 401 http://127.0.0.1:3100/api/me",
+    "HTTP 401 http://127.0.0.1:3100/api/me",
+    "HTTP 401 http://127.0.0.1:3100/api/me",
+    "HTTP 401 http://127.0.0.1:3100/api/me"
+  ]
+}

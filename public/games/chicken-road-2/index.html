@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#08090b" />
   <title>Chicken Road 2.0 — Fetan Bet</title>
-  <script>if (new URLSearchParams(location.search).get('fetan') === '1') document.documentElement.classList.add('fetan-integrated');</script>
+  <script>if (new URLSearchParams(location.search).get('fetan') === '1') { document.documentElement.classList.add('fetan-integrated'); try { document.documentElement.dataset.customerTheme = localStorage.getItem('fetan-theme') || 'dark'; } catch (_) { document.documentElement.dataset.customerTheme = 'dark'; } }</script>
   <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../../shared/fonts.css" />
   <link rel="stylesheet" href="../../shared/ui.css" />
   <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="../../shared/customer-theme.css" />
 </head>
 <body>
   <div class="loader-screen" id="loader">

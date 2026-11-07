@@ -331,7 +331,7 @@ window.Games = (function () {
             <button class="chip" id="gback" type="button">← ${C.esc(C.t('back'))}</button>
             <span id="sbtn"></span>
           </div>
-          <h2 class="legacy-game-title" style="text-align:center;margin:0 0 8px;color:#fff">${C.esc(titles[game])}</h2>
+          <h2 class="legacy-game-title" style="text-align:center;margin:0 0 8px;color:var(--text)">${C.esc(titles[game])}</h2>
           <div id="gbody"></div>
         </div>
       </div>`;
@@ -386,18 +386,28 @@ window.Games = (function () {
     const frame = document.createElement('iframe');
     frame.className = 'integrated-game-frame';
     frame.title = title;
-    frame.src = `/games/${game}/?fetan=1`;
     frame.loading = 'eager';
     frame.allow = 'fullscreen; autoplay';
     frame.referrerPolicy = 'same-origin';
     frame.setAttribute('allowfullscreen', '');
+    const syncFrameTheme = () => {
+      try {
+        const frameRoot = frame.contentDocument?.documentElement;
+        if (!frameRoot?.classList.contains('fetan-integrated')) return;
+        frameRoot.dataset.customerTheme = document.body.dataset.customerTheme || localStorage.getItem('fetan-theme') || 'dark';
+      } catch (_) { /* The embedded game is optional to the customer shell. */ }
+    };
+    frame.addEventListener('load', syncFrameTheme);
+    window.addEventListener('fetan-customer-theme-change', syncFrameTheme);
     body.replaceChildren(frame);
+    frame.src = `/games/${game}/?fetan=1`;
     const onMessage = (event) => {
       if (event.origin !== location.origin || event.source !== frame.contentWindow || event.data?.type !== 'fetan-game-close') return;
       $('mobile-game-back')?.click();
     };
     window.addEventListener('message', onMessage);
     stopFns.push(() => window.removeEventListener('message', onMessage));
+    stopFns.push(() => window.removeEventListener('fetan-customer-theme-change', syncFrameTheme));
     stopFns.push(() => { frame.src = 'about:blank'; });
   }
 
@@ -513,7 +523,7 @@ window.Games = (function () {
           <div class="mines-sidebar-section">
             <div class="mines-sidebar-label">
               <span>${esc(t('grid_size'))}</span>
-              <span id="mgrid-lbl" style="color:#ffffff;font-weight:800">5×5</span>
+              <span id="mgrid-lbl" style="color:var(--text-strong);font-weight:800">5×5</span>
             </div>
             <div class="mines-seg-control" id="mgrid-selector">
               <button type="button" class="mines-seg-btn" data-grid="3">3×3</button>
@@ -527,7 +537,7 @@ window.Games = (function () {
           <div class="mines-sidebar-section">
             <div class="mines-sidebar-label">
               <span>${esc(t('mines_count'))}</span>
-              <span id="mcount-lbl" style="color:#facc15;font-weight:800">5</span>
+              <span id="mcount-lbl" style="color:var(--accent);font-weight:800">5</span>
             </div>
             <div class="mines-seg-control" id="mmines-presets">
               <button type="button" class="mines-seg-btn" data-mines="1">1</button>
@@ -537,7 +547,7 @@ window.Games = (function () {
               <button type="button" class="mines-seg-btn" data-mines="custom">${esc(t('custom_mines'))}</button>
             </div>
             <div class="mines-custom-box" id="mmines-custom-box" style="display:none;margin-top:6px">
-              <span style="font-size:12px;color:#94a3b8">1–<span id="mmax-mines">24</span>:</span>
+              <span style="font-size:12px;color:var(--text-secondary)">1–<span id="mmax-mines">24</span>:</span>
               <input type="number" id="mmines-custom-input" class="mines-custom-input" min="1" max="24" value="5" step="1">
             </div>
           </div>
@@ -604,27 +614,27 @@ window.Games = (function () {
           <!-- PROVABLY FAIR VERIFIER CARD (Toggleable) -->
           <div class="mines-fair-card" id="mfair-card" style="display:none">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <h4 style="margin:0;color:#facc15;font-size:14px">🛡️ ${esc(t('mines_verify_title'))}</h4>
+              <h4 style="margin:0;color:var(--accent);font-size:14px">🛡️ ${esc(t('mines_verify_title'))}</h4>
               <button type="button" class="chip" id="mfair-close" style="font-size:11px">✕</button>
             </div>
-            <p style="font-size:12px;color:#94a3b8;margin:0 0 10px">${esc(t('mines_verify_desc'))}</p>
+            <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px">${esc(t('mines_verify_desc'))}</p>
             <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
               <div>
-                <label style="color:#aaa">${esc(t('server_seed_hash'))}:</label>
-                <input id="mfair-hash" type="text" readonly style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#94a3b8;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
+                <label style="color:var(--text-muted)">${esc(t('server_seed_hash'))}:</label>
+                <input id="mfair-hash" type="text" readonly style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-muted);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
               </div>
               <div>
-                <label style="color:#aaa">${esc(t('server_seed'))}:</label>
-                <input id="mfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+                <label style="color:var(--text-muted)">${esc(t('server_seed'))}:</label>
+                <input id="mfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
               </div>
               <div style="display:flex;gap:8px">
                 <div style="flex:1">
-                  <label style="color:#aaa">${esc(t('client_seed'))}:</label>
-                  <input id="mfair-client-seed" type="text" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+                  <label style="color:var(--text-muted)">${esc(t('client_seed'))}:</label>
+                  <input id="mfair-client-seed" type="text" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
                 </div>
                 <div style="width:70px">
-                  <label style="color:#aaa">Nonce:</label>
-                  <input id="mfair-nonce" type="number" value="1" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-size:11px">
+                  <label style="color:var(--text-muted)">Nonce:</label>
+                  <input id="mfair-nonce" type="number" value="1" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:11px">
                 </div>
               </div>
               <button type="button" class="btn btn-gold" id="mfair-verify-btn" style="padding:6px;margin-top:4px;font-size:12px">${esc(t('verify_btn'))}</button>
@@ -866,7 +876,7 @@ window.Games = (function () {
       const cSeed = $('mfair-client-seed').value.trim();
       const nonce = Number($('mfair-nonce').value) || 1;
       if (!sSeed || !cSeed) {
-        $('mfair-result').innerHTML = `<span style="color:#ef4444">Enter Server Seed and Client Seed</span>`;
+        $('mfair-result').innerHTML = `<span style="color:var(--danger)">Enter Server Seed and Client Seed</span>`;
         return;
       }
       try {
@@ -879,13 +889,13 @@ window.Games = (function () {
         });
         const matchHash = res.server_seed_hash === activeSeedHash;
         $('mfair-result').innerHTML = `
-          <div style="background:#071824;padding:8px;border-radius:6px;border:1px solid #10b981;color:#10b981">
+          <div style="background:var(--success-bg);padding:8px;border-radius:6px;border:1px solid var(--success-border);color:var(--success)">
             <b>✓ Verification Reproducible!</b><br>
-            <span style="color:#cbd5e1;font-size:11px">Mine Positions (${res.mines.length}): [${res.mines.join(', ')}]</span><br>
-            <span style="font-size:10px;color:#94a3b8">SHA-256: ${res.server_seed_hash.slice(0, 24)}... ${matchHash ? '✓ Matches Round Hash' : ''}</span>
+            <span style="color:var(--text-secondary);font-size:11px">Mine Positions (${res.mines.length}): [${res.mines.join(', ')}]</span><br>
+            <span style="font-size:10px;color:var(--text-secondary)">SHA-256: ${res.server_seed_hash.slice(0, 24)}... ${matchHash ? '✓ Matches Round Hash' : ''}</span>
           </div>`;
       } catch (e) {
-        $('mfair-result').innerHTML = `<span style="color:#ef4444">${esc(e.message || 'Verification failed')}</span>`;
+        $('mfair-result').innerHTML = `<span style="color:var(--danger)">${esc(e.message || 'Verification failed')}</span>`;
       }
     };
 
@@ -1328,7 +1338,7 @@ window.Games = (function () {
             <div class="plinko-sidebar-section">
               <div class="plinko-sidebar-label">
                 <span>${esc(t('auto_bets'))}</span>
-                <span style="font-size:11px;color:#cbd5e1">0 = ${esc(t('infinity'))}</span>
+                <span style="font-size:11px;color:var(--text-secondary)">0 = ${esc(t('infinity'))}</span>
               </div>
               <div class="plinko-input-box">
                 <input type="number" id="p-auto-count" min="0" max="1000" step="1" value="10">
@@ -1352,20 +1362,20 @@ window.Games = (function () {
             <!-- On Win / On Loss Strategy -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <div>
-                <label style="font-size:11px;color:#94a3b8;font-weight:700">${esc(t('on_win'))}</label>
+                <label style="font-size:11px;color:var(--text-secondary);font-weight:700">${esc(t('on_win'))}</label>
                 <select id="p-win-action" class="plinko-select" style="padding:4px 6px;font-size:11px">
                   <option value="reset">${esc(t('reset'))}</option>
                   <option value="increase">+%</option>
                 </select>
-                <input id="p-win-pct" type="number" placeholder="%" value="50" style="display:none;width:100%;margin-top:4px;background:#0f1923;border:1px solid #2f4553;color:#fff;border-radius:6px;padding:3px;font-size:11px">
+                <input id="p-win-pct" type="number" placeholder="%" value="50" style="display:none;width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);border-radius:6px;padding:3px;font-size:11px">
               </div>
               <div>
-                <label style="font-size:11px;color:#94a3b8;font-weight:700">${esc(t('on_loss'))}</label>
+                <label style="font-size:11px;color:var(--text-secondary);font-weight:700">${esc(t('on_loss'))}</label>
                 <select id="p-loss-action" class="plinko-select" style="padding:4px 6px;font-size:11px">
                   <option value="reset">${esc(t('reset'))}</option>
                   <option value="increase">+%</option>
                 </select>
-                <input id="p-loss-pct" type="number" placeholder="%" value="50" style="display:none;width:100%;margin-top:4px;background:#0f1923;border:1px solid #2f4553;color:#fff;border-radius:6px;padding:3px;font-size:11px">
+                <input id="p-loss-pct" type="number" placeholder="%" value="50" style="display:none;width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);border-radius:6px;padding:3px;font-size:11px">
               </div>
             </div>
           </div>
@@ -1410,29 +1420,29 @@ window.Games = (function () {
           <!-- PROVABLY FAIR CARD (Toggleable) -->
           <div class="plinko-fair-card" id="pfair-card" style="display:none">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <h4 style="margin:0;color:#facc15;font-size:14px">🛡️ ${esc(t('plinko_verify_title'))}</h4>
+              <h4 style="margin:0;color:var(--accent);font-size:14px">🛡️ ${esc(t('plinko_verify_title'))}</h4>
               <button type="button" class="chip" id="pfair-close" style="font-size:11px">✕</button>
             </div>
-            <p style="font-size:12px;color:#94a3b8;margin:0 0 8px">${esc(t('plinko_verify_desc'))}</p>
-            <div style="font-size:11px;color:#facc15;margin-bottom:8px">${esc(t('formula'))}</div>
+            <p style="font-size:12px;color:var(--text-secondary);margin:0 0 8px">${esc(t('plinko_verify_desc'))}</p>
+            <div style="font-size:11px;color:var(--accent);margin-bottom:8px">${esc(t('formula'))}</div>
 
             <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
               <div>
-                <label style="color:#aaa">${esc(t('server_seed_hash'))}:</label>
-                <input id="pfair-hash" type="text" readonly style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#94a3b8;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
+                <label style="color:var(--text-muted)">${esc(t('server_seed_hash'))}:</label>
+                <input id="pfair-hash" type="text" readonly style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-muted);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
               </div>
               <div>
-                <label style="color:#aaa">${esc(t('server_seed'))}:</label>
-                <input id="pfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+                <label style="color:var(--text-muted)">${esc(t('server_seed'))}:</label>
+                <input id="pfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
               </div>
               <div style="display:flex;gap:8px">
                 <div style="flex:1">
-                  <label style="color:#aaa">${esc(t('client_seed'))}:</label>
-                  <input id="pfair-client-seed" type="text" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+                  <label style="color:var(--text-muted)">${esc(t('client_seed'))}:</label>
+                  <input id="pfair-client-seed" type="text" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
                 </div>
                 <div style="width:80px">
-                  <label style="color:#aaa">Nonce:</label>
-                  <input id="pfair-nonce" type="number" value="1" style="width:100%;background:#0f1923;border:1px solid #2f4553;color:#ffffff;padding:4px 8px;border-radius:6px;font-size:11px">
+                  <label style="color:var(--text-muted)">Nonce:</label>
+                  <input id="pfair-nonce" type="number" value="1" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:11px">
                 </div>
               </div>
               <button type="button" class="btn btn-gold" id="pfair-verify-btn" style="padding:6px;margin-top:4px;font-size:12px">${esc(t('verify_btn'))}</button>
@@ -1778,7 +1788,7 @@ window.Games = (function () {
       const cSeed = $('pfair-client-seed').value.trim();
       const nonce = Number($('pfair-nonce').value) || 1;
       if (!sSeed || !cSeed) {
-        $('pfair-result').innerHTML = `<span style="color:#ef4444">Enter Server Seed and Client Seed</span>`;
+        $('pfair-result').innerHTML = `<span style="color:var(--danger)">Enter Server Seed and Client Seed</span>`;
         return;
       }
       try {
@@ -1792,13 +1802,13 @@ window.Games = (function () {
         });
         const matchHash = res.server_seed_hash === lastSeedHash;
         $('pfair-result').innerHTML = `
-          <div style="background:#071824;padding:8px;border-radius:6px;border:1px solid #10b981;color:#10b981">
+          <div style="background:var(--success-bg);padding:8px;border-radius:6px;border:1px solid var(--success-border);color:var(--success)">
             <b>✓ Verification Reproducible!</b><br>
-            <span style="color:#cbd5e1;font-size:11px">Landed Bucket: ${res.bucket} (×${res.multiplier})</span><br>
-            <span style="font-size:10px;color:#94a3b8">Path: [${res.path.map((b) => b ? 'R' : 'L').join(', ')}] ${matchHash ? '✓ Matches Round Hash' : ''}</span>
+            <span style="color:var(--text-secondary);font-size:11px">Landed Bucket: ${res.bucket} (×${res.multiplier})</span><br>
+            <span style="font-size:10px;color:var(--text-secondary)">Path: [${res.path.map((b) => b ? 'R' : 'L').join(', ')}] ${matchHash ? '✓ Matches Round Hash' : ''}</span>
           </div>`;
       } catch (e) {
-        $('pfair-result').innerHTML = `<span style="color:#ef4444">${esc(e.message || 'Verification failed')}</span>`;
+        $('pfair-result').innerHTML = `<span style="color:var(--danger)">${esc(e.message || 'Verification failed')}</span>`;
       }
     };
 
@@ -3064,7 +3074,7 @@ window.Games = (function () {
           const resBox = $('v-result');
           if (!sSeed || !cSeed || !lane) {
             resBox.style.display = 'block';
-            resBox.innerHTML = `<span style="color:#ef4444">Please enter server seed, client seed, and lane number.</span>`;
+            resBox.innerHTML = `<span style="color:var(--danger)">Please enter server seed, client seed, and lane number.</span>`;
             return;
           }
           try {
@@ -3081,7 +3091,7 @@ window.Games = (function () {
               </div>`;
           } catch (e) {
             resBox.style.display = 'block';
-            resBox.innerHTML = `<span style="color:#ef4444">Verification error: ${esc(e.message || 'Invalid parameters')}</span>`;
+            resBox.innerHTML = `<span style="color:var(--danger)">Verification error: ${esc(e.message || 'Invalid parameters')}</span>`;
           }
         };
       }

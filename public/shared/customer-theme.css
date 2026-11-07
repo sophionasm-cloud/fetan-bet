@@ -1,0 +1,163 @@
+/*
+ * Fetan Bet guest/customer theme bridge for the two integrated canvas games.
+ * This stylesheet is inert in standalone mode and does not style the parent
+ * workspace or alter either game's canvas, mechanics, or responsive layout.
+ */
+html.fetan-integrated[data-customer-theme="dark"] {
+  color-scheme: dark;
+  --embed-page: #0B0B0B;
+  --embed-shell: #111111;
+  --embed-panel: rgba(26, 26, 26, .82);
+  --embed-raised: rgba(51, 51, 51, .72);
+  --embed-border: rgba(255, 255, 255, .14);
+  --embed-text: #D9D9D9;
+  --embed-strong: #FFFFFF;
+  --embed-muted: #BDBDBD;
+  --embed-accent: #FFFFFF;
+  --embed-accent-soft: rgba(255, 255, 255, .12);
+  --embed-primary-bg: linear-gradient(135deg, #FFFFFF, #D9D9D9);
+  --embed-primary-text: #0B0B0B;
+  --cr-bg: #0B0B0B;
+  --cr-panel: rgba(26, 26, 26, .82);
+  --cr-panel-2: rgba(17, 17, 17, .94);
+  --cr-line: rgba(255, 255, 255, .14);
+  --cr-muted: #BDBDBD;
+  --cr-yellow: #FFFFFF;
+  --cr-yellow-hot: #D9D9D9;
+  --p-bg: #0B0B0B;
+  --p-panel: rgba(26, 26, 26, .82);
+  --p-panel-2: rgba(17, 17, 17, .94);
+  --p-line: rgba(255, 255, 255, .14);
+  --p-muted: #BDBDBD;
+  --p-gold: #FFFFFF;
+  --p-blue: #111111;
+}
+
+html.fetan-integrated[data-customer-theme="light"] {
+  color-scheme: light;
+  --embed-page: #F2E9FF;
+  --embed-shell: rgba(255, 255, 255, .92);
+  --embed-panel: rgba(209, 184, 255, .34);
+  --embed-raised: rgba(255, 255, 255, .78);
+  --embed-border: rgba(106, 47, 200, .18);
+  --embed-text: #2A163F;
+  --embed-strong: #17111F;
+  --embed-muted: #62576E;
+  --embed-accent: #6A2FC8;
+  --embed-accent-soft: rgba(106, 47, 200, .11);
+  --embed-primary-bg: linear-gradient(135deg, #6A2FC8, #5426BC);
+  --embed-primary-text: #FFFFFF;
+  --cr-bg: #F2E9FF;
+  --cr-panel: rgba(255, 255, 255, .82);
+  --cr-panel-2: rgba(242, 233, 255, .94);
+  --cr-line: rgba(106, 47, 200, .18);
+  --cr-muted: #62576E;
+  --cr-yellow: #6A2FC8;
+  --cr-yellow-hot: #5426BC;
+  --p-bg: #F2E9FF;
+  --p-panel: rgba(255, 255, 255, .82);
+  --p-panel-2: rgba(242, 233, 255, .94);
+  --p-line: rgba(106, 47, 200, .18);
+  --p-muted: #62576E;
+  --p-gold: #6A2FC8;
+  --p-blue: #F2E9FF;
+}
+
+html.fetan-integrated body {
+  color: var(--embed-text);
+  background: var(--embed-page);
+  transition: color .2s ease, background-color .2s ease;
+}
+
+html.fetan-integrated .app {
+  color: var(--embed-text);
+  background:
+    radial-gradient(ellipse at 50% 0%, var(--embed-accent-soft), transparent 52%),
+    var(--embed-shell);
+  border-color: var(--embed-border);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+html.fetan-integrated :is(.topbar, .penalty-topbar, .penalty-bar) {
+  color: var(--embed-text);
+  background: var(--embed-panel);
+  border-color: var(--embed-border);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+html.fetan-integrated :is(.brand-text, .penalty-brand-text, .online b, .ticker-name,
+  .mult-value, .bar-value, .bet-amount, .last-win, .menu-item, .node-label) {
+  color: var(--embed-strong);
+}
+
+html.fetan-integrated :is(.ticker-row, .ticker-label, .mult-label, .bar-label,
+  .difficulty-row, .penalty-disclaimer, .panel-foot, .disclaimer, .menu-item small) {
+  color: var(--embed-muted);
+}
+
+html.fetan-integrated :is(.balance-pill, .home-btn, .icon-btn, .how-btn, .bet-panel,
+  .penalty-bar, .result-card, .modal-card, .menu-list, .bet-field, .bet-input,
+  .select-wrap select, .mini-btn, .chip, .bet-controls button, .bar-value) {
+  border-color: var(--embed-border);
+  background-color: var(--embed-panel);
+  color: var(--embed-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 8px 24px rgba(0, 0, 0, .12);
+}
+
+html.fetan-integrated :is(.home-btn, .icon-btn, .how-btn, .mini-btn, .chip,
+  .bet-controls button, .bar-value, .select-wrap select) {
+  min-height: 40px;
+  border-radius: 12px;
+}
+
+html.fetan-integrated :is(.bet-input, .select-wrap select, input, select) {
+  border-color: var(--embed-border);
+  background-color: var(--embed-raised);
+  color: var(--embed-strong);
+}
+
+html.fetan-integrated :is(.home-btn, .brand-text em, .brand-text b, .mult-badge.hot .mult-value,
+  .next-payout b, .bet-currency, .bet-amount i, .last-win i, .select-wrap svg,
+  .menu-item:hover, .result-kicker) {
+  color: var(--embed-accent);
+}
+
+html.fetan-integrated :is(.play-btn, .go-btn, .shoot-btn, .claim-btn,
+  .result-card .btn-primary, .result-card .btn-gold) {
+  border: 1px solid var(--embed-border);
+  border-radius: 14px;
+  background: var(--embed-primary-bg);
+  color: var(--embed-primary-text);
+  box-shadow: 0 8px 24px var(--embed-accent-soft), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+html.fetan-integrated :is(.chip.active, .mult-ladder-item.current, .ladder-node.active .node-dot) {
+  border-color: var(--embed-accent);
+  background: var(--embed-accent);
+  color: var(--embed-primary-text);
+}
+
+html.fetan-integrated :is(.stage-hint, .integration-blocker, .integration-blocker p) {
+  color: var(--embed-strong);
+}
+
+html.fetan-integrated :is(button, a, input, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--embed-accent);
+  outline-offset: 3px;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html.fetan-integrated :is(.topbar, .penalty-topbar, .penalty-bar, .balance-pill,
+    .bet-panel, .result-card, .modal-card, .menu-list) {
+    background-color: var(--embed-shell);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.fetan-integrated *,
+  html.fetan-integrated *::before,
+  html.fetan-integrated *::after {
+    transition-duration: .01ms !important;
+  }
+}

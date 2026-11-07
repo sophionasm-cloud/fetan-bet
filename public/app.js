@@ -302,7 +302,10 @@ function applyCustomerTheme(theme = localStorage.getItem('fetan-theme') || 'dark
     toggle.title = light ? 'Switch to dark theme' : 'Switch to light theme';
   }
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.content = light ? '#F6F5FA' : '#090812';
+  if (themeMeta) themeMeta.content = light ? '#F2E9FF' : '#0B0B0B';
+  window.dispatchEvent(new CustomEvent('fetan-customer-theme-change', {
+    detail: { theme: light ? 'light' : 'dark' }
+  }));
 }
 
 function syncCustomerThemeControl(enabled) {
@@ -1155,7 +1158,7 @@ async function walletView(app) {
       </div>
 
       <div class="grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:14px">
-        <div class="stat" style="background:var(--surface-hover);border-color:rgba(214,189,114,0.3)">
+        <div class="stat" style="background:var(--surface-hover);border-color:var(--accent-border)">
           <div class="stat-label">${esc(t('balance'))} (${esc(t('currency_etb'))})</div>
           <b style="color:var(--gold-bright);font-size:32px;letter-spacing:0.5px">🪙 ${fmt(balance)}</b>
         </div>
@@ -1490,7 +1493,7 @@ async function withdrawView(app) {
         ${withdrawals.map((w) => `<tr>
           <td class="muted" style="white-space:nowrap">${esc(w.created_at)}</td>
           <td><b>${esc(w.provider)}</b></td>
-          <td style="font-weight:800;color:#FFFFFF;font-size:15px">${fmt(w.amount)} ${esc(t('currency_etb'))}</td>
+          <td style="font-weight:800;color:var(--text-strong);font-size:15px">${fmt(w.amount)} ${esc(t('currency_etb'))}</td>
           <td><span style="font-size:12px;font-family:monospace;background:var(--surface-hover);padding:3px 8px;border-radius:4px">${esc(w.account_number)}</span></td>
           <td>${statusTag(w.status)}${w.reason ? `<div class="muted" style="margin-top:3px;font-size:11px">${esc(w.reason)}</div>` : ''}</td>
         </tr>`).join('')}
@@ -1637,7 +1640,7 @@ async function supportView(app) {
       </div>
 
       ${ticket && ticket.status === 'escalated' ? `
-        <div style="padding:10px 18px;background:rgba(239,68,68,0.1);border-top:1px solid rgba(239,68,68,0.3);font-size:12px;color:#FCA5A5">
+        <div style="padding:10px 18px;background:var(--danger-bg);border-top:1px solid var(--danger-border);font-size:12px;color:var(--danger)">
           ℹ ${lang === 'am' ? 'ጥያቄዎ ወደ ሰው ድጋፍ ሰጪ ወኪሎቻችን ተላልፏል። አንድ ወኪል በቅርቡ እዚህ መልስ ይሰጥዎታል።' : 'Your request has been escalated to our human support team. An agent will reply to you directly here.'}
         </div>
       ` : ''}
