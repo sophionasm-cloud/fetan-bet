@@ -1121,6 +1121,8 @@ async function gamesView(app, gameRoute = null) {
   if (roadState.balance !== undefined) setBalance(roadState.balance);
   Games.mount(app, {
     api, t, esc, fmt, setBalance, fail, limits,
+    user: me,
+    getBalance: () => balance,
     roadState, minesState,
     reload: () => render()
   });

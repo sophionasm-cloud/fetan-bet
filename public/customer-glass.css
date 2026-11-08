@@ -2998,3 +2998,639 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .chip#bauto.o
     transition-duration: .01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   16. Roulette reference layout: fixed dark navy casino surface in both site
+       themes. This is deliberately isolated to the Roulette game shell.
+   --------------------------------------------------------------------------- */
+.mobile-game-shell[data-game="roulette"] {
+  --roulette-page: #101722;
+  --roulette-header: #121d2a;
+  --roulette-panel: #151f2b;
+  --roulette-tile: #202b38;
+  --roulette-border: #273645;
+  --roulette-text: #f1f4f8;
+  --roulette-muted: #9aa8b7;
+  --roulette-blue: #38a8ff;
+  --roulette-green: #12a653;
+  --roulette-red: #e5143d;
+  --roulette-black: #293744;
+  --roulette-purple: #7138ed;
+  --roulette-purple-light: #a98aff;
+  color: var(--roulette-text);
+  background: var(--roulette-page);
+}
+
+body.customer-theme[data-customer-theme] #app .mobile-game-shell[data-game="roulette"] .stage {
+  border-color: var(--roulette-border);
+  background: var(--roulette-page);
+  color: var(--roulette-text);
+}
+
+body.customer-theme[data-customer-theme] #app .mobile-game-shell[data-game="roulette"] .stage::before { display: none; }
+
+body.customer-theme[data-customer-theme] #app .mobile-game-shell[data-game="roulette"] .legacy-game-title {
+  color: var(--roulette-text) !important;
+}
+.mobile-game-shell[data-game="roulette"] .legacy-game-title { display: none; }
+
+body.customer-theme[data-customer-theme][data-customer-theme].game-open .mobile-game-shell[data-game="roulette"] {
+  color: var(--roulette-text);
+  background: var(--roulette-page);
+}
+
+.mobile-game-shell[data-game="roulette"] .mobile-game-topbar {
+  color: var(--roulette-text);
+  background: var(--roulette-header);
+  border-color: var(--roulette-border);
+}
+
+.mobile-game-shell[data-game="roulette"] .mobile-game-title {
+  color: var(--roulette-text);
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-blue-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  margin-right: 5px;
+  color: var(--roulette-blue);
+  font-size: 25px;
+  line-height: 1;
+  vertical-align: -2px;
+}
+.mobile-game-shell[data-game="roulette"] .roulette-blue-icon svg { width: 100%; height: 100%; }
+
+.mobile-game-shell[data-game="roulette"] .mobile-game-icon,
+.mobile-game-shell[data-game="roulette"] .mobile-game-balance {
+  color: var(--roulette-text);
+  background: #172331;
+  border-color: #344659;
+}
+
+.mobile-game-shell[data-game="roulette"] .mobile-game-balance small {
+  color: var(--roulette-blue);
+  font-size: 11px;
+}
+
+.mobile-game-shell[data-game="roulette"] .mobile-game-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 8px;
+  z-index: 10;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--roulette-border);
+  border-radius: 10px;
+  background: #101722;
+  box-shadow: 0 14px 30px rgba(0,0,0,.5);
+}
+
+.mobile-game-shell[data-game="roulette"] .mobile-game-menu button {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--roulette-text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mobile-game-shell[data-game="roulette"] .mobile-game-menu button:hover { background: #1b2938; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-strip {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 1100px);
+  min-height: 56px;
+  margin: 0 auto;
+  padding: 7px clamp(10px, 2vw, 22px);
+  color: var(--roulette-text);
+  background: #090e15;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-avatar {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #647384;
+  border-radius: 50%;
+  background: #101925;
+  color: #dce7f2;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  margin-left: auto;
+  padding: 7px 10px;
+  border: 1px solid #344659;
+  background: #101722;
+  font-variant-numeric: tabular-nums;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-value > span {
+  color: var(--roulette-blue);
+  font-weight: 800;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-value strong {
+  overflow: hidden;
+  color: var(--roulette-text);
+  font-size: 14px;
+  letter-spacing: .14em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-icon {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #344659;
+  background: #101722;
+  color: #b9c6d3;
+  font-family: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-deposit-button {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 0;
+  background: #19e68a;
+  color: #082215;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-menu {
+  position: absolute;
+  top: calc(100% - 2px);
+  right: clamp(10px, 2vw, 22px);
+  z-index: 20;
+  width: 150px;
+  padding: 5px;
+  border: 1px solid var(--roulette-border);
+  background: #101722;
+  box-shadow: 0 12px 28px rgba(0,0,0,.5);
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-menu button {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  background: transparent;
+  color: var(--roulette-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-account-menu button:hover {
+  background: #1b2938;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-screen {
+  width: 100%;
+  min-height: 100%;
+  padding: clamp(8px, 1.2vw, 14px);
+  color: var(--roulette-text);
+  background:
+    radial-gradient(ellipse at 50% 8%, rgba(39,74,106,.18), transparent 42%),
+    var(--roulette-page);
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-play-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(100%, 980px);
+  max-width: 980px;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-wheel-panel,
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-wheel-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-recent-wrap {
+  min-width: 0;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-section-label {
+  display: block;
+  margin: 0 0 5px 2px;
+  color: var(--roulette-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.mobile-game-shell[data-game="roulette"] .history {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 36px;
+  margin: 0;
+  overflow-x: auto;
+  padding: 1px 1px 4px;
+  scrollbar-width: none;
+}
+
+.mobile-game-shell[data-game="roulette"] .history::-webkit-scrollbar { display: none; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-history-empty,
+.mobile-game-shell[data-game="roulette"] .roulette-result-tile {
+  display: flex;
+  flex: 0 0 68px;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: 1px solid rgba(255,255,255,.035);
+  border-radius: 8px;
+  background: var(--roulette-tile);
+  color: var(--roulette-muted);
+  font: 700 11px/1.05 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-result-tile {
+  flex-direction: column;
+  gap: 2px;
+  color: #fff;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-result-tile.red { background: #a91936; }
+.mobile-game-shell[data-game="roulette"] .roulette-result-tile.black { background: #222e3a; }
+.mobile-game-shell[data-game="roulette"] .roulette-result-tile.green { background: #087849; }
+.mobile-game-shell[data-game="roulette"] .roulette-result-tile small { color: rgba(255,255,255,.76); font-size: 9px; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-wheel-panel .wheel-box {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  margin: 0;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel {
+  display: block;
+  width: min(88vw, 440px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 10px 38px rgba(0,0,0,.46), 0 0 28px rgba(230,169,35,.12);
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-tools button {
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: #c4d0dc;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-tools button:disabled {
+  color: #687687;
+  cursor: default;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-payout-guide {
+  display: block;
+  margin: 0;
+  padding: 5px 7px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  color: var(--roulette-muted);
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #344759 #131c28;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 32px repeat(12, minmax(20px, 1fr)) 32px;
+  gap: 3px;
+  margin: 0;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button,
+.mobile-game-shell[data-game="roulette"] .roulette-outside-dozens button,
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 4px 2px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 4px;
+  color: #f4f7fa;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter .14s ease, outline-color .14s ease;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable .zero {
+  grid-row: 1 / span 3;
+  background: #138847;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable .red,
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported .red { background: #ed123d; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable .black,
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported .black { background: #293846; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button:hover:not(:disabled),
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported button:hover:not(:disabled) { filter: brightness(1.18); }
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button.sel,
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported button.sel {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid #ffc938;
+  outline-offset: 0;
+  transform: none;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-column-marker,
+.mobile-game-shell[data-game="roulette"] .roulette-unavailable,
+.mobile-game-shell[data-game="roulette"] .roulette-outside-dozens button {
+  background: #1a2734;
+  color: #8392a1 !important;
+  cursor: not-allowed !important;
+  opacity: .8;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-outside-dozens {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-outside-dozens button { min-height: 38px; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported .eo { background: #253744; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported button.roulette-unavailable {
+  grid-column: span 2;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported .red,
+.mobile-game-shell[data-game="roulette"] .roulette-outside-supported .black { min-height: 48px; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-pick {
+  color: #e6c36a;
+}
+
+.mobile-game-shell[data-game="roulette"] .pick {
+  min-height: 22px;
+  margin: 0;
+  color: #f0cf58;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-button {
+  width: min(100%, 560px);
+  min-height: 56px;
+  margin: 4px auto 0;
+  border: 0;
+  border-radius: 5px;
+  background: #087a31;
+  color: #eef8f0;
+  font-family: inherit;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter .16s ease, background-color .16s ease;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-button:hover:not(:disabled) { background: #0a9140; }
+.mobile-game-shell[data-game="roulette"] .roulette-bet-button:disabled { opacity: .6; cursor: wait; }
+
+.mobile-game-shell[data-game="roulette"] #rbet .betbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 0 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mobile-game-shell[data-game="roulette"] #rbet .betrow {
+  order: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  flex-wrap: nowrap;
+}
+
+.mobile-game-shell[data-game="roulette"] #rbet .betrow input {
+  width: 76px;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid #344454;
+  border-radius: 8px;
+  background: #0d141d;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.mobile-game-shell[data-game="roulette"] #rbet .betrow .muted { color: #a9b5c1; }
+.mobile-game-shell[data-game="roulette"] #rbet .roulette-chip-value { color: #aab7c4; font: 700 12px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+.mobile-game-shell[data-game="roulette"] .roulette-chip-scroller {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 5px;
+  border: 1px solid #273746;
+  border-radius: 12px;
+  background: #0c131c;
+}
+
+.mobile-game-shell[data-game="roulette"] #rbet .chips {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: none;
+}
+
+.mobile-game-shell[data-game="roulette"] #rbet .chips::-webkit-scrollbar { display: none; }
+
+.mobile-game-shell[data-game="roulette"] #rbet .chipb {
+  flex: 0 0 54px;
+  width: 54px;
+  height: 54px;
+  border: 3px dashed #e2d9ff;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #9a6aff, #5923d6 70%);
+  color: #fff;
+  box-shadow: inset 0 0 0 3px #4015a6, 0 3px 9px rgba(0,0,0,.4);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mobile-game-shell[data-game="roulette"] #rbet .chipb.on {
+  outline: 3px solid #16d979;
+  outline-offset: 2px;
+  border-color: #f1eaff;
+  background: radial-gradient(circle at 34% 28%, #a77aff, #6029dc 72%);
+  box-shadow: inset 0 0 0 3px #4015a6, 0 0 0 6px rgba(22,217,121,.14);
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-chip-arrow {
+  flex: 0 0 32px;
+  width: 32px;
+  min-height: 42px;
+  border: 0;
+  background: transparent;
+  color: #dce5ed;
+  font-family: inherit;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mobile-game-shell[data-game="roulette"] .roulette-bet-panel .msg { min-height: 0; margin: 0; }
+.mobile-game-shell[data-game="roulette"] :is(button, input, canvas):focus-visible { outline: 3px solid #38a8ff; outline-offset: 2px; }
+
+@media (min-width: 1025px) {
+  .mobile-game-shell[data-game="roulette"] .mobile-game-topbar {
+    display: flex;
+    width: min(100%, 1100px);
+    min-height: 58px;
+    margin: 0 auto;
+    padding: 6px 18px;
+    border-bottom: 1px solid var(--roulette-border);
+    background: var(--roulette-header);
+  }
+  .mobile-game-shell[data-game="roulette"] .mobile-game-icon { display: inline-grid; }
+  .mobile-game-shell[data-game="roulette"] .roulette-account-strip { padding-inline: 22px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-screen { padding: 12px 18px 18px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-play-layout { flex-direction: row; align-items: flex-start; gap: 24px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel { flex: 0 0 min(44%, 470px); }
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel { flex: 1 1 0; padding-top: 4px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(100%, 460px); }
+  .mobile-game-shell[data-game="roulette"] .roulette-section-label { display: none; }
+  .mobile-game-shell[data-game="roulette"] .roulette-recent-wrap { order: 1; }
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable { min-width: 0; grid-template-columns: 32px repeat(12, minmax(20px, 1fr)) 32px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button { min-height: 40px; font-size: 12px; }
+}
+
+@media (max-width: 380px) {
+  body.game-open .mobile-game-shell[data-game="roulette"] .mobile-game-topbar { gap: 4px; padding-inline: 5px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .mobile-game-icon { flex-basis: 34px; width: 34px; height: 34px; font-size: 17px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .mobile-game-title { font-size: 13px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .mobile-game-balance { max-width: 74px; min-width: 38px; gap: 2px; padding-inline: 4px; font-size: 11px; }
+  body.game-open .mobile-game-shell[data-game="roulette"] .mobile-game-balance span { max-width: 38px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-account-strip { gap: 5px; padding-inline: 7px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-account-avatar { flex-basis: 34px; width: 34px; height: 34px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-account-value { gap: 4px; padding: 6px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-deposit-button { padding-inline: 9px; font-size: 12px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel { width: min(86vw, 390px); }
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable { min-width: 311px; grid-template-columns: 28px repeat(12, minmax(18px, 1fr)) 28px; gap: 3px; }
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button { min-height: 40px; padding-inline: 1px; font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-game-shell[data-game="roulette"] *,
+  .mobile-game-shell[data-game="roulette"] *::before,
+  .mobile-game-shell[data-game="roulette"] *::after { transition-duration: .01ms !important; }
+}

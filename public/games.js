@@ -307,23 +307,36 @@ window.Games = (function () {
       penalty: '⚽ Penalty Unlimited',
       mines:    '💎 ' + C.t('mines_title'),
       plinko:   '⚡ ' + C.t('plinko_title'),
-      roulette: '🎡 ' + C.t('roulette_title'),
+      roulette: C.t('roulette_title'),
       star:     '🎰 ' + C.t('star_title'),
       keno:     '🎱 ' + C.t('keno_title'),
       bingo:    '🇪🇹 ' + C.t('bingo_title'),
     };
+    const rouletteAccount = game === 'roulette' ? `
+      <div class="roulette-account-strip" aria-label="Customer wallet controls">
+        <button class="roulette-account-avatar" id="roulette-account-avatar" type="button" aria-label="${C.esc(C.t('profile'))}">${C.esc(Array.from(String(C.user?.name || 'G').trim())[0] || 'G').toUpperCase()}</button>
+        <div class="roulette-account-value"><span>${C.esc(C.t('wallet'))}</span><strong id="roulette-account-value">•••••• ETB</strong></div>
+        <button class="roulette-account-icon" id="roulette-account-visibility" type="button" aria-label="Show wallet balance" aria-pressed="false">◉</button>
+        <button class="roulette-account-icon" id="roulette-account-dropdown-toggle" type="button" aria-label="Open account menu" aria-expanded="false">⌄</button>
+        <div class="roulette-account-menu" id="roulette-account-menu" hidden>
+          <button type="button" data-roulette-nav="wallet">${C.esc(C.t('wallet'))}</button>
+          <button type="button" data-roulette-nav="profile">${C.esc(C.t('profile'))}</button>
+        </div>
+        <button class="roulette-deposit-button" id="roulette-deposit-button" type="button">${C.esc(C.t('deposit'))}</button>
+      </div>` : '';
     app.innerHTML = `
       <div class="mobile-game-shell" data-game="${game}">
+        ${rouletteAccount}
         <div class="mobile-game-topbar">
           <button class="mobile-game-icon" id="mobile-game-back" type="button" aria-label="${C.esc(C.t('back'))}">←</button>
-          <strong class="mobile-game-title">${C.esc(titles[game])}</strong>
-          <button class="mobile-game-balance" id="mobile-game-balance" type="button" aria-label="${C.esc(C.t('balance'))}">🪙 <span id="mobile-game-balance-value">—</span></button>
+          <strong class="mobile-game-title">${game === 'roulette' ? '<span class="roulette-blue-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7m0 4v7M3 12h7m4 0h7M5.6 5.6l5 5m2.8 2.8 5 5m0-12.8-5 5m-2.8 2.8-5 5"/></svg></span>' : ''}${C.esc(titles[game])}</strong>
+          <button class="mobile-game-balance" id="mobile-game-balance" type="button" aria-label="${C.esc(C.t('balance'))}">🪙 <span id="mobile-game-balance-value">—</span>${game === 'roulette' ? '<small>ETB</small>' : ''}</button>
           <button class="mobile-game-icon" id="mobile-game-sound" type="button" aria-label="${C.esc(C.t('sound_toggle'))}">🔊</button>
           <button class="mobile-game-icon" id="mobile-game-menu" type="button" aria-label="${C.esc(C.t('menu'))}">☰</button>
           <div class="mobile-game-menu" id="mobile-game-menu-panel" hidden>
-            <button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button>
-            <button type="button" data-action="history">${C.esc(C.t('history'))}</button>
-            <button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>
+            ${game === 'roulette'
+              ? `<button type="button" data-action="history">Recent results</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`
+              : `<button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button><button type="button" data-action="history">${C.esc(C.t('history'))}</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`}
           </div>
         </div>
         <div class="stage">
@@ -357,7 +370,8 @@ window.Games = (function () {
     $('mobile-game-menu-panel').onclick = (event) => {
       const action = event.target.closest('[data-action]')?.dataset.action;
       if (action === 'how') $('road-how-btn')?.click();
-      if (action === 'history') {
+      if (action === 'history' && game === 'roulette') document.querySelector('.roulette-recent-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (action === 'history' && game !== 'roulette') {
         $('tab-bets-btn')?.click();
         document.querySelector('.road-subtabs')?.classList.toggle('mobile-overlay');
       }
@@ -3811,47 +3825,138 @@ window.Games = (function () {
 
   function roulette(body, stage) {
     const { t, esc } = C;
-    let sel = null, spinning = false, everSpun = false, wheelA = 0, ballA = 0, ballR = 150, history = [];
+    let sel = null, spinning = false, everSpun = false, balanceVisible = false, wheelA = 0, ballA = 0, ballR = 150, history = [];
+    const selectionUndo = [];
     body.innerHTML = `
-      <div class="roulette-play-layout">
-        <section class="roulette-wheel-panel" aria-label="Roulette wheel and recent results">
-          <div class="wheel-box"><canvas id="wheel" aria-label="European roulette wheel"></canvas></div>
-          <div class="history" id="hist" aria-label="Recent roulette results"></div>
-        </section>
-        <section class="roulette-bet-panel" aria-label="Roulette betting table">
-          <p class="roulette-payout-guide">Gross payout: straight-up 11.10× · even-money 0.62× (partial return)</p>
-          <div class="rtable-wrap"><div class="rtable" id="rtab"></div></div>
-          <div class="outside" id="rout"></div>
-          <div class="pick" id="rpick">${esc(t('pick_prompt'))}</div>
-          <div id="rbet"></div>
-          <button class="bigbtn" id="rgo">${esc(t('spin'))}</button>
-          <div class="msg" id="rmsg"></div>
-        </section>
+      <div class="roulette-screen">
+        <div class="roulette-play-layout">
+          <section class="roulette-wheel-panel" aria-label="Roulette wheel and recent results">
+            <div class="roulette-recent-wrap">
+              <span class="roulette-section-label">Recent results</span>
+              <div class="history" id="hist" aria-label="Recent roulette results"><span class="roulette-history-empty">No results yet</span></div>
+            </div>
+            <div class="wheel-box"><canvas id="wheel" aria-label="European roulette wheel"></canvas></div>
+          </section>
+          <section class="roulette-bet-panel" aria-label="Roulette betting table">
+            <div class="roulette-bet-tools">
+              <button type="button" id="rundo" disabled>↶ <span>Undo</span></button>
+              <button type="button" id="rclear" disabled><span>Clear</span> ↻</button>
+            </div>
+            <p class="roulette-payout-guide">Gross payout: straight-up 11.10× · even-money 0.62× (partial return)</p>
+            <div class="rtable-wrap"><div class="rtable" id="rtab"></div></div>
+            <div class="roulette-outside-dozens" aria-label="Unsupported dozen bets">
+              <button type="button" disabled title="Dozen bets are not supported by the current roulette rules">1 to 12</button>
+              <button type="button" disabled title="Dozen bets are not supported by the current roulette rules">13 to 24</button>
+              <button type="button" disabled title="Dozen bets are not supported by the current roulette rules">25 to 36</button>
+            </div>
+            <div class="outside roulette-outside-supported" id="rout"></div>
+            <div class="pick" id="rpick">${esc(t('pick_prompt'))}</div>
+            <button class="roulette-bet-button" id="rgo" aria-label="Place roulette bet and spin">${esc(t('bet'))}</button>
+            <div id="rbet"></div>
+            <div class="msg" id="rmsg"></div>
+          </section>
+        </div>
       </div>`;
 
     const bet = betBar($('rbet'));
+    const betBarElement = $('rbet').querySelector('.betbar');
+    const chips = betBarElement.querySelector('.chips');
+    const betRow = betBarElement.querySelector('.betrow');
+    const currencyLabel = betRow.querySelectorAll('span.muted')[1];
+    if (currencyLabel) currencyLabel.textContent = 'ETB';
+    const chipLabel = document.createElement('div');
+    chipLabel.className = 'roulette-chip-value';
+    chipLabel.setAttribute('aria-live', 'polite');
+    const chipScroller = document.createElement('div');
+    chipScroller.className = 'roulette-chip-scroller';
+    const chipBack = document.createElement('button');
+    chipBack.type = 'button'; chipBack.className = 'roulette-chip-arrow';
+    chipBack.setAttribute('aria-label', 'Scroll chips left'); chipBack.textContent = '‹';
+    const chipForward = document.createElement('button');
+    chipForward.type = 'button'; chipForward.className = 'roulette-chip-arrow';
+    chipForward.setAttribute('aria-label', 'Scroll chips right'); chipForward.textContent = '›';
+    chipScroller.append(chipBack, chips, chipForward);
+    betBarElement.replaceChildren(chipLabel, chipScroller, betRow);
+    const updateChipLabel = () => { chipLabel.textContent = `Chip value ${C.fmt(bet.get())} ETB`; };
+    updateChipLabel();
+    betBarElement.querySelector('input').addEventListener('input', updateChipLabel);
+    chips.addEventListener('click', updateChipLabel);
+    betRow.addEventListener('click', updateChipLabel);
+    chipBack.onclick = () => chips.scrollBy({ left: -140, behavior: 'smooth' });
+    chipForward.onclick = () => chips.scrollBy({ left: 140, behavior: 'smooth' });
+
+    const accountValue = $('roulette-account-value');
+    const paintAccountBalance = () => {
+      if (!accountValue) return;
+      const value = C.fmt(C.getBalance?.() || 0) + ' ETB';
+      accountValue.textContent = balanceVisible ? value : '•••••• ETB';
+      $('roulette-account-visibility')?.setAttribute('aria-pressed', String(balanceVisible));
+      $('roulette-account-visibility')?.setAttribute('aria-label', balanceVisible ? 'Hide wallet balance' : 'Show wallet balance');
+    };
+    paintAccountBalance();
+    $('roulette-account-visibility')?.addEventListener('click', () => { balanceVisible = !balanceVisible; paintAccountBalance(); });
+    $('roulette-account-dropdown-toggle')?.addEventListener('click', (event) => {
+      const menu = $('roulette-account-menu');
+      menu.hidden = !menu.hidden;
+      event.currentTarget.setAttribute('aria-expanded', String(!menu.hidden));
+    });
+    $('roulette-account-avatar')?.addEventListener('click', () => document.querySelector('#nav [data-k="profile"]')?.click());
+    $('roulette-account-menu')?.querySelectorAll('[data-roulette-nav]').forEach((button) => {
+      button.addEventListener('click', () => document.querySelector(`#nav [data-k="${button.dataset.rouletteNav}"]`)?.click());
+    });
+    $('roulette-deposit-button')?.addEventListener('click', () => $('quickDepositBtn')?.click());
+    const closeAccountMenu = (event) => {
+      if (!event.target.closest('.roulette-account-strip')) {
+        const menu = $('roulette-account-menu');
+        const toggle = $('roulette-account-dropdown-toggle');
+        if (menu && !menu.hidden) { menu.hidden = true; toggle?.setAttribute('aria-expanded', 'false'); }
+      }
+    };
+    document.addEventListener('click', closeAccountMenu);
+    stopFns.push(() => document.removeEventListener('click', closeAccountMenu));
+
     const tab = $('rtab');
     let html = `<button class="zero" data-k="number" data-v="0">0</button>`;
-    for (let row = 0; row < 3; row++)
+    for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 12; col++) {
         const n = col * 3 + (3 - row);
         html += `<button class="${colorOf(n)}" data-k="number" data-v="${n}">${n}</button>`;
       }
+      html += '<button class="roulette-unavailable roulette-column-marker" type="button" disabled title="Column bets are not supported by the current roulette rules">2:1</button>';
+    }
+    // The server currently accepts only number, color and parity wagers. Keep
+    // the familiar 2:1 column markers visible but inert until that bet type is
+    // supported by the authoritative endpoint.
     tab.innerHTML = html;
     $('rout').innerHTML = `
       <button class="red"  data-k="color"  data-v="red"  >${esc(t('red'))}</button>
       <button class="black" data-k="color" data-v="black">${esc(t('black'))}</button>
       <button class="eo"   data-k="parity" data-v="even" >${esc(t('even'))}</button>
-      <button class="eo"   data-k="parity" data-v="odd"  >${esc(t('odd'))}</button>`;
+      <button class="eo"   data-k="parity" data-v="odd"  >${esc(t('odd'))}</button>
+      <button class="roulette-unavailable" type="button" disabled title="Low bets are not supported by the current roulette rules">1 to 18</button>
+      <button class="roulette-unavailable" type="button" disabled title="High bets are not supported by the current roulette rules">19 to 36</button>`;
+
+    function paintSelection() {
+      body.querySelectorAll('[data-k]').forEach((button) => {
+        button.classList.toggle('sel', Boolean(sel && button.dataset.k === sel.kind &&
+          String(button.dataset.v) === String(sel.value)));
+      });
+      $('rpick').textContent = sel
+        ? `${t('picked')}: ${sel.kind === 'number' ? sel.value : sel.value}  (gross ×${sel.kind === 'number' ? '11.10' : '0.62'})`
+        : t('pick_prompt');
+      $('rundo').disabled = !sel;
+      $('rclear').disabled = !sel && selectionUndo.length === 0;
+    }
 
     body.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => {
       if (spinning) return;
-      body.querySelectorAll('[data-k]').forEach((x) => x.classList.remove('sel'));
-      b.classList.add('sel');
+      if (sel) selectionUndo.push(sel);
       sel = { kind: b.dataset.k, value: b.dataset.k === 'number' ? Number(b.dataset.v) : b.dataset.v };
-      $('rpick').textContent = `${t('picked')}: ${b.textContent}  (gross ×${sel.kind === 'number' ? '11.10' : '0.62'})`;
+      paintSelection();
       sfx.tick();
     }));
+    $('rundo').onclick = () => { if (spinning || !sel) return; sel = selectionUndo.pop() || null; paintSelection(); };
+    $('rclear').onclick = () => { if (spinning) return; sel = null; selectionUndo.length = 0; paintSelection(); };
 
     const cv = $('wheel'), S = 320;
     const g = cv.getContext('2d');
@@ -3912,13 +4017,20 @@ window.Games = (function () {
       g.beginPath(); g.arc(cx, cy, 96, 0, Math.PI * 2);
       g.strokeStyle = '#c9a227'; g.lineWidth = 2; g.stroke();
 
-      // Center gold turret / hub
-      const hub = g.createRadialGradient(cx - 8, cy - 8, 4, cx, cy, 56);
-      hub.addColorStop(0, '#ffe58a'); hub.addColorStop(1, '#8a6200');
-      g.fillStyle = hub; g.beginPath(); g.arc(cx, cy, 50, 0, 7); g.fill();
-      g.fillStyle = '#1a0e00'; g.font = 'bold 20px Noto Sans Ethiopic,sans-serif';
-      g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText('ፈ', cx, cy);
+      // Gold spokes and hub provide the compact central roulette-wheel detail.
+      g.strokeStyle = '#e6a923'; g.lineWidth = 5; g.lineCap = 'round';
+      for (let spoke = 0; spoke < 4; spoke++) {
+        const angle = spoke * Math.PI / 2 + Math.PI / 4;
+        g.beginPath();
+        g.moveTo(cx + Math.cos(angle) * 15, cy + Math.sin(angle) * 15);
+        g.lineTo(cx + Math.cos(angle) * 48, cy + Math.sin(angle) * 48);
+        g.stroke();
+        g.beginPath(); g.arc(cx + Math.cos(angle) * 49, cy + Math.sin(angle) * 49, 5, 0, Math.PI * 2);
+        g.fillStyle = '#f3b52a'; g.fill();
+      }
+      const hub = g.createRadialGradient(cx - 5, cy - 6, 2, cx, cy, 16);
+      hub.addColorStop(0, '#ffe58a'); hub.addColorStop(1, '#c57a08');
+      g.fillStyle = hub; g.beginPath(); g.arc(cx, cy, 14, 0, Math.PI * 2); g.fill();
 
       // Top indicator pointer
       g.fillStyle = '#c9a227';
@@ -3980,9 +4092,10 @@ window.Games = (function () {
     }
 
     function paintHistory() {
-      $('hist').innerHTML = history.slice(-14).map(
-        (n) => `<span class="hnum ${colorOf(n)}">${n}</span>`
-      ).join('');
+      const recent = history.slice(-7).reverse();
+      $('hist').innerHTML = recent.length ? recent.map(({ n, mult }) =>
+        `<span class="roulette-result-tile ${colorOf(n)}"><b>${n}</b><small>${Number(mult || 0).toFixed(2)}×</small></span>`
+      ).join('') : '<span class="roulette-history-empty">No results yet</span>';
     }
 
     $('rgo').onclick = async () => {
@@ -3991,7 +4104,7 @@ window.Games = (function () {
       spinning = true; everSpun = true; $('rgo').disabled = true; bet.lock(true); say($('rmsg'), '');
       try {
         const r = await C.api('/games/roulette', { bet: bet.get(), kind: sel.kind, value: sel.value });
-        await animate(r.n); history.push(r.n); paintHistory(); C.setBalance(r.balance);
+        await animate(r.n); history.push({ n: r.n, mult: r.mult }); paintHistory(); C.setBalance(r.balance); paintAccountBalance();
         if (r.payout) {
           say($('rmsg'), `Result: ${grossNetText(r.payout, bet.get())} 🎉`, 'win'); sfx.win();
           if (r.payout >= bet.get() * 5) coinRain(stage);
