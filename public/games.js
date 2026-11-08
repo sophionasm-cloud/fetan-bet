@@ -3832,10 +3832,13 @@ window.Games = (function () {
         <div class="roulette-play-layout">
           <section class="roulette-wheel-panel" aria-label="Roulette wheel and recent results">
             <div class="roulette-recent-wrap">
-              <span class="roulette-section-label">Recent results</span>
               <div class="history" id="hist" aria-label="Recent roulette results"><span class="roulette-history-empty">No results yet</span></div>
             </div>
-            <div class="wheel-box"><canvas id="wheel" aria-label="European roulette wheel"></canvas></div>
+            <div class="wheel-box">
+              <span class="roulette-last-result" id="roulette-last-result" aria-label="Last result">—</span>
+              <canvas id="wheel" aria-label="European roulette wheel"></canvas>
+              <span class="roulette-wheel-spacer" aria-hidden="true"></span>
+            </div>
           </section>
           <section class="roulette-bet-panel" aria-label="Roulette betting table">
             <div class="roulette-bet-tools">
@@ -3844,7 +3847,10 @@ window.Games = (function () {
             </div>
             <p class="roulette-payout-guide">Gross payout: straight-up 11.10× · even-money 0.62× (partial return)</p>
             <div class="rtable-wrap"><div class="rtable" id="rtab"></div></div>
-            <div class="roulette-outside-dozens" aria-label="Unsupported dozen bets">
+            <!-- TODO: Dozen bets (1 to 12 / 13 to 24 / 25 to 36) are not
+                 supported by the current roulette bet logic. These cells are
+                 rendered for layout parity only and must stay disabled. -->
+            <div class="roulette-outside-dozens" aria-label="Dozen bets (visual only, unsupported)">
               <button type="button" disabled title="Dozen bets are not supported by the current roulette rules">1 to 12</button>
               <button type="button" disabled title="Dozen bets are not supported by the current roulette rules">13 to 24</button>
               <button type="button" disabled title="Dozen bets are not supported by the current roulette rules">25 to 36</button>
@@ -3877,7 +3883,7 @@ window.Games = (function () {
     chipForward.setAttribute('aria-label', 'Scroll chips right'); chipForward.textContent = '›';
     chipScroller.append(chipBack, chips, chipForward);
     betBarElement.replaceChildren(chipLabel, chipScroller, betRow);
-    const updateChipLabel = () => { chipLabel.textContent = `Chip value ${C.fmt(bet.get())} ETB`; };
+    const updateChipLabel = () => { chipLabel.textContent = `Chip value ${(bet.get() / 100).toFixed(2)} ETB`; };
     updateChipLabel();
     betBarElement.querySelector('input').addEventListener('input', updateChipLabel);
     chips.addEventListener('click', updateChipLabel);
@@ -3924,16 +3930,19 @@ window.Games = (function () {
       }
       html += '<button class="roulette-unavailable roulette-column-marker" type="button" disabled title="Column bets are not supported by the current roulette rules">2:1</button>';
     }
-    // The server currently accepts only number, color and parity wagers. Keep
-    // the familiar 2:1 column markers visible but inert until that bet type is
-    // supported by the authoritative endpoint.
+    // TODO: The server currently accepts only number, color and parity wagers.
+    // Keep the familiar 2:1 column markers visible but inert until that bet
+    // type is supported by the authoritative endpoint.
     tab.innerHTML = html;
+    // TODO: Low (1 to 18) and high (19 to 36) bets are not supported by the
+    // current roulette bet logic. They are rendered for layout parity only
+    // and must stay disabled until the authoritative endpoint supports them.
     $('rout').innerHTML = `
-      <button class="red"  data-k="color"  data-v="red"  >${esc(t('red'))}</button>
-      <button class="black" data-k="color" data-v="black">${esc(t('black'))}</button>
-      <button class="eo"   data-k="parity" data-v="even" >${esc(t('even'))}</button>
-      <button class="eo"   data-k="parity" data-v="odd"  >${esc(t('odd'))}</button>
       <button class="roulette-unavailable" type="button" disabled title="Low bets are not supported by the current roulette rules">1 to 18</button>
+      <button class="eo"   data-k="parity" data-v="even" >${esc(t('even'))}</button>
+      <button class="red"  data-k="color"  data-v="red"  aria-label="${esc(t('red'))}"></button>
+      <button class="black" data-k="color" data-v="black" aria-label="${esc(t('black'))}"></button>
+      <button class="eo"   data-k="parity" data-v="odd"  >${esc(t('odd'))}</button>
       <button class="roulette-unavailable" type="button" disabled title="High bets are not supported by the current roulette rules">19 to 36</button>`;
 
     function paintSelection() {
@@ -4093,9 +4102,11 @@ window.Games = (function () {
 
     function paintHistory() {
       const recent = history.slice(-7).reverse();
-      $('hist').innerHTML = recent.length ? recent.map(({ n, mult }) =>
-        `<span class="roulette-result-tile ${colorOf(n)}"><b>${n}</b><small>${Number(mult || 0).toFixed(2)}×</small></span>`
+      $('hist').innerHTML = recent.length ? recent.map(({ n }) =>
+        `<span class="roulette-result-tile ${colorOf(n)}">${n}</span>`
       ).join('') : '<span class="roulette-history-empty">No results yet</span>';
+      const lastSlot = $('roulette-last-result');
+      if (lastSlot) lastSlot.textContent = recent.length ? String(recent[0].n) : '—';
     }
 
     $('rgo').onclick = async () => {
