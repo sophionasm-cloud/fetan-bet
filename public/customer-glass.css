@@ -3629,6 +3629,145 @@ body.customer-theme[data-customer-theme][data-customer-theme].game-open .mobile-
   .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button { min-height: 40px; padding-inline: 1px; font-size: 11px; }
 }
 
+/* ---------------------------------------------------------------------------
+   Roulette mobile compact layout (phones & tablets, <= 1024px).
+   Makes the wheel, board and betting controls fit the available screen
+   height without clipping the Bet button or chip selector.
+   --------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .mobile-game-shell[data-game="roulette"] .roulette-screen {
+    padding: clamp(5px, 1vw, 9px);
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
+    gap: 7px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel {
+    gap: 8px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-section-label {
+    margin: 0 0 3px 2px;
+    font-size: 9px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .history {
+    gap: 5px;
+    min-height: 30px;
+    padding: 1px 1px 3px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-history-empty,
+  .mobile-game-shell[data-game="roulette"] .roulette-result-tile {
+    flex: 0 0 52px;
+    min-height: 28px;
+    font: 700 10px/1.04 ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel #wheel {
+    width: min(68vw, 260px);
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel {
+    gap: 6px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-tools {
+    gap: 8px;
+    min-height: 30px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-tools button {
+    min-height: 32px;
+    padding: 3px 7px;
+    font-size: 13px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-payout-guide {
+    padding: 3px 6px;
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable {
+    gap: 2px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button,
+  .mobile-game-shell[data-game="roulette"] .roulette-outside-dozens button,
+  .mobile-game-shell[data-game="roulette"] .roulette-outside-supported button {
+    min-height: 36px;
+    padding: 3px 1px;
+    font-size: 12px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-outside-dozens {
+    gap: 2px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-outside-dozens button {
+    min-height: 32px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-outside-supported {
+    gap: 2px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-outside-supported .red,
+  .mobile-game-shell[data-game="roulette"] .roulette-outside-supported .black {
+    min-height: 40px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .pick {
+    min-height: 18px;
+    font-size: 11px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-bet-button {
+    min-height: 46px;
+    font-size: 18px;
+    margin: 3px auto 0;
+  }
+
+  .mobile-game-shell[data-game="roulette"] #rbet .betbar {
+    gap: 5px;
+    padding: 3px 0 0;
+  }
+
+  .mobile-game-shell[data-game="roulette"] #rbet .betrow {
+    gap: 5px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] #rbet .betrow input {
+    width: 64px;
+    min-height: 38px;
+    font-size: 14px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-chip-scroller {
+    padding: 2px 4px;
+    gap: 3px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] #rbet .chips {
+    gap: 6px;
+    padding: 3px 2px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] #rbet .chipb {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    font-size: 11px;
+  }
+
+  .mobile-game-shell[data-game="roulette"] .roulette-chip-arrow {
+    min-height: 40px;
+    font-size: 22px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mobile-game-shell[data-game="roulette"] *,
   .mobile-game-shell[data-game="roulette"] *::before,

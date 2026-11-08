@@ -612,6 +612,19 @@ async function render(subMode = '') {
   nav();
   $('nav').hidden = me.role !== 'user';
   syncTelegramShell(Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches));
+
+  // While a customer is inside a game, hide the duplicated wallet balance and
+  // Deposit chips from the global top header. The game shell renders its own
+  // wallet controls (Roulette shows them in its game header) and Wallet /
+  // Deposit remain reachable through the bottom navigation / navigation rail.
+  // This only affects the game view; the homepage, lobby, wallet, deposit and
+  // profile pages keep their global header unchanged.
+  if (me && me.role === 'user') {
+    const inGameView = Boolean(gameRoute);
+    $('balanceBox').hidden = inGameView;
+    $('quickDepositBtn').hidden = inGameView;
+  }
+
   const views = {
     games: (root) => gamesView(root, gameRoute),
     wallet: walletView,
