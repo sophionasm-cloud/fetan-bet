@@ -1240,9 +1240,28 @@ window.Games = (function () {
     return Number(m).toFixed(2);
   }
 
-  // Smooth continuous gradient from low multipliers (cool slate/dark) to high (bright gold/orange/red)
-  function getBinColors(count) {
+  // Keep the existing dark gradient; light mode uses payout-ranked cocoa/cherry tiers.
+  function getBinColors(count, multipliers = []) {
     const colors = [];
+    if (document.body?.dataset.customerTheme === 'light') {
+      const theme = getComputedStyle(document.body);
+      const tierColors = [
+        theme.getPropertyValue('--plinko-tier-low').trim() || '#5C4033',
+        theme.getPropertyValue('--plinko-tier-mid').trim() || '#A77B52',
+        theme.getPropertyValue('--plinko-tier-high').trim() || '#C8553D',
+        theme.getPropertyValue('--plinko-tier-highest').trim() || '#E3173E'
+      ];
+      const values = multipliers.map(Number);
+      const unique = [...new Set(values)].sort((a, b) => a - b);
+      const maxRank = Math.max(1, unique.length - 1);
+      for (let i = 0; i < count; i++) {
+        const rank = Math.max(0, unique.indexOf(values[i])) / maxRank;
+        const tier = rank >= .75 ? 3 : rank >= .5 ? 2 : rank >= .25 ? 1 : 0;
+        colors.push(tierColors[tier]);
+      }
+      return colors;
+    }
+
     const mid = (count - 1) / 2;
     for (let i = 0; i < count; i++) {
       const dist = Math.abs(i - mid) / mid; // 0 at center, 1 at edges
@@ -1542,7 +1561,7 @@ window.Games = (function () {
 
       // Render Bottom Buckets with Plain Numbers & Smooth Gradient
       const mults = PLINKO_TABLES[selectedRows][selectedRisk];
-      const colors = getBinColors(bucketsCount);
+      const colors = getBinColors(bucketsCount, mults);
       const host = $('plinko-buckets');
       host.innerHTML = mults.map((m, i) => `
         <div class="plinko-bucket" id="p-bk-${i}" style="background:${colors[i]};color:#ffffff;font-size:${selectedRows >= 14 ? '9.5px' : '11px'}">
@@ -1587,9 +1606,11 @@ window.Games = (function () {
       ctx.clearRect(0, 0, W, H);
 
       // Background Gradient
+      const lightTheme = document.body?.dataset.customerTheme === 'light';
+      const theme = lightTheme ? getComputedStyle(document.body) : null;
       const bg = ctx.createLinearGradient(0, 0, 0, H);
-      bg.addColorStop(0, '#0a101d');
-      bg.addColorStop(1, '#05080f');
+      bg.addColorStop(0, lightTheme ? (theme.getPropertyValue('--plinko-board-top').trim() || '#3E2B22') : '#0a101d');
+      bg.addColorStop(1, lightTheme ? (theme.getPropertyValue('--plinko-board-bottom').trim() || '#2A1C16') : '#05080f');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
@@ -1607,7 +1628,7 @@ window.Games = (function () {
           }
           ctx.beginPath();
           ctx.arc(p.x, p.y, pegR, 0, Math.PI * 2);
-          ctx.fillStyle = isFlashing ? '#ffffff' : '#c9a227';
+          ctx.fillStyle = isFlashing ? '#ffffff' : (lightTheme ? (theme.getPropertyValue('--plinko-peg').trim() || '#E8A93A') : '#c9a227');
           if (isFlashing) {
             ctx.shadowColor = '#ffffff';
             ctx.shadowBlur = 14;
@@ -1635,7 +1656,7 @@ window.Games = (function () {
           sfx.coin();
           showFloatingWin(ball.targetBucket, ball.payout);
 
-          const colors = getBinColors(bucketsCount);
+          const colors = getBinColors(bucketsCount, PLINKO_TABLES[selectedRows][selectedRisk]);
           recentWins.push({ mult: ball.mult, color: colors[ball.targetBucket] || '#d97706' });
           renderRecent();
 
@@ -1689,6 +1710,10 @@ window.Games = (function () {
         animFrameId = requestAnimationFrame(animLoop);
       }
     }
+
+    const plinkoThemeObserver = new MutationObserver(() => startAnimLoopIfNeeded());
+    plinkoThemeObserver.observe(document.body, { attributes: true, attributeFilter: ['data-customer-theme'] });
+    stopFns.push(() => plinkoThemeObserver.disconnect());
 
     // Launch single ball through queue
     async function launchBall(onFinishCallback = null) {

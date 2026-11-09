@@ -302,7 +302,7 @@ function applyCustomerTheme(theme = localStorage.getItem('fetan-theme') || 'dark
     toggle.title = light ? 'Switch to dark theme' : 'Switch to light theme';
   }
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.content = light ? '#F2E9FF' : '#0B0B0B';
+  if (themeMeta) themeMeta.content = light ? '#F1E8D9' : '#0B0B0B';
   window.dispatchEvent(new CustomEvent('fetan-customer-theme-change', {
     detail: { theme: light ? 'light' : 'dark' }
   }));
