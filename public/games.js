@@ -105,19 +105,23 @@ window.Games = (function () {
   }
 
   // ---------- Bet Bar with Stake-style quick half / double buttons ----------
-  function betBar(host, start = 10) {
+  function betBar(host, start = 10, opts = {}) {
     const vals = [1, 5, 10, 50, 100];
+    const halfLabel = opts.halfLabel || '½';
+    const doubleLabel = opts.doubleLabel || '2×';
+    const currencyLabel = opts.currencyLabel || C.t('credits');
+    const quickStyle = opts.compactQuick ? '' : ' style="padding:4px 8px;font-size:12px;font-weight:700"';
     host.innerHTML = `
       <div class="betbar">
         <div class="chips">
           ${vals.map((v) => `<button type="button" class="chipb c${v}" data-v="${v}">${v}</button>`).join('')}
         </div>
         <div class="betrow">
-          <button type="button" class="chip" id="b-half" style="padding:4px 8px;font-size:12px;font-weight:700">½</button>
+          <button type="button" class="chip" id="b-half"${quickStyle}>${C.esc(halfLabel)}</button>
           <span class="muted">${C.esc(C.t('bet'))}</span>
           <input type="number" min="1" max="${C.limits.max / 100}" step="1" value="${start}">
-          <span class="muted">${C.esc(C.t('credits'))}</span>
-          <button type="button" class="chip" id="b-double" style="padding:4px 8px;font-size:12px;font-weight:700">2×</button>
+          <span class="muted">${C.esc(currencyLabel)}</span>
+          <button type="button" class="chip" id="b-double"${quickStyle}>${C.esc(doubleLabel)}</button>
         </div>
       </div>`;
     const input = host.querySelector('input');
@@ -443,229 +447,190 @@ window.Games = (function () {
     let lastWinAmount = 0;
     let activeServerSeed = null, activeClientSeed = '', activeNonce = 1, activeSeedHash = '';
 
-    // Original SVG Artwork: Glossy Faceted Gem on Emerald Glow
+    // Monochrome target artwork. The reveal animation is applied by the
+    // existing .revealed-safe / .revealed-mine CSS classes.
     const GEM_SVG = `
-      <svg class="tile-gem-svg tile-gem-sparkle" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="gemGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#00e800" stop-opacity="0.8"/>
-            <stop offset="60%" stop-color="#10b981" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
-          </radialGradient>
-          <linearGradient id="gemTop" x1="50%" y1="10%" x2="50%" y2="45%">
-            <stop offset="0%" stop-color="#a7f3d0"/>
-            <stop offset="100%" stop-color="#34d399"/>
-          </linearGradient>
-          <linearGradient id="gemBody" x1="20%" y1="35%" x2="80%" y2="90%">
-            <stop offset="0%" stop-color="#10b981"/>
-            <stop offset="50%" stop-color="#059669"/>
-            <stop offset="100%" stop-color="#064e3b"/>
-          </linearGradient>
-          <linearGradient id="gemFacetL" x1="10%" y1="40%" x2="50%" y2="85%">
-            <stop offset="0%" stop-color="#34d399"/>
-            <stop offset="100%" stop-color="#047857"/>
-          </linearGradient>
-          <linearGradient id="gemFacetR" x1="90%" y1="40%" x2="50%" y2="85%">
-            <stop offset="0%" stop-color="#059669"/>
-            <stop offset="100%" stop-color="#022c22"/>
-          </linearGradient>
-        </defs>
-        <!-- Emerald Aura Background -->
-        <circle cx="50" cy="50" r="48" fill="url(#gemGlow)"/>
-        <!-- Crown / Table facets -->
-        <polygon points="50,14 74,36 26,36" fill="url(#gemTop)"/>
-        <polygon points="26,36 12,38 28,18 50,14" fill="#6ee7b7" opacity="0.9"/>
-        <polygon points="74,36 88,38 72,18 50,14" fill="#34d399" opacity="0.8"/>
-        <!-- Center Pavilion -->
-        <polygon points="26,36 74,36 50,86" fill="url(#gemBody)"/>
-        <!-- Side Pavilion Facets -->
-        <polygon points="12,38 26,36 50,86" fill="url(#gemFacetL)"/>
-        <polygon points="88,38 74,36 50,86" fill="url(#gemFacetR)"/>
-        <!-- Shimmer highlights -->
-        <polygon points="46,18 54,18 51,32 47,32" fill="#ffffff" opacity="0.75"/>
-        <polygon points="48,40 52,40 50,72" fill="#ffffff" opacity="0.35"/>
-        <circle cx="32" cy="28" r="2.5" fill="#ffffff" opacity="0.9"/>
+      <svg class="tile-gem-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M6.2 3.5h11.6L21 9l-9 11.5L3 9l3.2-5.5Z" fill="#5ee0f2" fill-opacity=".14" stroke="#5ee0f2" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M3.2 9h17.6M9 3.5 12 9l3-5.5M12 9v11.2" stroke="#5ee0f2" stroke-width="1.1" stroke-linejoin="round" opacity=".75"/>
       </svg>
     `;
 
-    // Original SVG Artwork: Round Bomb with Lit Fuse on Red Burst
     const BOMB_SVG = `
-      <svg class="tile-bomb-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="bombBurst" cx="50%" cy="55%" r="50%">
-            <stop offset="0%" stop-color="#ef4444" stop-opacity="0.9"/>
-            <stop offset="60%" stop-color="#b91c1c" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="#7f1d1d" stop-opacity="0"/>
-          </radialGradient>
-          <radialGradient id="bombShere" cx="42%" cy="46%" r="50%">
-            <stop offset="0%" stop-color="#475569"/>
-            <stop offset="45%" stop-color="#1e293b"/>
-            <stop offset="100%" stop-color="#090d16"/>
-          </radialGradient>
-          <radialGradient id="sparkGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="35%" stop-color="#fef08a"/>
-            <stop offset="70%" stop-color="#f97316"/>
-            <stop offset="100%" stop-color="#dc2626" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <!-- Explosion blast aura -->
-        <circle cx="50" cy="55" r="46" fill="url(#bombBurst)"/>
-        <!-- Curved Fuse -->
-        <path d="M50,34 C50,22 64,24 68,14" stroke="#d97706" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-        <path d="M50,34 C50,22 64,24 68,14" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="3,3" fill="none"/>
-        <!-- Fuse Collar / Cap -->
-        <rect x="42" y="32" width="16" height="7" rx="3.5" fill="#64748b" stroke="#334155" stroke-width="1.5"/>
-        <!-- Round Bomb Core -->
-        <circle cx="50" cy="58" r="30" fill="url(#bombShere)"/>
-        <!-- Shiny Specular Reflection Arc -->
-        <path d="M32,44 A20,20 0 0,1 48,38" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
-        <!-- Lit Fuse Sparks -->
-        <circle cx="69" cy="13" r="10" fill="url(#sparkGlow)"/>
-        <line x1="69" y1="13" x2="78" y2="6" stroke="#facc15" stroke-width="2" stroke-linecap="round"/>
-        <line x1="69" y1="13" x2="76" y2="20" stroke="#f97316" stroke-width="1.8" stroke-linecap="round"/>
-        <line x1="69" y1="13" x2="61" y2="7" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+      <svg class="tile-bomb-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="10.5" cy="13.5" r="6.3" fill="#ff5a6a" fill-opacity=".14" stroke="#ff5a6a" stroke-width="1.5"/>
+        <path d="m15.2 8.8 2.2-2.2M17.4 6.6l2 2M19.4 8.6 21 7" stroke="#ff5a6a" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="18.8" cy="4.2" r="1.4" fill="#ff5a6a"/>
       </svg>
     `;
 
-    // Render Initial DOM Structure: Two-column Desktop Layout + Mobile Responsive Area
+    // Render the target single-column layout. Every id, handler and game-state
+    // hook is preserved; this is presentation markup only.
     body.innerHTML = `
       <div class="mines-arena">
-        <!-- LEFT CONTROLS PANEL -->
-        <div class="mines-sidebar">
-          <!-- Grid Size Selector -->
-          <div class="mines-sidebar-section">
-            <div class="mines-sidebar-label">
-              <span>${esc(t('grid_size'))}</span>
-              <span id="mgrid-lbl" style="color:var(--text-strong);font-weight:800">5×5</span>
-            </div>
-            <div class="mines-seg-control" id="mgrid-selector">
-              <button type="button" class="mines-seg-btn" data-grid="3">3×3</button>
-              <button type="button" class="mines-seg-btn active" data-grid="5">5×5</button>
-              <button type="button" class="mines-seg-btn" data-grid="7">7×7</button>
-              <button type="button" class="mines-seg-btn" data-grid="9">9×9</button>
-            </div>
-          </div>
-
-          <!-- Mine Count Presets & Custom -->
-          <div class="mines-sidebar-section">
-            <div class="mines-sidebar-label">
-              <span>${esc(t('mines_count'))}</span>
-              <span id="mcount-lbl" style="color:var(--accent);font-weight:800">5</span>
-            </div>
-            <div class="mines-seg-control" id="mmines-presets">
-              <button type="button" class="mines-seg-btn" data-mines="1">1</button>
-              <button type="button" class="mines-seg-btn" data-mines="3">3</button>
-              <button type="button" class="mines-seg-btn active" data-mines="5">5</button>
-              <button type="button" class="mines-seg-btn" data-mines="7">7</button>
-              <button type="button" class="mines-seg-btn" data-mines="custom">${esc(t('custom_mines'))}</button>
-            </div>
-            <div class="mines-custom-box" id="mmines-custom-box" style="display:none;margin-top:6px">
-              <span style="font-size:12px;color:var(--text-secondary)">1–<span id="mmax-mines">24</span>:</span>
-              <input type="number" id="mmines-custom-input" class="mines-custom-input" min="1" max="24" value="5" step="1">
-            </div>
-          </div>
-
-          <!-- Bet Bar (with Chips 1, 5, 10, 50, 100, 1/2 and 2x) -->
-          <div class="mines-sidebar-section">
-            <div class="mines-sidebar-label"><span>${esc(t('bet'))}</span></div>
-            <div id="mbet"></div>
-          </div>
-
-          <!-- Random Pick Button -->
-          <button type="button" class="btn-random-pick" id="mbtn-random" disabled>
-            <span>🎲</span> ${esc(t('random_pick'))}
-          </button>
-
-          <!-- Desktop Start & Cashout Action Buttons -->
-          <div class="mines-actions-row">
-            <button class="btn-mines-start" id="mstart">${esc(t('start'))}</button>
-            <button class="btn-mines-cashout" id="mcash" disabled style="display:none">${esc(t('cashout'))}</button>
-          </div>
-
-          <!-- Provably Fair Link / Rules Modal Trigger -->
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">
-            <button type="button" class="chip" id="mbtn-rules" style="font-size:11px">ℹ ${esc(t('how_to_play'))}</button>
-            <button type="button" class="chip" id="mbtn-fair" style="font-size:11px">🛡️ ${esc(t('provably_fair'))}</button>
-          </div>
-        </div>
-
-        <!-- RIGHT MAIN AREA -->
         <div class="mines-main-area">
-          <!-- TOP STRIP: Live Stats & Next Multipliers -->
+          <!-- 1. FOUR-COLUMN LIVE STATS -->
           <div class="mines-top-strip">
             <div class="mines-live-stats">
               <div class="stat-item">
-                <span class="stat-title">${esc(t('mines_safe'))}</span>
+                <span class="stat-title">SAFE LEFT</span>
                 <span class="stat-val green" id="msafe">20</span>
               </div>
               <div class="stat-item">
-                <span class="stat-title">${esc(t('mines_mult'))}</span>
-                <span class="stat-val gold" id="mmult">×1.00</span>
+                <span class="stat-title">CURRENT</span>
+                <span class="stat-val" id="mmult">×1.00</span>
               </div>
               <div class="stat-item">
-                <span class="stat-title">Gross potential</span>
-                <span class="stat-val" id="mpotential">—</span>
+                <span class="stat-title">NEXT</span>
+                <span class="stat-val green" id="mnext">—</span>
               </div>
               <div class="stat-item">
-                <span class="stat-title">${esc(t('last_win'))}</span>
-                <span class="stat-val gold" id="mlastwin">0</span>
+                <span class="stat-title">WIN</span>
+                <span class="stat-val" id="mlastwin">0 ETB</span>
               </div>
             </div>
 
-            <!-- Multiplier Progression Strip -->
+            <!-- Kept for the existing multiplier helper; hidden in the target layout. -->
             <div class="mines-mult-strip-wrap" id="mmult-strip"></div>
           </div>
 
-          <!-- THE BOARD CONTAINER -->
+          <!-- 2. BOARD CARD -->
           <div class="mines-board-container" id="mboard-wrap">
             <div class="mines-grid-view mines-grid-5" id="mgrid"></div>
             <div id="mmodal-slot"></div>
           </div>
 
-          <div class="msg" id="mmsg" style="text-align:center;min-height:22px"></div>
+          <!-- 3. QUICK ACTIONS -->
+          <div class="mines-quick-actions">
+            <button type="button" class="btn-random-pick" id="mbtn-random" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="16" height="16" rx="4"/>
+                <circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="9" cy="15" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="15" cy="15" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span>${esc(t('random_pick'))}</span>
+            </button>
+            <!-- TODO: Auto game is not implemented by the current Mines logic; this switch is visual-only. -->
+            <button type="button" class="mines-auto-toggle" id="mbtn-auto" aria-pressed="false" disabled>
+              <span class="mines-auto-switch" aria-hidden="true"></span>
+              <span>Auto game</span>
+            </button>
+          </div>
+        </div>
 
-          <!-- PROVABLY FAIR VERIFIER CARD (Toggleable) -->
-          <div class="mines-fair-card" id="mfair-card" style="display:none">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <h4 style="margin:0;color:var(--accent);font-size:14px">🛡️ ${esc(t('mines_verify_title'))}</h4>
-              <button type="button" class="chip" id="mfair-close" style="font-size:11px">✕</button>
+        <!-- 4. SETTINGS, BET AND PRIMARY ACTION -->
+        <div class="mines-sidebar">
+          <div class="mines-settings" id="msettings">
+            <div class="mines-sidebar-section">
+              <div class="mines-sidebar-label">
+                <span>${esc(t('grid_size'))}</span>
+                <span class="mines-setting-value" id="mgrid-lbl">5×5</span>
+              </div>
+              <div class="mines-seg-control" id="mgrid-selector">
+                <button type="button" class="mines-seg-btn" data-grid="3">3×3</button>
+                <button type="button" class="mines-seg-btn active" data-grid="5">5×5</button>
+                <button type="button" class="mines-seg-btn" data-grid="7">7×7</button>
+                <button type="button" class="mines-seg-btn" data-grid="9">9×9</button>
+              </div>
             </div>
-            <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px">${esc(t('mines_verify_desc'))}</p>
-            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
-              <div>
-                <label style="color:var(--text-muted)">${esc(t('server_seed_hash'))}:</label>
-                <input id="mfair-hash" type="text" readonly style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-muted);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
+
+            <div class="mines-sidebar-section">
+              <div class="mines-sidebar-label">
+                <span>${esc(t('mines_count'))}</span>
+                <span class="mines-setting-value" id="mcount-lbl">5</span>
               </div>
-              <div>
-                <label style="color:var(--text-muted)">${esc(t('server_seed'))}:</label>
-                <input id="mfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+              <div class="mines-seg-control" id="mmines-presets">
+                <button type="button" class="mines-seg-btn" data-mines="1">1</button>
+                <button type="button" class="mines-seg-btn" data-mines="3">3</button>
+                <button type="button" class="mines-seg-btn active" data-mines="5">5</button>
+                <button type="button" class="mines-seg-btn" data-mines="7">7</button>
+                <button type="button" class="mines-seg-btn" data-mines="custom">${esc(t('custom_mines'))}</button>
               </div>
-              <div style="display:flex;gap:8px">
-                <div style="flex:1">
-                  <label style="color:var(--text-muted)">${esc(t('client_seed'))}:</label>
-                  <input id="mfair-client-seed" type="text" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
-                </div>
-                <div style="width:70px">
-                  <label style="color:var(--text-muted)">Nonce:</label>
-                  <input id="mfair-nonce" type="number" value="1" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:11px">
-                </div>
+              <div class="mines-custom-box" id="mmines-custom-box" style="display:none">
+                <span class="mines-custom-range">1–<span id="mmax-mines">24</span></span>
+                <input type="number" id="mmines-custom-input" class="mines-custom-input" min="1" max="24" value="5" step="1">
               </div>
-              <button type="button" class="btn btn-gold" id="mfair-verify-btn" style="padding:6px;margin-top:4px;font-size:12px">${esc(t('verify_btn'))}</button>
-              <div id="mfair-result" style="font-size:12px;margin-top:6px"></div>
             </div>
+          </div>
+
+          <div class="mines-sidebar-section mines-bet-section">
+            <div class="mines-sidebar-label mines-bet-label">
+              <span>BET</span>
+              <span class="mines-chip-caption">Chip <b id="mchip-lbl">10</b> ETB</span>
+            </div>
+            <div class="mines-bet-card">
+              <span class="mines-chip-nav" aria-hidden="true">‹</span>
+              <div id="mbet"></div>
+              <span class="mines-chip-nav" aria-hidden="true">›</span>
+            </div>
+          </div>
+
+          <div class="mines-actions-row">
+            <button class="btn-mines-start" id="mstart">${esc(t('start'))}</button>
+            <button class="btn-mines-cashout" id="mcash" disabled style="display:none">${esc(t('cashout'))}</button>
+          </div>
+
+          <!-- Existing rules / fairness triggers kept available on wide screens. -->
+          <div class="mines-utility-links">
+            <button type="button" class="chip" id="mbtn-rules">ℹ ${esc(t('how_to_play'))}</button>
+            <button type="button" class="chip" id="mbtn-fair">🛡️ ${esc(t('provably_fair'))}</button>
+          </div>
+        </div>
+
+        <div class="msg" id="mmsg"></div>
+
+        <!-- PROVABLY FAIR VERIFIER CARD (Toggleable) -->
+        <div class="mines-fair-card" id="mfair-card" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h4 style="margin:0;color:var(--accent);font-size:14px">🛡️ ${esc(t('mines_verify_title'))}</h4>
+            <button type="button" class="chip" id="mfair-close" style="font-size:11px">✕</button>
+          </div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px">${esc(t('mines_verify_desc'))}</p>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+            <div>
+              <label style="color:var(--text-muted)">${esc(t('server_seed_hash'))}:</label>
+              <input id="mfair-hash" type="text" readonly style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-muted);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px" value="">
+            </div>
+            <div>
+              <label style="color:var(--text-muted)">${esc(t('server_seed'))}:</label>
+              <input id="mfair-server-seed" type="text" placeholder="Revealed after round" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+            </div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1">
+                <label style="color:var(--text-muted)">${esc(t('client_seed'))}:</label>
+                <input id="mfair-client-seed" type="text" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:monospace;font-size:11px">
+              </div>
+              <div style="width:70px">
+                <label style="color:var(--text-muted)">Nonce:</label>
+                <input id="mfair-nonce" type="number" value="1" style="width:100%;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);padding:4px 8px;border-radius:6px;font-size:11px">
+              </div>
+            </div>
+            <button type="button" class="btn btn-gold" id="mfair-verify-btn" style="padding:6px;margin-top:4px;font-size:12px">${esc(t('verify_btn'))}</button>
+            <div id="mfair-result" style="font-size:12px;margin-top:6px"></div>
           </div>
         </div>
       </div>
 
-      <!-- MOBILE STICKY BOTTOM BAR -->
+      <!-- Duplicate mobile action bar retained for existing handler wiring; hidden visually. -->
       <div class="mines-mobile-sticky-bar" id="mmobile-bar">
         <button class="btn-mines-start" id="mmob-start">${esc(t('start'))}</button>
         <button class="btn-mines-cashout" id="mmob-cash" disabled style="display:none">${esc(t('cashout'))}</button>
       </div>
     `;
 
-    const bet = betBar($('mbet'));
+    const bet = betBar($('mbet'), 10, {
+      halfLabel: '1/2',
+      doubleLabel: '2x',
+      currencyLabel: 'ETB',
+      compactQuick: true,
+    });
+    const betInput = $('mbet').querySelector('.betrow input');
+    const updateChipCaption = () => { $('mchip-lbl').textContent = String(Number(betInput.value) || 0); };
+    betInput.addEventListener('input', updateChipCaption);
+    $('mbet').addEventListener('click', updateChipCaption);
+    updateChipCaption();
 
     // Synchronize Desktop & Mobile Start/Cashout buttons
     function updateActionButtons(active, canCashout, payoutText) {
@@ -682,13 +647,13 @@ window.Games = (function () {
         if (dCash) {
           dCash.style.display = 'block';
           dCash.disabled = !canCashout;
-          dCash.textContent = canCashout ? `${esc(t('cashout'))} · Gross ${payoutText}` : esc(t('cashout'));
+          dCash.textContent = canCashout ? `${esc(t('cashout'))} · Gross ${payoutText} ETB` : esc(t('cashout'));
         }
         if (mStart) { mStart.style.display = 'none'; }
         if (mCash) {
           mCash.style.display = 'block';
           mCash.disabled = !canCashout;
-          mCash.textContent = canCashout ? `${esc(t('cashout'))} · Gross ${payoutText}` : esc(t('cashout'));
+          mCash.textContent = canCashout ? `${esc(t('cashout'))} · Gross ${payoutText} ETB` : esc(t('cashout'));
         }
       }
     }
@@ -746,12 +711,15 @@ window.Games = (function () {
     // Update Live Stats
     function updateStats(safeLeft, mult, potential) {
       const s = $('msafe'), m = $('mmult'), p = $('mpotential');
+      const next = $('mnext');
       if (s) s.textContent = (safeLeft !== null && safeLeft !== undefined) ? safeLeft : '—';
       if (m) m.textContent = (mult !== null && mult !== undefined) ? '×' + Number(mult).toFixed(2) : '—';
       if (p) p.textContent = (potential !== null && potential !== undefined && potential > 0) ? `+${C.fmt(potential)}` : '—';
+      if (next) next.textContent = nextMults.length ? `×${Number(nextMults[0]).toFixed(2)}` : '—';
     }
 
     function lockSettings(locked) {
+      $('msettings')?.classList.toggle('is-locked', locked);
       bet.lock(locked);
       $('mgrid-selector').querySelectorAll('button').forEach((b) => (b.disabled = locked));
       $('mmines-presets').querySelectorAll('button').forEach((b) => (b.disabled = locked));
@@ -829,6 +797,8 @@ window.Games = (function () {
         list.push(mult);
       }
       nextMults = list;
+      const next = $('mnext');
+      if (next) next.textContent = list.length ? `×${Number(list[0]).toFixed(2)}` : '—';
       updateMultiplierStrip(1, list);
     }
 
@@ -992,7 +962,7 @@ window.Games = (function () {
             coinRain(stage);
             showCashoutModal(currentMult, r.payout ?? currentPotential, minesActiveBetCents);
             lastWinAmount = r.payout || currentPotential;
-            $('mlastwin').textContent = grossNetText(lastWinAmount, minesActiveBetCents);
+            $('mlastwin').textContent = `${C.fmt(lastWinAmount)} ETB`;
 
             // Reveal mine positions dimmed
             if (r.mines) {
@@ -1080,7 +1050,7 @@ window.Games = (function () {
         const r = await C.api('/games/mines/cashout', {});
         C.setBalance(r.balance);
         lastWinAmount = r.payout;
-        $('mlastwin').textContent = grossNetText(lastWinAmount, minesActiveBetCents);
+        $('mlastwin').textContent = `${C.fmt(lastWinAmount)} ETB`;
         say($('mmsg'), `Cashout · ${grossNetText(r.payout, minesActiveBetCents)} 🎉`, 'win');
         sfx.win();
         showCashoutModal(r.multiplier || r.mult, r.payout, minesActiveBetCents);
