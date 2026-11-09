@@ -5581,6 +5581,390 @@ body.customer-theme[data-customer-theme="light"][data-customer-theme] :is(.bingo
 body.customer-theme[data-customer-theme="light"][data-customer-theme] .bingo-cell:not(.free) { border-color: rgba(255,255,255,.14); background: #3E2B22; color: #FBF4E8; }
 body.customer-theme[data-customer-theme="light"][data-customer-theme] .bingo-cell.marked:not(.free) { background: var(--cherry); color: #FFFFFF; }
 
+/* Star Spin has a fixed dark Ethiopian-premium cabinet in both customer themes. */
+#app .mobile-game-shell[data-game="star"] #gbody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 9px;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px max(8px, env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(227,23,62,.22), transparent 34%),
+    radial-gradient(circle at 0% 48%, rgba(120,50,110,.38), transparent 36%),
+    radial-gradient(circle at 100% 100%, rgba(138,106,88,.28), transparent 42%),
+    radial-gradient(circle at 18% 20%, rgba(255,255,255,.52) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 83% 17%, rgba(255,255,255,.38) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 72% 64%, rgba(255,255,255,.32) 0 1px, transparent 1.6px),
+    #0E0709;
+  color: #F7F0E8;
+}
+#app .mobile-game-shell[data-game="star"] .slot {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 520px;
+  max-height: none;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 4px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#app .mobile-game-shell[data-game="star"] .slot::before { display: none; }
+#app .mobile-game-shell[data-game="star"] .slot-title {
+  flex: 0 0 auto;
+  margin: 0;
+  color: #F2C14E;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(242,193,78,.18);
+}
+#app .mobile-game-shell[data-game="star"] .star-multiplier-arc {
+  position: relative;
+  width: min(180px, 48vw);
+  height: 29px;
+  flex: 0 0 29px;
+  align-self: center;
+  margin-top: -2px;
+}
+#app .mobile-game-shell[data-game="star"] .star-multiplier-arc svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+#app .mobile-game-shell[data-game="star"] .star-multiplier-arc path {
+  fill: none;
+  stroke: rgba(232,184,74,.8);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 4px rgba(232,184,74,.36));
+}
+#app .mobile-game-shell[data-game="star"] .star-multiplier-value {
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  min-width: 52px;
+  padding: 3px 8px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(232,184,74,.8);
+  border-radius: 999px;
+  background: #170B10;
+  color: #F2C14E;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#app .mobile-game-shell[data-game="star"] .star-reel-frame {
+  width: fit-content;
+  max-width: 100%;
+  align-self: center;
+  padding: 4px;
+  overflow: hidden;
+  border: 2px solid #E8B84A;
+  border-radius: 12px;
+  background: #170B10;
+  box-shadow: 0 0 18px rgba(232,184,74,.28);
+}
+#app .mobile-game-shell[data-game="star"] .slot-tibeb {
+  height: 4px;
+  margin-bottom: 4px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, #078930 0 8px, #FCDD09 8px 16px, #DA121A 16px 24px);
+}
+#app .mobile-game-shell[data-game="star"] .reels3 {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+}
+#app .mobile-game-shell[data-game="star"] .reelwin {
+  width: clamp(70px, 24vw, 112px);
+  height: calc(clamp(48px, 7.8vh, 64px) * 3);
+  flex: 0 1 112px;
+  border: 0;
+  border-radius: 7px;
+  background: #211318;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.055), inset 0 3px 10px rgba(0,0,0,.25);
+}
+#app .mobile-game-shell[data-game="star"] .reelwin::after {
+  background: linear-gradient(rgba(0,0,0,.34), transparent 26%, transparent 74%, rgba(0,0,0,.34));
+}
+#app .mobile-game-shell[data-game="star"] .sym {
+  display: grid;
+  place-items: center;
+  height: clamp(48px, 7.8vh, 64px);
+  font-size: 0;
+  line-height: 1;
+}
+#app .mobile-game-shell[data-game="star"] .slot-symbol-image {
+  display: block;
+  width: min(78%, 56px);
+  height: min(78%, 56px);
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+#app .mobile-game-shell[data-game="star"] .slot-symbol-image.birr-200 { transform: rotate(-6deg); }
+#app .mobile-game-shell[data-game="star"] .slot-symbol-image.birr-100 { transform: rotate(5deg); }
+#app .mobile-game-shell[data-game="star"] .slot-symbol-image.compact {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+#app .mobile-game-shell[data-game="star"] .slot-symbol-fallback { width: 36px; height: 36px; }
+#app .mobile-game-shell[data-game="star"] .paytable {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 8px;
+  margin: 1px 0 0;
+  color: #C9B59A;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0;
+  opacity: 1;
+}
+#app .mobile-game-shell[data-game="star"] .star-pay-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+#app .mobile-game-shell[data-game="star"] .star-pay-item b { color: #F2C14E; font-variant-numeric: tabular-nums; }
+#app .mobile-game-shell[data-game="star"] .star-spin-row {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 8vw, 38px);
+  min-width: 0;
+  margin: 0 auto;
+}
+#app .mobile-game-shell[data-game="star"] .star-spin-button {
+  display: flex;
+  flex: 0 0 80px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 80px;
+  min-width: 80px;
+  height: 80px;
+  min-height: 80px;
+  margin: 0;
+  padding: 7px;
+  border: 3px solid #F2C14E;
+  border-radius: 50%;
+  background: #E3173E;
+  color: #FFF8E8;
+  box-shadow: 0 0 22px rgba(227,23,62,.55);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+#app .mobile-game-shell[data-game="star"] .star-spin-button:hover:not(:disabled) { background: #c91235; }
+#app .mobile-game-shell[data-game="star"] .star-spin-button:focus-visible { outline: 3px solid #FFF3C4; outline-offset: 4px; }
+#app .mobile-game-shell[data-game="star"] .star-spin-button svg {
+  width: 27px;
+  height: 27px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#app .mobile-game-shell[data-game="star"] .star-side-control {
+  display: flex;
+  flex: 0 0 44px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(232,184,74,.48);
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  color: #F2C14E;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  padding: 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: not-allowed;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+#app .mobile-game-shell[data-game="star"] .star-side-control small { font-size: 8px; font-weight: 700; }
+#app .mobile-game-shell[data-game="star"] .star-info-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 520px);
+  flex: 0 0 auto;
+  align-self: center;
+}
+#app .mobile-game-shell[data-game="star"] .star-info-card {
+  display: flex;
+  min-width: 0;
+  min-height: 44px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  background: rgba(255,255,255,.08);
+  color: #C9B59A;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+#app .mobile-game-shell[data-game="star"] .star-info-card > span { font-size: 9px; font-weight: 800; letter-spacing: .08em; }
+#app .mobile-game-shell[data-game="star"] .star-info-card strong { color: #F7F0E8; font-size: 13px; font-variant-numeric: tabular-nums; }
+#app .mobile-game-shell[data-game="star"] .star-info-card b { color: #F2C14E; }
+#app .mobile-game-shell[data-game="star"] #sbet {
+  display: block;
+  width: min(100%, 520px);
+  min-width: 0;
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0;
+}
+#app .mobile-game-shell[data-game="star"] #sbet .betbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 9px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 12px;
+  background: rgba(255,255,255,.08);
+  color: #F7F0E8;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+#app .mobile-game-shell[data-game="star"] #sbet .chips {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 8px;
+  max-width: 100%;
+  padding: 2px 2px 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+#app .mobile-game-shell[data-game="star"] #sbet .chips::-webkit-scrollbar { display: none; }
+#app .mobile-game-shell[data-game="star"] #sbet .chipb {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 2px solid rgba(242,193,78,.6);
+  background: #27151C;
+  color: #F7F0E8;
+}
+#app .mobile-game-shell[data-game="star"] #sbet .chipb.on {
+  border-color: #F2C14E;
+  outline: 2px solid rgba(242,193,78,.38);
+  outline-offset: 2px;
+  color: #F2C14E;
+}
+#app .mobile-game-shell[data-game="star"] #sbet .betrow {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 0;
+  color: #C9B59A;
+}
+#app .mobile-game-shell[data-game="star"] #sbet .betrow input {
+  width: clamp(62px, 22vw, 84px);
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px;
+  background: rgba(0,0,0,.38);
+  color: #FFF8E8;
+  font-size: 16px;
+  text-align: center;
+}
+#app .mobile-game-shell[data-game="star"] #sbet .betrow .chip {
+  min-width: 40px;
+  min-height: 42px;
+  padding: 4px;
+  border-color: rgba(232,184,74,.38);
+  background: rgba(255,255,255,.08);
+  color: #F2C14E;
+}
+#app .mobile-game-shell[data-game="star"] #sbet .betrow .muted { color: #C9B59A; }
+#app .mobile-game-shell[data-game="star"] #smsg {
+  flex: 0 0 auto;
+  min-height: 0;
+  margin: 0 auto;
+  color: #C9B59A;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+#app .mobile-game-shell[data-game="star"] #smsg.win { color: #F2C14E; }
+#app .mobile-game-shell[data-game="star"] #smsg.lose { color: #E89A9A; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  #app .mobile-game-shell[data-game="star"] :is(.star-side-control,.star-info-card,#sbet .betbar) { background: #211318; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  #app .mobile-game-shell[data-game="star"] :is(.star-side-control,.star-info-card,#sbet .betbar) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: #211318;
+  }
+}
+@media (max-width: 360px) {
+  #app .mobile-game-shell[data-game="star"] #gbody { gap: 7px; padding-inline: 6px; }
+  #app .mobile-game-shell[data-game="star"] .slot { gap: 5px; padding-inline: 0; }
+  #app .mobile-game-shell[data-game="star"] .slot-title { font-size: 17px; }
+  #app .mobile-game-shell[data-game="star"] .reels3 { gap: 3px; }
+  #app .mobile-game-shell[data-game="star"] .reelwin { width: clamp(66px, 23vw, 82px); }
+  #app .mobile-game-shell[data-game="star"] #sbet .betrow { gap: 4px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #app .mobile-game-shell[data-game="star"] #gbody { padding-block: 6px; }
+  #app .mobile-game-shell[data-game="star"] .reelwin { height: calc(clamp(42px, 12vh, 54px) * 3); }
+  #app .mobile-game-shell[data-game="star"] .sym { height: clamp(42px, 12vh, 54px); }
+  #app .mobile-game-shell[data-game="star"] .slot-symbol-image { width: min(72%, 46px); height: min(72%, 46px); }
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   body.customer-theme[data-customer-theme="light"][data-customer-theme] {
     --glass-bg: rgba(250,244,234,.92); --glass-bg-strong: rgba(250,244,234,.92); --glass-bg-soft: rgba(250,244,234,.92);

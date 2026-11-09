@@ -4135,27 +4135,89 @@ window.Games = (function () {
   // STAR SPIN (Slot Machine)
   // =========================================================
   const SYMS = ['🍒', '🍋', '🔔', '⭐', '7️⃣', '🌟'];
+  const STAR_SYMBOL_ASSETS = {
+    '🍒': { file: 'sym_coffee_cherries.png', alt: 'Coffee cherries', key: 'coffee-cherries' },
+    '🍋': { file: 'sym_sini_cup.png', alt: 'Sini cup', key: 'sini-cup' },
+    '🔔': { file: 'sym_jebena.png', alt: 'Jebena', key: 'jebena' },
+    '⭐': { file: 'sym_mesob.png', alt: 'Mesob', key: 'mesob' },
+    '7️⃣': { file: 'sym_birr_200.png', alt: '200 birr', key: 'birr-200' },
+    '🌟': { file: 'sym_wild_cross.png', alt: 'Gold cross wild symbol', key: 'wild-cross' },
+  };
+  const STAR_SYMBOL_ASSETS_ALL = [
+    ...Object.values(STAR_SYMBOL_ASSETS),
+    { file: 'sym_birr_100.png', alt: '100 birr', key: 'birr-100' },
+  ];
   const rs = () => SYMS[Math.floor(Math.random() * SYMS.length)];
   const SYM_H = 84;
 
   function star(body, stage) {
     const { t, esc } = C;
+    // Preload the custom artwork as soon as Star Spin opens, before the first spin.
+    const preloadedSymbols = STAR_SYMBOL_ASSETS_ALL.map((asset) => {
+      const image = new Image();
+      image.src = `/img/slots/${asset.file}`;
+      return image;
+    });
+    const symbolImageMarkup = (symbol, compact = false) => {
+      const asset = STAR_SYMBOL_ASSETS[symbol];
+      if (!asset) return '<span class="slot-symbol-fallback" aria-hidden="true"></span>';
+      return `<img class="slot-symbol-image${compact ? ' compact' : ''} ${asset.key}" src="/img/slots/${asset.file}" alt="${esc(asset.alt)}" width="${compact ? 18 : 44}" height="${compact ? 18 : 44}" decoding="async">`;
+    };
+    const symbolGroupMarkup = (symbol, count = 3) =>
+      Array.from({ length: count }, () => symbolImageMarkup(symbol, true)).join('');
     const cur = [0, 1, 2].map(() => [rs(), rs(), rs()]);
     body.innerHTML = `
       <div class="slot">
-        <div class="slot-title">★ STAR SPIN ★</div>
-        <div class="reels3">
-          ${[0,1,2].map((i) => `<div class="reelwin" id="rw${i}"><div class="strip" id="st${i}"></div></div>`).join('')}
-          <div class="payline"></div>
+        <div class="slot-title">HABESHA STARS</div>
+        <div class="star-multiplier-arc" aria-label="Last spin multiplier">
+          <svg viewBox="0 0 180 44" aria-hidden="true"><path d="M8 40 A82 82 0 0 1 172 40" /></svg>
+          <span class="star-multiplier-value" id="smult">—×</span>
         </div>
-        <div class="paytable">🍒🍒🍒 ×1.07 &nbsp;|&nbsp; 🍋🍋🍋 ×1.72 &nbsp;|&nbsp; 🔔🔔🔔 ×2.58 &nbsp;|&nbsp; ⭐⭐⭐ ×5.38 &nbsp;|&nbsp; 7️⃣7️⃣7️⃣/🌟🌟🌟 ×10.76 &nbsp;|&nbsp; other 2+ 🍒/🌟 combinations ×0.33 (partial return)</div>
+        <div class="star-reel-frame">
+          <div class="slot-tibeb" aria-hidden="true"></div>
+          <div class="reels3">
+            ${[0,1,2].map((i) => `<div class="reelwin" id="rw${i}"><div class="strip" id="st${i}"></div></div>`).join('')}
+            <div class="payline"></div>
+          </div>
+        </div>
+        <div class="paytable" aria-label="Star Spin paytable">
+          <span class="star-pay-item">${symbolGroupMarkup('🍒')} <b>×1.07</b></span>
+          <span class="star-pay-item">${symbolGroupMarkup('🍋')} <b>×1.72</b></span>
+          <span class="star-pay-item">${symbolGroupMarkup('🔔')} <b>×2.58</b></span>
+          <span class="star-pay-item">${symbolGroupMarkup('⭐')} <b>×5.38</b></span>
+          <span class="star-pay-item">${symbolGroupMarkup('7️⃣')} / ${symbolGroupMarkup('🌟')} <b>×10.76</b></span>
+          <span class="star-pay-item">${symbolGroupMarkup('🍒', 2)} / ${symbolGroupMarkup('🌟', 2)} 2+ <b>×0.33 (partial return)</b></span>
+        </div>
+      </div>
+      <div class="star-spin-row">
+        <!-- TODO: Auto and Turbo are visual-only until supported by the existing game. -->
+        <button type="button" class="star-side-control" disabled aria-label="Auto play unavailable"><span>↻</span><small>Auto</small></button>
+        <button class="bigbtn star-spin-button" id="sgo" aria-label="Spin">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.7 9A7 7 0 0 1 18 6l2 2M4 16l2 2a7 7 0 0 0 12.3-3"/></svg>
+          <span>SPIN</span>
+        </button>
+        <button type="button" class="star-side-control" disabled aria-label="Turbo unavailable"><span>ϟ</span><small>Turbo</small></button>
+      </div>
+      <div class="star-info-row" aria-live="polite">
+        <div class="star-info-card"><span>LAST WIN</span><strong><b id="slastwin">${C.fmt(0)}</b> ETB</strong></div>
+        <div class="star-info-card"><span>BET</span><strong><b id="sstake">${C.fmt(1000)}</b> ETB</strong></div>
       </div>
       <div id="sbet"></div>
-      <button class="bigbtn" id="sgo">${esc(t('spin'))}</button>
       <div class="msg" id="smsg"></div>`;
 
-    const bet = betBar($('sbet'));
-    const paint = (i) => ($('st' + i).innerHTML = cur[i].map((s) => `<div class="sym">${s}</div>`).join(''));
+    // Keep the established bet handlers and lock behavior; only expose ETB labels.
+    const bet = betBar($('sbet'), 10, { currencyLabel: 'ETB' });
+    const betInput = $('sbet').querySelector('input');
+    const updateStake = () => {
+      const amount = bet.get();
+      $('sstake').textContent = Number.isSafeInteger(amount) && amount > 0 ? C.fmt(amount) : '—';
+    };
+    betInput.addEventListener('input', updateStake);
+    $('sbet').addEventListener('click', (event) => {
+      if (event.target.closest('.chipb, #b-half, #b-double')) updateStake();
+    });
+    updateStake();
+    const paint = (i) => ($('st' + i).innerHTML = cur[i].map((s) => `<div class="sym">${symbolImageMarkup(s)}</div>`).join(''));
     [0, 1, 2].forEach(paint);
 
     function spinReel(i, finalSym, dur) {
@@ -4169,7 +4231,7 @@ window.Games = (function () {
       const top = rs(), bot = rs();
       items.push(top, finalSym, bot);
 
-      strip.innerHTML = items.map((s) => `<div class="sym">${s}</div>`).join('');
+      strip.innerHTML = items.map((s) => `<div class="sym">${symbolImageMarkup(s)}</div>`).join('');
       strip.style.transition = 'none';
       strip.style.transform = 'translateY(0)';
       void strip.offsetHeight;
@@ -4184,7 +4246,7 @@ window.Games = (function () {
         // Reset cleanly to the 3 final symbols at translateY(0)
         // so no leftover offset or media-query scale can ever cause symbols to disappear!
         strip.style.transition = 'none';
-        strip.innerHTML = cur[i].map((s) => `<div class="sym">${s}</div>`).join('');
+        strip.innerHTML = cur[i].map((s) => `<div class="sym">${symbolImageMarkup(s)}</div>`).join('');
         strip.style.transform = 'translateY(0)';
       });
     }
@@ -4197,9 +4259,11 @@ window.Games = (function () {
       [0, 1, 2].forEach((i) => $('rw' + i).classList.remove('win'));
       try {
         const r = await C.api('/games/star', { bet: bet.get() });
+        $('smult').textContent = Number.isFinite(Number(r.mult)) ? `×${r.mult}` : '—×';
         const spinTick = setInterval(sfx.tick, 85);
         await Promise.all(r.reels.map((s, i) => spinReel(i, s, 1400 + i * 700)));
         clearInterval(spinTick); C.setBalance(r.balance);
+        $('slastwin').textContent = C.fmt(r.payout || 0);
         if (r.payout) {
           await sleep(100);
           if (r.net > 0) {
