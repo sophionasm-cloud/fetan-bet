@@ -340,7 +340,9 @@ window.Games = (function () {
           <div class="mobile-game-menu" id="mobile-game-menu-panel" hidden>
             ${game === 'roulette'
               ? `<button type="button" data-action="history">Recent results</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`
-              : `<button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button><button type="button" data-action="history">${C.esc(C.t('history'))}</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`}
+              : game === 'mines'
+                ? `<button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button><button type="button" data-action="fair">${C.esc(C.t('provably_fair'))}</button><button type="button" data-action="history">${C.esc(C.t('history'))}</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`
+                : `<button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button><button type="button" data-action="history">${C.esc(C.t('history'))}</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`}
           </div>
         </div>
         <div class="stage">
@@ -373,7 +375,11 @@ window.Games = (function () {
     $('mobile-game-menu').onclick = () => { const menu = $('mobile-game-menu-panel'); menu.hidden = !menu.hidden; };
     $('mobile-game-menu-panel').onclick = (event) => {
       const action = event.target.closest('[data-action]')?.dataset.action;
-      if (action === 'how') $('road-how-btn')?.click();
+      if (action === 'how') {
+        if (game === 'mines') $('mbtn-rules')?.click();
+        else $('road-how-btn')?.click();
+      }
+      if (action === 'fair' && game === 'mines') $('mbtn-fair')?.click();
       if (action === 'history' && game === 'roulette') document.querySelector('.roulette-recent-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (action === 'history' && game !== 'roulette') {
         $('tab-bets-btn')?.click();
@@ -850,6 +856,7 @@ window.Games = (function () {
         $('mfair-hash').value = activeSeedHash || '';
         $('mfair-client-seed').value = activeClientSeed || '';
         if (activeServerSeed) $('mfair-server-seed').value = activeServerSeed;
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     };
     $('mfair-close').onclick = () => { $('mfair-card').style.display = 'none'; };
