@@ -2250,6 +2250,29 @@
   margin-top: 6px;
 }
 
+.mines-utility-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mines-utility-links .chip {
+  display: inline-flex;
+  height: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  border: 1px solid #292929;
+  border-radius: 999px;
+  background: #121212;
+  color: #9a9a9a;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+
 .btn-mines-start {
   background: #00e800;
   color: #071824;
@@ -2406,34 +2429,31 @@
   background: #17242d;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 16px;
+  padding: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 380px;
+  display: block;
 }
 
 .mines-grid-view {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
-.mines-grid-3 { grid-template-columns: repeat(3, 1fr); max-width: 320px; gap: 12px; }
-.mines-grid-5 { grid-template-columns: repeat(5, 1fr); max-width: 460px; gap: 8px; }
-.mines-grid-7 { grid-template-columns: repeat(7, 1fr); max-width: 490px; gap: 6px; }
-.mines-grid-9 { grid-template-columns: repeat(9, 1fr); max-width: 520px; gap: 5px; }
+.mines-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mines-grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.mines-grid-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.mines-grid-9 { grid-template-columns: repeat(9, minmax(0, 1fr)); }
 
-/* 3D TILE STYLING WITH ROTATEY FLIP ANIMATION */
+/* FLAT TILE STYLING WITH ROTATEY FLIP ANIMATION */
 .mine-tile {
+  min-width: 0;
   aspect-ratio: 1;
-  background: #2f4553;
-  border-radius: 8px;
-  border: none;
-  border-bottom: 5px solid #20313c;
+  background: #1b1b1b;
+  border-radius: 9px;
+  border: 1px solid #262626;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2442,39 +2462,39 @@
   user-select: none;
   outline: none;
   position: relative;
+  box-shadow: none;
   transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
   perspective: 600px;
 }
 
 .mine-tile:hover:not(:disabled) {
-  background: #557086;
-  border-bottom-color: #384e5e;
-  transform: translateY(-2px);
+  background: #242424;
+  border-color: #383838;
+  transform: translateY(-1px);
 }
 
 .mine-tile:active:not(:disabled) {
-  transform: translateY(2px);
-  border-bottom-width: 2px;
+  transform: translateY(1px);
 }
 
 .mine-tile.revealed-safe {
-  background: #071824;
-  border-bottom: 4px solid #041018;
-  box-shadow: inset 0 0 14px rgba(0, 232, 0, 0.35);
+  background: #10262a;
+  border: 1px solid #1d5560;
+  box-shadow: inset 0 0 12px rgba(94, 224, 242, 0.12);
   animation: tileFlipSafe 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .mine-tile.revealed-mine {
-  background: #1f0b0b;
-  border-bottom: 4px solid #140505;
-  box-shadow: inset 0 0 18px rgba(239, 68, 68, 0.6);
+  background: #2a1215;
+  border: 1px solid #5c1d24;
+  box-shadow: inset 0 0 12px rgba(255, 90, 106, 0.14);
   animation: tileFlipMine 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .mine-tile.revealed-hit {
-  background: #3b0d0d;
-  border-bottom: 4px solid #ef4444;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 16px rgba(239, 68, 68, 0.9);
+  background: #2a1215;
+  border: 1px solid #5c1d24;
+  box-shadow: 0 0 20px rgba(255, 90, 106, 0.35), inset 0 0 12px rgba(255, 90, 106, 0.22);
   animation: tileHitExplode 0.45s ease-in-out forwards;
 }
 
@@ -3884,7 +3904,7 @@ body.game-open .mobile-game-shell[data-game="mines"] #mbet { margin: 0; }
 body.game-open .mobile-game-shell[data-game="mines"] .mines-board-container { min-height: 0 !important; padding: 8px; }
 body.game-open .mobile-game-shell[data-game="mines"] .mines-mult-strip-wrap { display: none; }
 body.game-open .mobile-game-shell[data-game="mines"] .mines-main-area { gap: 6px; }
-body.game-open .mobile-game-shell[data-game="mines"] .mines-grid-view { width: min(27dvh, 88vw); max-width: 100%; aspect-ratio: 1; margin-inline: auto; gap: 5px; }
+body.game-open .mobile-game-shell[data-game="mines"] .mines-grid-view { width: 100%; max-width: none; aspect-ratio: 1; margin-inline: 0; gap: 6px; }
 body.game-open .mobile-game-shell[data-game="mines"] #mbet .betbar { margin: 0; padding: 8px; }
 body.game-open .mobile-game-shell[data-game="mines"] #mbet .chips { gap: 4px; }
 body.game-open .mobile-game-shell[data-game="mines"] #mbet .betrow { gap: 6px; margin-top: 4px; }
@@ -4206,8 +4226,8 @@ body.game-open.game-landscape .mobile-game-shell[data-game="mines"] #gbody,
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-arena { display: contents; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-main-area { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-column: 1; grid-row: 2; width: auto; height: 100%; min-height: 0; gap: 4px; padding: 4px; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-sidebar { grid-column: 2; grid-row: 2; width: 280px; max-height: 100%; padding-bottom: 84px; overflow: auto; }
-body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-board-container { height: 100%; padding: 4px; }
-body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-grid-view { width: auto; height: 100%; max-width: 100%; aspect-ratio: 1; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-board-container { height: 100%; padding: 8px; }
+body.game-open.game-landscape .mobile-game-shell[data-game="mines"] .mines-grid-view { width: 100%; height: auto; max-width: none; aspect-ratio: 1; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] #mbet .betbar { margin: 0; padding: 4px; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] #mbet .chips { gap: 1px; flex-wrap: nowrap; }
 body.game-open.game-landscape .mobile-game-shell[data-game="mines"] #mbet .chipb { width: 44px; height: 44px; }

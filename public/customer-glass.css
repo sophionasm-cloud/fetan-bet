@@ -3049,7 +3049,7 @@ body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell
   align-items: stretch;
   gap: 8px;
   margin: 0 auto;
-  padding: 8px 0 12px;
+  padding: 8px 0 0;
   color: var(--mines-text);
 }
 
@@ -3120,10 +3120,9 @@ body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell
 }
 
 body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-board-container {
-  display: grid;
+  display: block;
   width: 100%;
   min-height: 0;
-  place-items: center;
   padding: 8px;
   border: 1px solid var(--mines-border);
   border-radius: 12px;
@@ -3134,11 +3133,10 @@ body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell
 }
 
 body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-grid-view {
-  width: min(100%, 520px);
-  max-width: 100%;
-  aspect-ratio: 1;
+  width: 100%;
+  max-width: none;
   gap: 6px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mine-tile {
@@ -3498,19 +3496,32 @@ body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell
 }
 
 body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-utility-links {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
-body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-utility-links .chip {
+body.customer-theme[data-customer-theme][data-customer-theme] #app .mobile-game-shell[data-game="mines"] .mines-utility-links .chip {
+  display: inline-flex;
+  height: 30px;
   min-height: 30px;
-  padding: 4px 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
   border: 1px solid #292929;
   border-radius: 999px;
   background: #121212;
-  color: #aaa;
-  font-size: 10px;
+  color: #9a9a9a;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+body.customer-theme[data-customer-theme][data-customer-theme] #app .mobile-game-shell[data-game="mines"] .mines-utility-links .chip:hover {
+  background: #181818;
+  border-color: #363636;
+  color: #b5b5b5;
 }
 
 body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] #mmsg {
@@ -3539,16 +3550,10 @@ body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell
   body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-live-stats { gap: 2px; }
   body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-live-stats .stat-title { font-size: 7px; }
   body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-live-stats .stat-val { font-size: 12px; }
-  body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-grid-view { gap: 5px; }
+  body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-grid-view { gap: 6px; }
   body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-seg-btn { font-size: 10px; }
   body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] #mbet .chips { gap: 4px; }
   body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] #mbet .chipb { width: 32px; height: 32px; flex-basis: 32px; }
-}
-
-@media (max-width: 600px) {
-  body.customer-theme[data-customer-theme][data-customer-theme] .mobile-game-shell[data-game="mines"] .mines-grid-view {
-    width: min(100%, calc(100vw - 32px), 520px);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
