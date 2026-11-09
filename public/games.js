@@ -3832,6 +3832,7 @@ window.Games = (function () {
         <div class="roulette-play-layout">
           <section class="roulette-wheel-panel" aria-label="Roulette wheel and recent results">
             <div class="roulette-recent-wrap">
+              <span class="roulette-section-label roulette-results-label">RECENT RESULTS</span>
               <div class="history" id="hist" aria-label="Recent roulette results"><span class="roulette-history-empty">No results yet</span></div>
             </div>
             <div class="wheel-box">

@@ -3957,7 +3957,7 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] {
   --rl-bet: #0f6b2f;
   --rl-zero-w: 26px;
   --rl-marker-w: 28px;
-  --rl-row-h: 26px;
+  --rl-row-h: 28px;
   --rl-wheel: 210px;
   color: var(--rl-text);
   background: var(--rl-bg);
@@ -3997,6 +3997,18 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-recent-wr
   width: 100%;
   min-width: 0;
   min-height: 22px;
+}
+
+body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-results-label {
+  display: block;
+  margin: 0 0 3px 2px;
+  color: #8a8a8a;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 body.customer-theme .mobile-game-shell[data-game="roulette"] .history {
@@ -4178,7 +4190,10 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel
 }
 
 body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable .zero {
-  grid-row: 1 / span 3;
+  grid-row: 1 / 4;
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
   background: var(--rl-zero);
   color: var(--rl-zero-text);
   font-weight: 600;
@@ -4289,7 +4304,7 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel
   min-height: 14px;
   margin: 0;
   overflow: hidden;
-  color: var(--rl-muted);
+  color: #8a8a8a;
   font-size: 10px;
   font-weight: 500;
   line-height: 1.3;
@@ -4480,11 +4495,13 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel
   order: 9;
   min-height: 0;
   margin: 0;
-  color: var(--rl-muted);
+  color: #8a8a8a;
   font-size: 10px;
   line-height: 1.25;
   text-align: center;
 }
+
+body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .msg:empty { display: none; }
 
 /* Focus stays visible without adding glow to the table. */
 body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):focus-visible {
@@ -4510,8 +4527,17 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):
 
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-screen { padding: 0; }
 
+  /* Fill the card so the chip row lands directly above the fixed tab bar
+     instead of leaving a large empty block underneath it. */
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     gap: 6px;
     width: 100%;
@@ -4521,13 +4547,21 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):
 
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     gap: 6px;
+    min-height: 0;
     padding: 0;
+  }
+
+  body.game-open .mobile-game-shell[data-game="roulette"] .roulette-wheel-panel .wheel-box {
+    margin-top: auto;
+    margin-bottom: auto;
   }
 
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel {
     display: flex;
+    flex: 0 0 auto;
     flex-direction: column;
     gap: 4px;
     padding: 0;
@@ -4540,7 +4574,7 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):
 
   /* Very short phones shrink the wheel before the controls, preserving the
      target proportions on 360-390px-wide screens. */
-  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: clamp(190px, calc(100dvh - 510px), 210px); }
+  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: 210px; }
 
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable {
     grid-template-columns: var(--rl-zero-w) repeat(12, minmax(0, 1fr)) var(--rl-marker-w);
@@ -4553,7 +4587,7 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):
 
 /* Portrait tablets: keep the phone-style lane centred with a larger wheel. */
 @media (min-width: 600px) and (max-width: 1024px) and (orientation: portrait) {
-  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: 260px; }
+  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: 210px; }
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout { max-width: 480px; }
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button,
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-dozens button,
@@ -4565,7 +4599,7 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):
 
 /* Short landscape screens use two columns so the target stays on one screen. */
 @media (orientation: landscape) and (max-width: 1024px) {
-  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: clamp(160px, 24vw, 240px); }
+  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: 210px; }
 
   body.game-open .mobile-game-shell[data-game="roulette"] .roulette-play-layout {
     display: grid;
@@ -4583,7 +4617,7 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):
 
 /* Laptop/desktop: results strip across the top, wheel left, controls right. */
 @media (min-width: 1025px) {
-  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: clamp(240px, 24vw, 320px); }
+  body.customer-theme .mobile-game-shell[data-game="roulette"] { --rl-wheel: 210px; }
 
   body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-screen {
     min-height: 0;
@@ -4612,9 +4646,9 @@ body.customer-theme .mobile-game-shell[data-game="roulette"] :is(button, input):
   body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-bet-tools { min-height: 20px; }
   body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .rtable button,
   body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-dozens button,
-  body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-supported button { height: 30px; min-height: 30px; font-size: 11px; }
-  body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-dozens button { height: 28px; min-height: 28px; font-size: 10px; }
-  body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-supported button { height: 30px; min-height: 30px; }
+  body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-supported button { height: 28px; min-height: 28px; font-size: 11px; }
+  body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-dozens button { height: 26px; min-height: 26px; font-size: 10px; }
+  body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .roulette-outside-supported button { height: 28px; min-height: 28px; }
   body.customer-theme .mobile-game-shell[data-game="roulette"] #rbet .chipb { flex-basis: 36px; width: 36px; height: 36px; min-width: 36px; font-size: 11px; }
   body.customer-theme .mobile-game-shell[data-game="roulette"] .roulette-bet-panel .pick { min-height: 16px; font-size: 11px; }
 }
