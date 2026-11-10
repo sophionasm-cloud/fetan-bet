@@ -3,6 +3,27 @@
 let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0, promoCredits = 0,
     limits = { min: 100, max: 100000 }, tab = 'games', agentSubtab = 'deposits';
 let promoSliderCleanup = null;
+let chickenRoadScrollY = null;
+
+window.setFetanChickenImmersive = (active) => {
+  const root = document.documentElement;
+  if (active) {
+    if (chickenRoadScrollY === null) chickenRoadScrollY = window.scrollY || 0;
+    root.classList.add('chicken-road-immersive');
+    return;
+  }
+  const wasImmersive = root.classList.contains('chicken-road-immersive');
+  root.classList.remove('chicken-road-immersive');
+  if (wasImmersive && document.fullscreenElement) {
+    window.__fetanManualChickenFullscreenExit = true;
+    document.exitFullscreen?.().catch(() => {});
+  }
+  if (wasImmersive && chickenRoadScrollY !== null) {
+    const restoreY = chickenRoadScrollY;
+    chickenRoadScrollY = null;
+    requestAnimationFrame(() => window.scrollTo({ top: restoreY, behavior: 'auto' }));
+  }
+};
 
 const $ = (id) => document.getElementById(id);
 const t = (k) => T[k] ?? k;
@@ -579,6 +600,7 @@ function nav() {
 async function render(subMode = '') {
   clearPromoSlider();
   const gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
+  window.setFetanChickenImmersive(Boolean(gameRoute && gameRoute[1] === 'chicken-road-2'));
   await refreshMe();
   if ((!me || !['agent', 'superadmin'].includes(me.role)) && window.FetanWorkspace) {
     window.FetanWorkspace.cleanup();
@@ -586,6 +608,7 @@ async function render(subMode = '') {
   const app = $('app');
   if (!gameRoute || !me || me.role !== 'user' || !matchMedia('(max-width: 1024px)').matches) document.body.classList.remove('game-open');
   if (!me) {
+    window.setFetanChickenImmersive(false);
     document.body.classList.remove('game-open');
     document.body.classList.remove('has-app-nav');
     $('nav').hidden = true;
@@ -599,8 +622,10 @@ async function render(subMode = '') {
   // Staff roles use the dedicated premium workspace; they never render
   // customer wallet/deposit/game views.
   if (me.role === 'agent' || me.role === 'superadmin') {
+    window.setFetanChickenImmersive(false);
     tab = 'workspace';
   } else if (me.role === 'admin') {
+    window.setFetanChickenImmersive(false);
     // The legacy admin console remains available for existing admin accounts.
     tab = 'admin';
   } else if (['agent', 'admin', 'workspace'].includes(tab)) {
@@ -1137,7 +1162,16 @@ async function gamesView(app, gameRoute = null) {
     user: me,
     getBalance: () => balance,
     roadState, minesState,
-    reload: () => render()
+    reload: () => render(),
+    navigateCustomer: (nextTab) => {
+      if (me?.role !== 'user' || !['wallet', 'withdraw', 'profile', 'support'].includes(nextTab)) return;
+      tab = nextTab;
+      window.setFetanChickenImmersive(false);
+      if (/^#\/game\//.test(location.hash)) {
+        history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);
+      }
+      render();
+    }
   });
   if (!gameRoute) mountPromoSlider(app);
   if (gameRoute) {
@@ -2337,7 +2371,7 @@ async function adminView(app) {
 }
 
 // A direct game link still gets an in-app lobby entry for Back navigation.
-const initialGameRoute = /^#\/game\/(road|road-dash|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
+const initialGameRoute = /^#\/game\/(road|road-dash|chicken-road-2|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
 if (initialGameRoute) {
   const deepLink = location.hash;
   history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);

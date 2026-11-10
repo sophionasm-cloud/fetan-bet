@@ -29,6 +29,11 @@
   const maxBtn = $('maxBtn');
   const soundBtn = $('soundBtn');
   const menuBtn = $('menuBtn');
+  const walletOpen = $('walletOpen');
+  const depositOpen = $('depositOpen');
+  const lowBalanceNote = $('lowBalanceNote');
+  const walletSheet = $('walletSheet');
+  const depositSheet = $('depositSheet');
   const soundOnIcon = $('soundOnIcon');
   const soundOffIcon = $('soundOffIcon');
   const stageHint = $('stageHint');
@@ -64,6 +69,14 @@
   const MAX_BET = 500;
   const START_BALANCE = 1000000;
   const STORE_KEY = 'fetanbet.cr2.v1';
+  let activeAccountSheet = null;
+  let accountSheetOpener = null;
+  let depositProviders = [];
+  let selectedDepositProviderId = null;
+  let depositReceiptData = null;
+  let balanceAnimationFrame = 0;
+  let displayedBalance = null;
+  let wakeLock = null;
 
   function laneLimit() { return DIFFICULTY[state.difficulty].lanes; }
   function roadWidth() { return laneLimit() * LANE_W; }
@@ -395,6 +408,7 @@
     if (integrationBlocker) integrationBlocker.hidden = true;
     if (menuReset) menuReset.disabled = true;
     updateHUD();
+    syncWakeLockState();
   }
 
   function apiErrorMessage(error) {
@@ -471,9 +485,7 @@
   }
 
   function updateHUD() {
-    balanceEl.textContent = integrated
-      ? (state.remoteReady ? fmtMoney(state.balance) : state.remoteError ? 'Unavailable · ETB' : 'Loading ETB…')
-      : `${fmtInt(state.balance)} ETB`;
+    renderWalletBalance();
     betAmountEl.textContent = fmtInt(state.bet);
     const active = state.phase === 'playing';
     const settling = state.phase === 'crashed' || state.phase === 'cashed' || state.phase === 'finished';
@@ -508,7 +520,9 @@
     // A settled round is over, so the player may prepare the next round
     // (difficulty and stake) while the result card is still on screen.
     setBetControls(state.phase === 'idle' || settling);
-    playBtn.disabled = integrated && (!state.remoteReady || state.remoteBusy);
+    const insufficient = integrated && state.remoteReady && state.bet > state.balance;
+    if (lowBalanceNote) lowBalanceNote.hidden = !insufficient || state.phase !== 'idle';
+    playBtn.disabled = integrated && (!state.remoteReady || state.remoteBusy || Boolean(activeAccountSheet) || insufficient);
     if (integrated && !state.remoteReady) {
       playBtn.querySelector('span')?.replaceChildren(document.createTextNode('Unavailable'));
     }
@@ -524,6 +538,314 @@
       stageHint.classList.remove('fade');
     }
     renderLadder();
+    syncAccountSheetState();
+  }
+
+  function renderWalletBalance() {
+    if (!integrated) {
+      balanceEl.textContent = `${fmtInt(state.balance)} ETB`;
+      return;
+    }
+    if (!state.remoteReady) {
+      balanceEl.textContent = state.remoteError ? 'Unavailable · ETB' : 'Loading ETB…';
+      updateSheetBalances(state.remoteError ? 'Unavailable · ETB' : 'Loading ETB…');
+      return;
+    }
+    const target = Number.isFinite(state.balance) ? Math.max(0, state.balance) : 0;
+    if (displayedBalance === null || Math.abs(target - displayedBalance) < 0.005 ||
+        matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      displayedBalance = target;
+      balanceEl.textContent = fmtMoney(target);
+      updateSheetBalances(fmtMoney(target));
+      return;
+    }
+    cancelAnimationFrame(balanceAnimationFrame);
+    const from = displayedBalance;
+    const startedAt = performance.now();
+    const animate = (now) => {
+      const progress = Math.min(1, (now - startedAt) / 300);
+      const eased = 1 - ((1 - progress) ** 3);
+      const value = from + (target - from) * eased;
+      displayedBalance = value;
+      const formatted = fmtMoney(value);
+      balanceEl.textContent = formatted;
+      updateSheetBalances(formatted);
+      if (progress < 1) balanceAnimationFrame = requestAnimationFrame(animate);
+      else displayedBalance = target;
+    };
+    balanceAnimationFrame = requestAnimationFrame(animate);
+  }
+
+  function updateSheetBalances(value = fmtMoney(state.balance)) {
+    const walletBalance = $('walletSheetBalance');
+    const depositBalance = $('depositSheetBalance');
+    if (walletBalance) walletBalance.textContent = value;
+    if (depositBalance) depositBalance.textContent = value;
+  }
+
+  function syncAccountSheetState() {
+    if (!integrated) return;
+    const activeRound = state.phase === 'playing';
+    document.querySelectorAll('.sheet-round-note').forEach((note) => { note.hidden = !activeRound; });
+    document.querySelectorAll('.sheet-round-action').forEach((dock) => {
+      dock.hidden = !activeRound;
+      const button = dock.querySelector('.sheet-cashout');
+      if (!button) return;
+      const eligible = state.pos >= 1 && !state.hop && !state.remoteBusy && Boolean(state.serverRoundId);
+      button.disabled = !eligible;
+      button.textContent = state.pos < 1 ? 'Cash out after first crossing' : `Cash out · ${cashValueEl.textContent}`;
+      button.onclick = () => {
+        if (!eligible) return;
+        closeAccountSheet(false);
+        cashBtn.click();
+      };
+    });
+  }
+
+  function releaseWakeLock() {
+    if (!wakeLock) return;
+    const lock = wakeLock;
+    wakeLock = null;
+    try { Promise.resolve(lock.release?.()).catch(() => {}); } catch (_) { /* Optional browser API. */ }
+  }
+
+  function syncWakeLockState() {
+    if (!integrated || state.phase !== 'playing' || document.visibilityState === 'hidden') {
+      releaseWakeLock();
+      return;
+    }
+    if (!navigator.wakeLock?.request || wakeLock) return;
+    navigator.wakeLock.request('screen').then((lock) => {
+      if (state.phase !== 'playing' || document.visibilityState === 'hidden') {
+        lock.release().catch(() => {});
+        return;
+      }
+      wakeLock = lock;
+      lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = null; }, { once: true });
+    }).catch(() => { /* Screen wake lock is optional and is not supported everywhere. */ });
+  }
+
+  function openAccountSheet(sheet, opener) {
+    if (!integrated || !sheet) return;
+    if (activeAccountSheet && activeAccountSheet !== sheet) closeAccountSheet(false);
+    activeAccountSheet = sheet;
+    accountSheetOpener = opener || document.activeElement;
+    sheet.hidden = false;
+    requestAnimationFrame(() => {
+      if (activeAccountSheet !== sheet) return;
+      sheet.classList.add('open');
+      const panel = sheet.querySelector('[role="dialog"]');
+      panel?.focus({ preventScroll: true });
+    });
+    updateHUD();
+  }
+
+  function closeAccountSheet(restoreFocus = true) {
+    const sheet = activeAccountSheet;
+    if (!sheet) return;
+    activeAccountSheet = null;
+    sheet.classList.remove('open');
+    updateHUD();
+    setTimeout(() => { if (!sheet.classList.contains('open')) sheet.hidden = true; }, 210);
+    if (restoreFocus && accountSheetOpener?.isConnected) accountSheetOpener.focus({ preventScroll: true });
+    accountSheetOpener = null;
+  }
+
+  function trapSheetFocus(event) {
+    const panel = activeAccountSheet?.querySelector('[role="dialog"]');
+    if (!panel || event.key !== 'Tab') return;
+    const focusable = [...panel.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href], select:not([disabled]), [tabindex="0"]')]
+      .filter((element) => !element.hidden && element.getClientRects().length > 0);
+    if (!focusable.length) { event.preventDefault(); panel.focus(); return; }
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault(); first.focus();
+    }
+  }
+
+  async function customerAccountApi(path, payload) {
+    let response;
+    try {
+      response = await fetch(path, {
+        method: payload === undefined ? 'GET' : 'POST',
+        credentials: 'same-origin',
+        headers: payload === undefined ? {} : { 'Content-Type': 'application/json' },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+      });
+    } catch (_) {
+      const error = new Error('NETWORK'); error.code = 'NETWORK'; throw error;
+    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data.error || 'GENERIC');
+      error.code = data.error || 'GENERIC'; error.status = response.status; throw error;
+    }
+    return data;
+  }
+
+  async function refreshAuthoritativeBalance() {
+    const data = await fetanApi('');
+    const serverBalance = Number(data.balance_santim ?? data.balance);
+    if (!Number.isFinite(serverBalance) || serverBalance < 0) throw new Error('INVALID_BALANCE');
+    state.balance = serverBalance / 100;
+    state.remoteReady = true;
+    state.remoteError = null;
+    updateHUD();
+    return data;
+  }
+
+  const providerIcons = { telebirr: '📱', cbe: '🏦', boa: '🏛', dashen: '⚡', awash: '🛡', mpesa: '💸' };
+  function depositFeedback(message, kind = '') {
+    const output = $('gameDepositFeedback');
+    if (!output) return;
+    output.textContent = message;
+    output.classList.toggle('error', kind === 'error');
+    output.hidden = !message;
+  }
+
+  function selectDepositProvider(providerId) {
+    selectedDepositProviderId = Number(providerId);
+    $('gameDepositProviderId').value = String(selectedDepositProviderId);
+    const provider = depositProviders.find((item) => Number(item.id) === selectedDepositProviderId);
+    document.querySelectorAll('#gameDepositProviders .sheet-provider').forEach((button) => {
+      button.setAttribute('aria-pressed', String(Number(button.dataset.providerId) === selectedDepositProviderId));
+    });
+    const instructions = $('gameDepositInstructions');
+    if (provider && instructions) {
+      const language = (() => { try { return parent.localStorage.getItem('lang') || 'en'; } catch (_) { return 'en'; } })();
+      instructions.textContent = language === 'am' ? (provider.instr_am || provider.instr_en || '') : (provider.instr_en || provider.instr_am || '');
+      instructions.hidden = !instructions.textContent;
+    }
+  }
+
+  async function loadDepositProviders() {
+    const container = $('gameDepositProviders');
+    container.replaceChildren();
+    const loading = document.createElement('p');
+    loading.className = 'sheet-muted'; loading.textContent = 'Loading payment methods…';
+    container.append(loading);
+    try {
+      const response = await customerAccountApi('/api/providers');
+      depositProviders = Array.isArray(response.providers) ? response.providers : [];
+      container.replaceChildren();
+      if (!depositProviders.length) {
+        const empty = document.createElement('p'); empty.className = 'sheet-muted';
+        empty.textContent = 'No active payment methods are available right now.'; container.append(empty);
+        return;
+      }
+      for (const provider of depositProviders) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'sheet-provider'; button.dataset.providerId = String(provider.id);
+        button.setAttribute('aria-pressed', 'false');
+        const icon = document.createElement('span'); icon.className = 'sheet-provider-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = providerIcons[provider.code] || '💳';
+        const name = document.createElement('span'); name.textContent = provider.name;
+        button.append(icon, name);
+        button.addEventListener('click', () => selectDepositProvider(provider.id));
+        container.append(button);
+      }
+      selectDepositProvider(depositProviders[0].id);
+    } catch (error) {
+      container.replaceChildren();
+      const message = document.createElement('p'); message.className = 'sheet-muted';
+      message.textContent = error.code === 'LOGIN' ? 'Your session has expired. Sign in again to request a deposit.' : 'Payment methods could not be loaded. Please try again.';
+      container.append(message);
+      depositFeedback('Payment methods are unavailable. No request was submitted.', 'error');
+    }
+  }
+
+  async function loadRecentTransactions() {
+    const container = $('walletTransactions');
+    container.replaceChildren();
+    const loading = document.createElement('p'); loading.className = 'sheet-muted'; loading.textContent = 'Loading recent activity…'; container.append(loading);
+    try {
+      const { transactions = [] } = await customerAccountApi('/api/transactions');
+      container.replaceChildren();
+      const recent = transactions.slice(0, 3);
+      if (!recent.length) {
+        const empty = document.createElement('p'); empty.className = 'sheet-muted'; empty.textContent = 'No transactions yet.'; container.append(empty); return;
+      }
+      for (const tx of recent) {
+        const row = document.createElement('div'); row.className = 'wallet-tx-row';
+        const main = document.createElement('div'); main.className = 'wallet-tx-main';
+        const type = document.createElement('strong'); type.textContent = String(tx.type || 'Wallet activity').replace(/[_-]+/g, ' ');
+        const time = document.createElement('time'); time.textContent = tx.created_at ? new Date(tx.created_at).toLocaleString() : '—';
+        main.append(type, time);
+        const amount = Number(tx.amount) / 100;
+        const value = document.createElement('span'); value.className = `wallet-tx-amount${amount > 0 ? ' positive' : ''}`;
+        value.textContent = `${amount > 0 ? '+' : ''}${fmtMoney(amount)}`;
+        row.append(main, value); container.append(row);
+      }
+    } catch (error) {
+      container.replaceChildren();
+      const message = document.createElement('p'); message.className = 'sheet-muted';
+      message.textContent = error.code === 'LOGIN' ? 'Your session has expired. Sign in again to view wallet activity.' : 'Recent transactions could not be loaded.';
+      container.append(message);
+    }
+  }
+
+  function navigateCustomer(route) {
+    closeAccountSheet(false);
+    if (parent !== window) parent.postMessage({ type: 'fetan-game-navigate', route }, location.origin);
+  }
+
+  async function submitGameDeposit(event) {
+    event.preventDefault();
+    const amount = Number($('gameDepositAmount').value);
+    const txRef = $('gameDepositReference').value.trim().toUpperCase();
+    const providerId = Number($('gameDepositProviderId').value);
+    if (!Number.isInteger(amount) || amount < 10 || amount > 50000) {
+      depositFeedback('Enter a whole ETB amount from 10 to 50,000.', 'error'); $('gameDepositAmount').focus(); return;
+    }
+    if (!providerId || !depositProviders.some((provider) => Number(provider.id) === providerId)) {
+      depositFeedback('Choose an available payment method.', 'error'); return;
+    }
+    if (!/^[A-Z0-9-]{4,40}$/.test(txRef)) {
+      depositFeedback('Enter a payment reference using 4–40 letters, numbers, or hyphens.', 'error'); $('gameDepositReference').focus(); return;
+    }
+    const button = $('gameDepositSubmit'); button.disabled = true; button.textContent = 'Submitting request…';
+    depositFeedback('');
+    try {
+      const payload = { provider_id: providerId, amount, tx_ref: txRef };
+      if (depositReceiptData) payload.receipt_data = depositReceiptData;
+      const result = await customerAccountApi('/api/deposits', payload);
+      depositFeedback(result.existing
+        ? `This reference already has a ${String(result.status || 'pending')} request. It will remain in the existing review flow.`
+        : 'Your request was submitted for manual review. Your balance changes only after authorized approval.');
+      await Promise.allSettled([refreshAuthoritativeBalance(), loadRecentTransactions()]);
+    } catch (error) {
+      const message = error.code === 'DUP_REF' ? 'That payment reference is already in use. Check the reference or contact support.'
+        : error.code === 'INVALID' ? 'The amount, payment method, or transaction reference was not accepted. Check the form and try again.'
+          : error.code === 'RECEIPT_STORAGE_UNAVAILABLE' ? 'The receipt could not be stored. Please retry without the image or contact support.'
+            : error.code === 'LOGIN' ? 'Your session has expired. Sign in again before submitting a deposit.'
+              : 'The deposit request could not be submitted. Please check your connection and try again.';
+      depositFeedback(message, 'error');
+    } finally {
+      button.disabled = false; button.textContent = 'Submit deposit request';
+    }
+  }
+
+  async function handleDepositReceipt(event) {
+    const file = event.target.files?.[0];
+    depositReceiptData = null;
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      depositFeedback(file.size > 5 * 1024 * 1024 ? 'Receipt image must be 5 MB or smaller.' : 'Choose a JPG, PNG, or WEBP receipt image.', 'error');
+      event.target.value = '';
+      return;
+    }
+    depositReceiptData = await new Promise((resolve) => {
+      const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => resolve(null); reader.readAsDataURL(file);
+    });
+    if (!depositReceiptData) { depositFeedback('The receipt image could not be read. Choose another image.', 'error'); event.target.value = ''; }
+  }
+
+  function openDepositSheet(opener = depositOpen) {
+    depositFeedback('');
+    openAccountSheet(depositSheet, opener);
+    loadDepositProviders();
+    refreshAuthoritativeBalance().catch(() => {});
   }
 
   let autoVerifiedRoundId = null;
@@ -584,6 +906,7 @@
     resetTraffic();
     saveStore();
     updateHUD();
+    syncWakeLockState();
     stageHint.textContent = integrated ? 'Play with your Fetan Bet wallet' : 'Press Play, then hop across the road';
     stageHint.classList.remove('fade');
   }
@@ -591,7 +914,7 @@
   // ---------------------------------------------------------------- Betting
   function setBet(value) {
     state.bet = clamp(Math.round(value), MIN_BET, MAX_BET);
-    state.bet = Math.min(state.bet, Math.max(MIN_BET, Math.floor(state.balance)));
+    if (!integrated) state.bet = Math.min(state.bet, Math.max(MIN_BET, Math.floor(state.balance)));
     saveStore();
     updateHUD();
   }
@@ -629,7 +952,7 @@
   function startRound() {
     startAudio();
     if (integrated) {
-      if (!state.remoteReady || state.remoteBusy) return;
+      if (!state.remoteReady || state.remoteBusy || activeAccountSheet) return;
       state.remoteBusy = true;
       updateHUD();
       state.pendingStartActionId ||= nextActionId();
@@ -655,6 +978,7 @@
           ? 'Active round restored from the server.'
           : 'Server-committed outcomes; traffic is visual only.';
         play('click');
+        syncWakeLockState();
       }).catch(async (error) => {
         try { useServerRound(await fetanApi('')); } catch { showGameServiceError(error); }
         toast(apiErrorMessage(error), 'bad');
@@ -812,6 +1136,8 @@
         addConfetti(posX(state.pos), roadCenterY(), 48, false);
         updateHUD();
         stageHint.textContent = 'Banked it!';
+        syncWakeLockState();
+        refreshAuthoritativeBalance().catch(() => {});
       }).catch(async (error) => {
         state.remoteBusy = false;
         if (error.message === 'STALE_ACTION') {
@@ -849,6 +1175,8 @@
     addConfetti(state.cameraX + state.viewW * 0.4, roadCenterY() - 60, 60, true);
     updateHUD();
     stageHint.textContent = 'Clean crossing!';
+    syncWakeLockState();
+    if (integrated) refreshAuthoritativeBalance().catch(() => {});
   }
 
   function crash(car) {
@@ -867,6 +1195,8 @@
     setTimeout(() => stage.classList.remove('shake'), 500);
     updateHUD();
     stageHint.textContent = 'Busted!';
+    syncWakeLockState();
+    if (integrated) refreshAuthoritativeBalance().catch(() => {});
   }
 
   function scheduleResult() {
@@ -2464,6 +2794,78 @@
       updateMenuState();
       openModal(menuModal);
     });
+    if (integrated) {
+      walletOpen.setAttribute('role', 'button');
+      walletOpen.setAttribute('tabindex', '0');
+      walletOpen.setAttribute('aria-label', 'Open wallet and recent transactions');
+      $('integratedGameTitle').hidden = false;
+      $('depositOpen').hidden = false;
+      $('menuFullscreen').hidden = false;
+      $('menuResponsible').hidden = false;
+      walletOpen.addEventListener('click', () => {
+        openAccountSheet(walletSheet, walletOpen);
+        refreshAuthoritativeBalance().catch(() => {});
+        loadRecentTransactions();
+      });
+      walletOpen.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); walletOpen.click(); }
+      });
+      depositOpen.addEventListener('click', () => openDepositSheet(depositOpen));
+      $('lowBalanceDeposit')?.addEventListener('click', () => openDepositSheet($('lowBalanceDeposit')));
+      $('walletSheetDeposit').addEventListener('click', () => openDepositSheet(depositOpen));
+      $('walletSheetWithdraw').addEventListener('click', () => navigateCustomer('withdraw'));
+      $('walletSheetRefresh').addEventListener('click', () => {
+        refreshAuthoritativeBalance().catch(() => {});
+        loadRecentTransactions();
+      });
+      $('gameDepositForm').addEventListener('submit', submitGameDeposit);
+      $('gameDepositReceipt').addEventListener('change', handleDepositReceipt);
+      document.querySelectorAll('[data-deposit-amount]').forEach((button) => {
+        button.addEventListener('click', () => {
+          $('gameDepositAmount').value = button.dataset.depositAmount;
+          document.querySelectorAll('[data-deposit-amount]').forEach((item) => item.classList.toggle('active', item === button));
+        });
+      });
+      $('gameDepositAmount').addEventListener('input', () => {
+        document.querySelectorAll('[data-deposit-amount]').forEach((item) => item.classList.toggle('active', item.dataset.depositAmount === $('gameDepositAmount').value));
+      });
+      [walletSheet, depositSheet].forEach((sheet) => {
+        sheet.addEventListener('click', (event) => {
+          if (event.target === sheet || event.target.closest('[data-sheet-close]')) closeAccountSheet();
+        });
+        let touchStartY = null;
+        const handle = sheet.querySelector('.sheet-handle');
+        handle?.addEventListener('pointerdown', (event) => { touchStartY = event.clientY; });
+        handle?.addEventListener('pointerup', (event) => {
+          if (touchStartY !== null && event.clientY - touchStartY > 56) closeAccountSheet();
+          touchStartY = null;
+        });
+        handle?.addEventListener('pointercancel', () => { touchStartY = null; });
+      });
+      $('menuFullscreen').addEventListener('click', () => {
+        closeModal(menuModal);
+        try {
+          const parentDocument = parent.document;
+          if (parentDocument.fullscreenElement) {
+            parent.__fetanManualChickenFullscreenExit = true;
+            parentDocument.exitFullscreen().catch(() => {});
+          } else if (document.querySelector('.app')?.requestFullscreen) {
+            parent.__fetanManualChickenFullscreenExit = false;
+            document.querySelector('.app').requestFullscreen().catch(() => {});
+          } else {
+            $('fullscreenState').textContent = 'Unavailable';
+          }
+        } catch (_) {
+          $('fullscreenState').textContent = 'Unavailable';
+        }
+      });
+      $('menuResponsible').addEventListener('click', (event) => {
+        event.preventDefault();
+        closeModal(menuModal);
+        navigateCustomer('support');
+      });
+      syncAccountSheetState();
+    }
     menuSound.addEventListener('click', () => {
       state.sound = !state.sound;
       applySoundSettings();
@@ -2517,7 +2919,20 @@
     });
 
     document.addEventListener('keydown', (e) => {
+      if (activeAccountSheet) {
+        if (e.key === 'Escape') { e.preventDefault(); closeAccountSheet(); }
+        else if (e.key === 'Tab') trapSheetFocus(e);
+        return;
+      }
       if (e.code === 'Escape') {
+        if (document.querySelector('.modal.open')) {
+          closeAllModals();
+          return;
+        }
+        if (integrated && parent !== window) {
+          parent.postMessage({ type: 'fetan-game-close' }, location.origin);
+          return;
+        }
         closeAllModals();
         return;
       }
@@ -2542,6 +2957,8 @@
     });
 
     document.addEventListener('pointerdown', startAudio, { once: true });
+    document.addEventListener('visibilitychange', syncWakeLockState);
+    window.addEventListener('pagehide', releaseWakeLock, { once: true });
 
     window.addEventListener('resize', resize);
     if (window.ResizeObserver) {
@@ -2555,6 +2972,15 @@
     menuMusicState.textContent = state.music ? 'On' : 'Off';
     menuSoundState.classList.toggle('off', !state.sound);
     menuMusicState.classList.toggle('off', !state.music);
+    if (integrated && $('fullscreenState')) {
+      let available = false, active = false;
+      try {
+        available = Boolean(parent.document.fullscreenEnabled && document.querySelector('.app')?.requestFullscreen);
+        active = Boolean(parent.document.fullscreenElement);
+      } catch (_) { /* The regular embedded layout remains available. */ }
+      $('fullscreenState').textContent = available ? (active ? 'On' : 'Off') : 'Unavailable';
+      $('menuFullscreen').disabled = !available;
+    }
   }
 
   // ---------------------------------------------------------------- Resize / init

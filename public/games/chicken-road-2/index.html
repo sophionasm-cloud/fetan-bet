@@ -9,8 +9,8 @@
   <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../../shared/fonts.css" />
   <link rel="stylesheet" href="../../shared/ui.css" />
-  <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="../../shared/customer-theme.css" />
+  <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
   <div class="loader-screen" id="loader">
@@ -38,11 +38,13 @@
         </span>
         <span class="brand-text">FETAN <em>BET</em> <b>⚡</b></span>
       </a>
+      <div class="integrated-game-title" id="integratedGameTitle" hidden>Chicken Road Dash</div>
       <div class="top-actions">
-        <div class="balance-pill" title="Fetan Bet wallet balance">
+        <div class="balance-pill" title="Fetan Bet wallet balance" id="walletOpen">
           <span class="coin-dot"></span>
           <span id="balance">Loading ETB…</span>
         </div>
+        <button class="deposit-open" id="depositOpen" type="button" aria-label="Deposit ETB" title="Deposit">+</button>
         <button class="icon-btn" id="soundBtn" aria-label="Toggle sound" title="Sound">
           <svg id="soundOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a9 9 0 0 1 0 12"/>
@@ -120,6 +122,10 @@
           <button class="chip" data-bet="8">8</button>
           <button class="chip" data-bet="20">20</button>
         </div>
+      </div>
+      <div class="low-balance-note" id="lowBalanceNote" role="status" hidden>
+        <span>Your bet is higher than your available balance.</span>
+        <button type="button" id="lowBalanceDeposit">Add funds</button>
       </div>
 
       <div class="difficulty-row">
@@ -202,6 +208,12 @@
         <button class="menu-item" id="menuHow">
           <span>How to play</span><span>›</span>
         </button>
+        <button class="menu-item integrated-only" id="menuFullscreen" type="button" hidden>
+          <span>Fullscreen</span><b id="fullscreenState">Available</b>
+        </button>
+        <a class="menu-item integrated-only responsible-link" id="menuResponsible" href="#support" hidden>
+          <span>18+ · Play responsibly</span><span>Support ›</span>
+        </a>
         <a class="menu-item" href="../">
           <span>Back to arcade hub</span><span>›</span>
         </a>
@@ -210,6 +222,70 @@
         <button class="btn btn-ghost" data-close="menuModal">Close</button>
       </div>
     </div>
+  </div>
+
+  <div class="account-sheet-overlay" id="walletSheet" hidden>
+    <section class="account-sheet" role="dialog" aria-modal="true" aria-labelledby="walletSheetTitle" tabindex="-1">
+      <button class="sheet-handle" type="button" data-sheet-close aria-label="Close wallet sheet"><span></span></button>
+      <div class="sheet-head">
+        <div><p class="sheet-eyebrow">FETAN BET</p><h2 id="walletSheetTitle">Wallet</h2></div>
+        <button class="sheet-close" type="button" data-sheet-close aria-label="Close wallet">×</button>
+      </div>
+      <div class="sheet-balance"><span>Available balance</span><strong id="walletSheetBalance">— ETB</strong></div>
+      <div class="sheet-actions">
+        <button type="button" class="sheet-primary" id="walletSheetDeposit">Deposit</button>
+        <button type="button" class="sheet-secondary" id="walletSheetWithdraw">Withdraw</button>
+      </div>
+      <section class="sheet-transactions" aria-labelledby="recentTxTitle">
+        <div class="sheet-section-head"><h3 id="recentTxTitle">Recent transactions</h3><button type="button" id="walletSheetRefresh">Refresh</button></div>
+        <div id="walletTransactions" class="wallet-transactions" aria-live="polite"><p class="sheet-muted">Loading recent activity…</p></div>
+      </section>
+      <div class="sheet-round-note" hidden>
+        A round is in progress. You can still bank the current result.
+      </div>
+      <div class="sheet-round-action" hidden>
+        <button type="button" class="sheet-cashout">Cash out</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="account-sheet-overlay" id="depositSheet" hidden>
+    <section class="account-sheet deposit-sheet" role="dialog" aria-modal="true" aria-labelledby="depositSheetTitle" tabindex="-1">
+      <button class="sheet-handle" type="button" data-sheet-close aria-label="Close deposit sheet"><span></span></button>
+      <div class="sheet-head">
+        <div><p class="sheet-eyebrow">ADD FUNDS</p><h2 id="depositSheetTitle">Deposit ETB</h2></div>
+        <button class="sheet-close" type="button" data-sheet-close aria-label="Close deposit">×</button>
+      </div>
+      <div class="sheet-balance compact"><span>Current balance</span><strong id="depositSheetBalance">— ETB</strong></div>
+      <div class="sheet-round-note" hidden>
+        <p>A round is in progress. You can still bank the current result.</p>
+      </div>
+      <form id="gameDepositForm" novalidate>
+        <label class="sheet-label" for="gameDepositAmount">Amount in ETB</label>
+        <div class="sheet-quick-amounts" role="group" aria-label="Quick deposit amounts">
+          <button type="button" data-deposit-amount="50">50 ETB</button>
+          <button type="button" data-deposit-amount="100">100 ETB</button>
+          <button type="button" data-deposit-amount="250">250 ETB</button>
+          <button type="button" data-deposit-amount="500">500 ETB</button>
+        </div>
+        <input class="sheet-input" id="gameDepositAmount" name="amount" type="number" min="10" max="50000" step="1" value="100" required inputmode="decimal">
+        <label class="sheet-label">Payment method</label>
+        <div class="sheet-provider-grid" id="gameDepositProviders" role="group" aria-label="Payment method"></div>
+        <input type="hidden" id="gameDepositProviderId" name="provider_id">
+        <div class="sheet-provider-instructions" id="gameDepositInstructions" hidden></div>
+        <label class="sheet-label" for="gameDepositReference">Transaction reference</label>
+        <input class="sheet-input" id="gameDepositReference" name="tx_ref" type="text" minlength="4" maxlength="40" autocomplete="off" placeholder="Enter your payment reference" required>
+        <label class="sheet-label" for="gameDepositReceipt">Receipt image <span>(optional · JPG, PNG or WEBP, up to 5 MB)</span></label>
+        <input class="sheet-file" id="gameDepositReceipt" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+        <p class="sheet-feedback" id="gameDepositFeedback" role="status" aria-live="polite" hidden></p>
+        <p class="sheet-footnote">Requests are reviewed manually. Submitting a request does not verify payment or add funds to your balance.</p>
+        <button class="sheet-primary sheet-submit" id="gameDepositSubmit" type="submit">Submit deposit request</button>
+      </form>
+      <div class="sheet-round-action" hidden>
+        <p>Cash out is available while you manage your wallet.</p>
+        <button type="button" class="sheet-cashout">Cash out</button>
+      </div>
+    </section>
   </div>
 
   <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>

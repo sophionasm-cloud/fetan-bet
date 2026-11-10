@@ -300,9 +300,38 @@ window.Games = (function () {
   let stopFns = [];
   function open(app, game, pushHistory = false) {
     const mobileShell = window.matchMedia('(max-width: 1024px)').matches;
+    const immersiveChicken = game === 'chicken-road-2';
+    let chickenLeaveStarted = false;
+    let chickenFullscreenWasActive = Boolean(document.fullscreenElement);
     const routeSlug = game === 'road' ? 'road-dash' : game;
-    if (mobileShell && pushHistory && location.hash !== `#/game/${routeSlug}`) {
+    if ((mobileShell || immersiveChicken) && pushHistory && location.hash !== `#/game/${routeSlug}`) {
       history.pushState({ fetanPage: 'game', game }, '', `#/game/${routeSlug}`);
+    }
+    if (immersiveChicken) {
+      window.setFetanChickenImmersive?.(true);
+      document.documentElement.classList.add('chicken-road-immersive');
+      window.__fetanManualChickenFullscreenExit = false;
+      const onFullscreenChange = () => {
+        if (document.fullscreenElement) { chickenFullscreenWasActive = true; return; }
+        if (!chickenFullscreenWasActive) return;
+        chickenFullscreenWasActive = false;
+        if (window.__fetanManualChickenFullscreenExit) {
+          window.__fetanManualChickenFullscreenExit = false;
+          return;
+        }
+        if (!chickenLeaveStarted && location.hash === `#/game/${routeSlug}`) {
+          chickenLeaveStarted = true;
+          history.back();
+        }
+      };
+      document.addEventListener('fullscreenchange', onFullscreenChange);
+      stopFns.push(() => {
+        document.removeEventListener('fullscreenchange', onFullscreenChange);
+        if (document.fullscreenElement) {
+          window.__fetanManualChickenFullscreenExit = true;
+          document.exitFullscreen?.().catch(() => {});
+        }
+      });
     }
     document.body.classList.toggle('game-open', mobileShell);
     const titles = {
@@ -356,9 +385,18 @@ window.Games = (function () {
       </div>`;
     soundBtn($('sbtn'));
     const leaveGame = () => {
+      if (immersiveChicken && chickenLeaveStarted) return;
+      if (immersiveChicken) chickenLeaveStarted = true;
       stopFns.forEach((f) => f()); stopFns = [];
-      if (mobileShell && location.hash === `#/game/${routeSlug}`) history.back();
-      else { document.body.classList.remove('game-open'); C.reload(); }
+      if (immersiveChicken && document.fullscreenElement) {
+        window.__fetanManualChickenFullscreenExit = true;
+        document.exitFullscreen?.().catch(() => {});
+      }
+      if ((mobileShell || immersiveChicken) && location.hash === `#/game/${routeSlug}`) history.back();
+      else {
+        if (immersiveChicken) window.setFetanChickenImmersive?.(false);
+        document.body.classList.remove('game-open'); C.reload();
+      }
     };
     $('gback').onclick = leaveGame;
     $('mobile-game-back').onclick = leaveGame;
@@ -426,8 +464,21 @@ window.Games = (function () {
     body.replaceChildren(frame);
     frame.src = `/games/${game}/?fetan=1`;
     const onMessage = (event) => {
-      if (event.origin !== location.origin || event.source !== frame.contentWindow || event.data?.type !== 'fetan-game-close') return;
-      $('mobile-game-back')?.click();
+      if (event.origin !== location.origin || event.source !== frame.contentWindow || typeof event.data?.type !== 'string') return;
+      if (event.data.type === 'fetan-game-close') {
+        $('mobile-game-back')?.click();
+        return;
+      }
+      if (game === 'chicken-road-2' && event.data.type === 'fetan-game-navigate' &&
+          ['wallet', 'withdraw', 'profile', 'support'].includes(event.data.route)) {
+        if (document.fullscreenElement) {
+          window.__fetanManualChickenFullscreenExit = true;
+          document.exitFullscreen?.().catch(() => {});
+        }
+        stopFns.forEach((stop) => stop());
+        stopFns = [];
+        C.navigateCustomer?.(event.data.route);
+      }
     };
     window.addEventListener('message', onMessage);
     stopFns.push(() => window.removeEventListener('message', onMessage));

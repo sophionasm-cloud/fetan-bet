@@ -1134,3 +1134,296 @@ html.fetan-integrated .integration-blocker p:last-child { color: #f0d67a; }
   .mult-ladder-item b { font-size: 8.5px; }
   .mult-ladder-item .ladder-line { font-size: 6px; }
 }
+
+/* Fetan Bet immersive account shell. The road artwork and game state remain
+   unchanged; this only replaces the embedded page chrome and account controls. */
+html.fetan-integrated {
+  --cr-bg: #121418;
+  --cr-panel: #1b1e24;
+  --cr-panel-2: #121418;
+  --cr-line: rgba(255, 255, 255, .10);
+  --cr-muted: #aeb3bc;
+  --cr-yellow: #ef9f27;
+  --cr-yellow-hot: #f5b64b;
+}
+html.fetan-integrated,
+html.fetan-integrated body {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #121418;
+  touch-action: auto;
+}
+html.fetan-integrated body { display: flex; align-items: stretch; justify-content: center; }
+html.fetan-integrated .app {
+  width: min(480px, 100vw);
+  height: 100dvh;
+  min-height: 0;
+  max-height: none;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: #121418;
+  box-shadow: none;
+}
+html.fetan-integrated .topbar {
+  display: grid;
+  grid-template-columns: 44px minmax(44px, 1fr) auto;
+  gap: 5px;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 56px;
+  padding: calc(env(safe-area-inset-top) + 4px) max(8px, env(safe-area-inset-right)) 5px max(8px, env(safe-area-inset-left));
+  background: #121418;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: none;
+}
+html.fetan-integrated .home-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  background: #1b1e24;
+  color: #f5f6f7;
+  box-shadow: none;
+  font-size: 12px;
+}
+html.fetan-integrated .home-btn > span:last-child { display: none; }
+html.fetan-integrated .home-btn > span:first-child { color: #ef9f27; font-size: 22px; }
+html.fetan-integrated .brand { display: none; }
+html.fetan-integrated .integrated-game-title {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.fetan-integrated .integrated-game-title[hidden] { display: none; }
+html.fetan-integrated .top-actions { gap: 3px; }
+html:not(.fetan-integrated) .deposit-open { display: none; }
+html.fetan-integrated .balance-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  min-width: 0;
+  max-width: 118px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 7px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  background: #1b1e24;
+  color: #fff;
+  box-shadow: none;
+  font: 600 12px/1.2 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+html.fetan-integrated .balance-pill #balance { overflow: hidden; text-overflow: ellipsis; }
+html.fetan-integrated .balance-pill .coin-dot { display: block; width: 13px; height: 13px; flex: 0 0 13px; }
+html.fetan-integrated .deposit-open,
+html.fetan-integrated .top-actions .icon-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  background: #1b1e24;
+  color: #f5f6f7;
+  box-shadow: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+html.fetan-integrated .deposit-open { color: #ef9f27; font-size: 24px; font-weight: 500; }
+html.fetan-integrated .top-actions .icon-btn svg { width: 18px; height: 18px; }
+html.fetan-integrated .stage-wrap { min-height: 0; padding: 0 max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); }
+html.fetan-integrated .stage { border-color: rgba(255,255,255,.08); border-radius: 14px; box-shadow: none; }
+html.fetan-integrated .stage::after { display: none; }
+html.fetan-integrated .stage-hint { font-size: 12px; background: rgba(18,20,24,.82); border-color: rgba(255,255,255,.12); }
+html.fetan-integrated .bet-panel {
+  flex: 0 0 auto;
+  margin: 7px max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+  padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  background: #1b1e24;
+  box-shadow: none;
+}
+html.fetan-integrated .bet-panel::before { display: none; }
+html.fetan-integrated .bet-field,
+html.fetan-integrated .select-wrap select { background: #121418; border-color: rgba(255,255,255,.12); }
+html.fetan-integrated .mini-btn { min-height: 34px; color: #d9dde3; background: #252930; border-color: rgba(255,255,255,.10); font-size: 12px; }
+html.fetan-integrated .bet-input { font-size: 18px; }
+html.fetan-integrated .bet-currency { color: #ef9f27; font-size: 12px; }
+html.fetan-integrated .chip { min-width: 40px; min-height: 40px; background: #252930; border-color: rgba(255,255,255,.10); font-size: 12px; }
+html.fetan-integrated .chip.active { background: #ef9f27; border-color: #ef9f27; color: #141619; box-shadow: none; }
+html.fetan-integrated .difficulty-row { gap: 8px; margin-top: 8px; color: #aeb3bc; font-size: 12px; }
+html.fetan-integrated .select-wrap select { min-height: 40px; font-size: 12px; }
+html.fetan-integrated .play-btn,
+html.fetan-integrated .go-btn {
+  min-height: 48px;
+  background: #ef9f27;
+  border: 1px solid #ef9f27;
+  color: #17191c;
+  box-shadow: none;
+}
+html.fetan-integrated .cash-btn { min-height: 48px; background: #121418; border-color: rgba(239,159,39,.55); color: #fff; box-shadow: none; }
+html.fetan-integrated .cash-btn b { color: #ef9f27; }
+html.fetan-integrated .panel-foot { display: none; }
+html.fetan-integrated .low-balance-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  padding: 8px 10px;
+  border: 1px solid rgba(239,159,39,.24);
+  border-radius: 10px;
+  color: #d8dbe0;
+  background: #121418;
+  font-size: 12px;
+  line-height: 1.35;
+}
+html.fetan-integrated .low-balance-note[hidden] { display: none; }
+html.fetan-integrated .low-balance-note button { min-height: 40px; padding: 0 12px; border: 0; border-radius: 9px; background: #ef9f27; color: #17191c; font: 700 12px/1 var(--font-ui); white-space: nowrap; }
+
+html.fetan-integrated .account-sheet-overlay {
+  position: fixed;
+  z-index: 10020;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: rgba(3,4,6,.72);
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+html.fetan-integrated .account-sheet-overlay[hidden] { display: none; }
+html.fetan-integrated .account-sheet-overlay.open { opacity: 1; }
+html.fetan-integrated .account-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 480px);
+  max-height: min(90dvh, 820px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 8px 16px max(16px, env(safe-area-inset-bottom));
+  border: 1px solid rgba(255,255,255,.12);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: #1b1e24;
+  color: #f5f6f7;
+  box-shadow: 0 -12px 36px rgba(0,0,0,.25);
+  transform: translateY(22px);
+  transition: transform .2s ease;
+  -webkit-overflow-scrolling: touch;
+}
+html.fetan-integrated .account-sheet-overlay.open .account-sheet { transform: translateY(0); }
+html.fetan-integrated .sheet-handle { display: grid; place-items: center; flex: 0 0 44px; width: 100%; min-height: 44px; border: 0; background: transparent; cursor: grab; touch-action: pan-y; }
+html.fetan-integrated .sheet-handle span { width: 38px; height: 4px; border-radius: 5px; background: #5b6069; }
+html.fetan-integrated .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; }
+html.fetan-integrated .sheet-eyebrow { margin: 0 0 3px; color: #ef9f27; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+html.fetan-integrated .sheet-head h2 { margin: 0; font-size: 20px; line-height: 1.2; }
+html.fetan-integrated .sheet-close { width: 44px; min-width: 44px; height: 44px; border: 1px solid rgba(255,255,255,.10); border-radius: 12px; background: #121418; color: #fff; font-size: 24px; }
+html.fetan-integrated .sheet-balance { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: #121418; }
+html.fetan-integrated .sheet-balance span { color: #aeb3bc; font-size: 12px; }
+html.fetan-integrated .sheet-balance strong { color: #fff; font-size: clamp(16px, 4vw, 20px); font-variant-numeric: tabular-nums; }
+html.fetan-integrated .sheet-balance.compact { margin-bottom: 10px; padding-block: 10px; }
+html.fetan-integrated .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+html.fetan-integrated .sheet-primary,
+html.fetan-integrated .sheet-secondary { min-height: 46px; padding: 0 14px; border: 1px solid transparent; border-radius: 11px; font: 700 13px/1.2 var(--font-ui); cursor: pointer; }
+html.fetan-integrated .sheet-primary { background: #ef9f27; color: #17191c; }
+html.fetan-integrated .sheet-secondary { background: #121418; border-color: rgba(255,255,255,.12); color: #f5f6f7; }
+html.fetan-integrated .sheet-primary:disabled { opacity: .55; cursor: wait; }
+html.fetan-integrated .sheet-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0 7px; }
+html.fetan-integrated .sheet-section-head h3 { margin: 0; font-size: 14px; }
+html.fetan-integrated .sheet-section-head button { min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: #ef9f27; font-size: 12px; }
+html.fetan-integrated .wallet-transactions { display: grid; gap: 6px; }
+html.fetan-integrated .wallet-tx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.07); border-radius: 10px; background: #171a1f; }
+html.fetan-integrated .wallet-tx-main { min-width: 0; display: grid; gap: 2px; }
+html.fetan-integrated .wallet-tx-main strong { overflow: hidden; color: #e9ebef; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+html.fetan-integrated .wallet-tx-main time { color: #aeb3bc; font-size: 12px; }
+html.fetan-integrated .wallet-tx-amount { flex: 0 0 auto; color: #fff; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+html.fetan-integrated .wallet-tx-amount.positive { color: #efb556; }
+html.fetan-integrated .sheet-muted { color: #aeb3bc; font-size: 12px; }
+html.fetan-integrated .sheet-round-note { margin: 0 0 10px; padding: 9px 10px; border: 1px solid rgba(239,159,39,.24); border-radius: 10px; color: #e4d3b8; background: rgba(239,159,39,.07); font-size: 12px; line-height: 1.4; }
+html.fetan-integrated .sheet-round-note[hidden],
+html.fetan-integrated .sheet-round-action[hidden] { display: none; }
+html.fetan-integrated .sheet-round-action { position: sticky; z-index: 2; bottom: calc(-1 * max(16px, env(safe-area-inset-bottom))); margin: auto -16px calc(-1 * max(16px, env(safe-area-inset-bottom))); padding: 8px 16px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.10); background: #1b1e24; }
+html.fetan-integrated .sheet-round-action p { margin: 0 0 6px; color: #aeb3bc; font-size: 12px; text-align: center; }
+html.fetan-integrated .sheet-cashout { width: 100%; min-height: 46px; border: 1px solid rgba(239,159,39,.46); border-radius: 11px; background: #121418; color: #efb556; font: 700 13px/1.2 var(--font-ui); }
+html.fetan-integrated .sheet-cashout:disabled { opacity: .5; }
+html.fetan-integrated .deposit-sheet { gap: 0; }
+html.fetan-integrated .deposit-sheet form { display: grid; gap: 8px; }
+html.fetan-integrated .sheet-label { margin-top: 5px; color: #f2f3f5; font-size: 12px; font-weight: 600; }
+html.fetan-integrated .sheet-label span { color: #aeb3bc; font-size: 12px; font-weight: 400; }
+html.fetan-integrated .sheet-quick-amounts { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; }
+html.fetan-integrated .sheet-quick-amounts button { min-width: 0; min-height: 42px; padding: 4px; border: 1px solid rgba(255,255,255,.10); border-radius: 9px; background: #121418; color: #dce0e5; font: 600 12px/1 var(--font-ui); }
+html.fetan-integrated .sheet-quick-amounts button.active { border-color: #ef9f27; color: #efb556; }
+html.fetan-integrated .sheet-input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; outline: 0; background: #121418; color: #fff; font: 500 14px/1.25 var(--font-ui); }
+html.fetan-integrated .sheet-input:focus-visible,
+html.fetan-integrated .sheet-file:focus-visible,
+html.fetan-integrated .account-sheet button:focus-visible { outline: 2px solid #ef9f27; outline-offset: 2px; }
+html.fetan-integrated .sheet-provider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px,1fr)); gap: 6px; }
+html.fetan-integrated .sheet-provider { display: grid; align-content: center; justify-items: center; gap: 3px; min-height: 58px; padding: 6px; border: 1px solid rgba(255,255,255,.10); border-radius: 10px; background: #121418; color: #dce0e5; font-size: 12px; cursor: pointer; }
+html.fetan-integrated .sheet-provider[aria-pressed="true"] { border-color: #ef9f27; color: #f5b64b; }
+html.fetan-integrated .sheet-provider-icon { font-size: 17px; line-height: 1; }
+html.fetan-integrated .sheet-provider-instructions { padding: 9px 10px; border-left: 2px solid #ef9f27; border-radius: 0 8px 8px 0; background: #121418; color: #c2c6cd; font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
+html.fetan-integrated .sheet-provider-instructions[hidden] { display: none; }
+html.fetan-integrated .sheet-file { width: 100%; min-height: 44px; color: #c2c6cd; font-size: 12px; }
+html.fetan-integrated .sheet-file::file-selector-button { min-height: 40px; margin-right: 8px; padding: 0 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: #121418; color: #fff; font-size: 12px; }
+html.fetan-integrated .sheet-feedback { padding: 9px 10px; border-radius: 9px; color: #f0d5a4; background: rgba(239,159,39,.10); font-size: 12px; line-height: 1.45; }
+html.fetan-integrated .sheet-feedback.error { color: #f1b8b8; background: rgba(190,70,70,.12); }
+html.fetan-integrated .sheet-feedback[hidden] { display: none; }
+html.fetan-integrated .sheet-footnote { margin: 2px 0; color: #aeb3bc; font-size: 12px; line-height: 1.45; }
+html.fetan-integrated .sheet-submit { width: 100%; margin-top: 2px; }
+html.fetan-integrated .responsible-link { color: #e8e9ec; }
+html.fetan-integrated .account-sheet :is(button, input, label, p, time, strong, span) { letter-spacing: normal; }
+html.fetan-integrated .account-sheet :is(button, input, label, p, time, strong, span) { font-size: max(12px, 1em); }
+
+@media (min-width: 640px) and (min-height: 720px) {
+  html.fetan-integrated .app { height: 100dvh; border: 0; border-radius: 0; }
+}
+@media (max-width: 380px) {
+  html.fetan-integrated .topbar { grid-template-columns: 44px minmax(0,1fr) auto; gap: 3px; padding-inline: 6px; }
+  html.fetan-integrated .top-actions { gap: 2px; }
+  html.fetan-integrated .balance-pill { max-width: 104px; padding-inline: 5px; }
+  html.fetan-integrated .deposit-open,
+  html.fetan-integrated .top-actions .icon-btn { width: 42px; min-width: 42px; height: 44px; }
+  html.fetan-integrated .home-btn { width: 42px; min-width: 42px; }
+  html.fetan-integrated .integrated-game-title { font-size: 12px; }
+}
+@media (max-height: 700px) {
+  html.fetan-integrated .account-sheet { max-height: 94dvh; }
+  html.fetan-integrated .bet-panel { padding-top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.fetan-integrated *, html.fetan-integrated *::before, html.fetan-integrated *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
