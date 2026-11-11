@@ -4,7 +4,8 @@
  */
 window.FETAN_SITE = Object.freeze({
   brandName: 'FETAN BET',
-  supportHours: '24/7',
+  // Leave blank until the operator's support schedule has been confirmed.
+  supportHours: '',
   license: Object.freeze({
     authority: '[YOUR LICENSE AUTHORITY]',
     number: '[YOUR LICENSE NO.]'

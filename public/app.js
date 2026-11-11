@@ -2,7 +2,7 @@
 'use strict';
 let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0, promoCredits = 0,
     limits = { min: 100, max: 100000 }, tab = 'games', agentSubtab = 'deposits';
-let homeHeroCleanup = null;
+let homePromoCleanup = null;
 let gameImmersiveScrollY = null;
 
 window.setFetanGameImmersive = (active) => {
@@ -82,15 +82,13 @@ function scrollPublicTarget(target) {
 }
 
 function clearPromoSlider() {
-  homeHeroCleanup?.();
-  homeHeroCleanup = null;
+  homePromoCleanup?.();
+  homePromoCleanup = null;
 }
 
 function syncPublicNavigation(enabled) {
-  // The new header intentionally exposes only the logo, balance and menu.
-  // guest-mode still drives guest-only styling and header defaults.
-  const nav = $('publicPrimaryNav');
-  if (nav) nav.hidden = true;
+  // Login and registration live in the header; the menu holds secondary
+  // public links. Avoid mounting customer destinations for guests.
   document.body.classList.toggle('guest-mode', enabled);
 }
 
@@ -110,136 +108,204 @@ function toggleSound() {
   renderMobileHeaderMenu();
 }
 
-function mountHomeHero(app) {
+function mountPromoSlider(app) {
   clearPromoSlider();
+  const gameCount = new Set([...app.querySelectorAll('.home-game-card')].map((card) => card.dataset.game)).size;
+  const currentCustomer = me?.role === 'user';
+  const gameTokens = [
+    ['road', 'Chicken Road Dash'], ['mines', 'Mines'], ['plinko', 'Plinko'],
+    ['penalty', 'Penalty Unlimited'], ['keno', 'Keno'], ['roulette', 'Roulette'], ['star', 'Star Spin']
+  ];
+  const tokenMarkup = () => gameTokens.map(([key, label], index) => `
+    <span class="promo-game-token promo-game-token--${key}" style="--token-index:${index}" title="${esc(label)}">
+      <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><use href="/images/promotions/game-tokens.svg#token-${key}"></use></svg>
+    </span>`).join('');
+  const am = lang === 'am';
   const slides = [
     {
-      key: 'withdraw',
-      kicker: lang === 'am' ? 'ለእርስዎ' : 'FOR YOU',
-      title: lang === 'am' ? 'ፈጣን ገንዘብ ማውጣት' : 'Fast withdrawals',
-      copy: lang === 'am'
-        ? 'የማውጣት ጥያቄ ያስገቡና ሁኔታውን በኪስ ቦርሳዎ ይከታተሉ።'
-        : 'Request a payout and follow its status in Wallet.',
-      cta: t('withdraw'),
-      action: 'withdraw',
-      secondary: false
+      key: 'daily-winning', image: '/images/promotions/daily-winning.svg',
+      title: am ? 'ለእያንዳንዱ ስሜት ጨዋታ አለ' : 'A game for every mood',
+      copy: am ? 'ኦሪጅናል፣ የቁጥር እና የጠረጴዛ ጨዋታዎችን በአንድ ቦታ ይመልከቱ።' : 'Explore original, number and table games in one lobby.',
+      note: am ? 'የጨዋታ ውጤቶች በአገልጋዩ ይወሰናሉ።' : 'Game results are determined by the server.',
+      action: 'games', cta: am ? 'ጨዋታዎችን ይመልከቱ' : 'Explore games'
     },
     {
-      key: 'games',
-      kicker: lang === 'am' ? 'የጨዋታ ማዕከል' : 'GAME LOBBY',
-      title: lang === 'am' ? 'ጨዋታዎን ይምረጡ' : 'Pick your game',
-      copy: lang === 'am'
-        ? 'ኦሪጅናል፣ ኬኖና ክላሲክ ጠረጴዛ ጨዋታዎች በአንድ ቦታ።'
-        : 'Originals, Keno and classic table games in one place.',
-      cta: lang === 'am' ? 'ጨዋታዎችን ይመልከቱ' : 'Browse games',
-      action: 'games',
-      secondary: true
+      key: 'six-games', image: '/images/promotions/six-games.svg',
+      title: am ? `${gameCount} ጨዋታዎች፣ አንድ ሎቢ` : `${gameCount} games, one lobby`,
+      copy: am ? 'የሚወዱትን ይምረጡ፤ ሁሉም ጨዋታዎች እዚህ ይገኛሉ።' : 'Browse the available games and choose what you feel like playing.',
+      note: am ? 'ምሳሌያዊ የጨዋታ ምስሎች።' : 'Illustrative artwork; the game posters are below.',
+      action: 'games', cta: am ? 'ሁሉንም ይመልከቱ' : 'Browse games'
     },
     {
-      key: 'support',
-      kicker: lang === 'am' ? 'ድጋፍ' : 'SUPPORT',
-      title: lang === 'am' ? 'ሁልጊዜ እኛ እንደዚህ ነን' : 'Here when you need us',
-      copy: lang === 'am'
-        ? 'ከመለያዎ ውስጥ በማንኛውም ሰዓት ከድጋፍ ጋር ይወያዩ።'
-        : 'Chat with support from your account, around the clock.',
-      cta: lang === 'am' ? 'ድጋፍ ያግኙ' : 'Contact support',
-      action: 'support',
-      secondary: true
+      key: 'fast-withdrawals', image: '/images/promotions/fast-withdrawals.svg',
+      title: am ? 'ጥያቄዎን በኪስ ቦርሳ ይከታተሉ' : 'Keep up with your wallet',
+      copy: am ? 'የማውጣት ጥያቄ ያስገቡና ሁኔታውን በኪስ ቦርሳ ይመልከቱ።' : 'Submit a withdrawal request and follow its status in Wallet.',
+      note: am ? 'የጥያቄ ጊዜዎች ሊለያዩ ይችላሉ።' : 'Review and processing times vary.',
+      action: 'wallet', cta: am ? 'ኪስ ቦርሳ' : 'View wallet'
     }
   ];
+  if (!currentCustomer) slides.push({
+    key: 'registration-bonus', image: '/images/promotions/registration-bonus.svg',
+    title: am ? 'በሪፈራል ኮድ ይመዝገቡ' : 'Register with an active referral code',
+    offer: am ? '2,000 የፕሮሞ ክሬዲት' : '2,000 promo credits',
+    copy: am ? 'ብቁ የሆኑ አዳዲስ መለያዎች ንቁ የወኪል ኮድ ሲጠቀሙ አንድ ጊዜ ይሸለማሉ።' : 'Eligible new accounts receive a one-time reward when they register with an active agent code.',
+    note: am ? 'የፕሮሞ ክሬዲት ከገንዘብ ቀሪ ሂሳብ የተለየ ሲሆን ለማውጣት አይቻልም።' : 'Promo credits are separate from cash balance and cannot be withdrawn.',
+    action: 'register', cta: am ? 'ይመዝገቡ' : 'Register now'
+  });
 
-  const hero = document.createElement('section');
-  hero.id = 'homeHero';
-  hero.className = 'home-hero';
-  hero.setAttribute('aria-label', 'Fetan Bet highlights');
-  hero.setAttribute('aria-roledescription', 'carousel');
-  hero.innerHTML = `
-    <div class="home-hero-viewport">
-      <div class="home-hero-track">
-        ${slides.map((slide, index) => `
-          <article class="home-hero-slide" data-hero-slide="${index}" role="group" aria-roledescription="slide" aria-label="${index + 1} of ${slides.length}"${index === 0 ? '' : ' inert aria-hidden="true"'}>
-            <span class="home-hero-kicker">${esc(slide.kicker)}</span>
-            <h2>${esc(slide.title)}</h2>
-            <p>${esc(slide.copy)}</p>
-            <a class="home-hero-cta${slide.secondary ? ' is-secondary' : ''}" href="#/lobby" data-hero-action="${slide.action}">${esc(slide.cta)}</a>
-          </article>`).join('')}
+  const slider = document.createElement('section');
+  slider.className = 'promo-slider';
+  slider.id = 'promoSlider';
+  slider.setAttribute('aria-label', am ? 'የፍጣን ቤት ማስታወቂያዎች' : 'Fetan Bet promotions');
+  slider.setAttribute('aria-roledescription', 'carousel');
+  const promoCode = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code') || '';
+  const tokenHtml = tokenMarkup();
+  const slideMarkup = (slide, logicalIndex, clone = false) => `
+    <article class="promo-slide promo-slide--${slide.key}" role="group" aria-roledescription="slide" aria-label="${logicalIndex + 1} of ${slides.length}" data-slide-key="${slide.key}"${clone ? ' data-slide-clone="true" inert aria-hidden="true"' : ''}>
+      <div class="promo-slide-copy">
+        <span class="promo-slide-kicker">FETAN BET <i></i> ${currentCustomer ? (am ? 'ለእርስዎ' : 'FOR YOU') : (am ? 'ማስታወቂያ' : 'PROMOTIONS')}</span>
+        <h2>${esc(slide.title)}</h2>
+        ${slide.offer ? `<strong class="promo-slide-offer">${esc(slide.offer)}</strong>` : ''}
+        <p>${esc(slide.copy)}</p>
+        <small class="promo-slide-note">${esc(slide.note)}</small>
+        <button type="button" class="promo-slide-cta" data-promo-action="${slide.action}">${esc(slide.cta)} <span aria-hidden="true">→</span></button>
       </div>
-    </div>
-    <div class="home-hero-dots" role="group" aria-label="Choose a highlight">
-      ${slides.map((slide, index) => `<button type="button" class="home-hero-dot${index === 0 ? ' is-active' : ''}" data-hero-dot="${index}" aria-label="Show ${esc(slide.title)}" aria-pressed="${index === 0}"></button>`).join('')}
+      ${slide.key === 'six-games' ? `<div class="promo-slide-art promo-slide-art--showcase" aria-hidden="true"><span class="promo-art-glow"></span><div class="promo-showcase"><div class="promo-game-orbit">${tokenHtml}</div><img class="promo-showcase-collage" src="/images/promotions/game-collage.svg" width="640" height="520" alt="" loading="eager" decoding="async"></div></div><div class="promo-game-strip" aria-hidden="true">${tokenHtml}</div>` : `<div class="promo-slide-art" aria-hidden="true"><span class="promo-art-glow"></span><img src="${slide.image}" width="560" height="360" alt="" loading="eager" decoding="async"></div>`}
+    </article>`;
+  const copies = [slides[slides.length - 1], ...slides, slides[0]];
+  slider.innerHTML = `
+    <div class="promo-slider-frame"><div class="promo-slider-track">${copies.map((slide, index) => {
+      const clone = index === 0 || index === copies.length - 1;
+      const logicalIndex = index === 0 ? slides.length - 1 : index === copies.length - 1 ? 0 : index - 1;
+      return slideMarkup(slide, logicalIndex, clone);
+    }).join('')}</div></div>
+    <div class="promo-slider-bar">
+      <span class="promo-slider-counter" aria-hidden="true">01 / ${String(slides.length).padStart(2, '0')}</span>
+      <div class="promo-slider-controls">
+        <button type="button" class="promo-slider-arrow" data-promo-prev aria-label="${am ? 'ቀዳሚ ማስታወቂያ' : 'Previous promotion'}">‹</button>
+        <div class="promo-slider-dots" role="group" aria-label="${am ? 'ማስታወቂያ ይምረጡ' : 'Choose a promotion'}">${slides.map((slide, i) => `<button type="button" data-promo-dot="${i}" aria-label="${am ? `ማስታወቂያ ${i + 1}` : `Show promotion ${i + 1}`}" aria-pressed="${i === 0}"${i === 0 ? ' class="is-active"' : ''}></button>`).join('')}</div>
+        <button type="button" class="promo-slider-arrow" data-promo-next aria-label="${am ? 'ቀጣይ ማስታወቂያ' : 'Next promotion'}">›</button>
+      </div>
     </div>`;
+  app.prepend(slider);
 
-  const catalog = app.querySelector('#ggrid');
-  if (catalog) catalog.before(hero);
-  else app.prepend(hero);
-
-  const track = hero.querySelector('.home-hero-track');
-  const panels = [...hero.querySelectorAll('[data-hero-slide]')];
-  const dots = [...hero.querySelectorAll('[data-hero-dot]')];
-  let index = 0;
+  const track = slider.querySelector('.promo-slider-track');
+  const panels = [...track.children];
+  const dots = [...slider.querySelectorAll('[data-promo-dot]')];
+  const counter = slider.querySelector('.promo-slider-counter');
+  const realCount = slides.length;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let index = 1;
+  let timer = null;
+  let transitionTimer = null;
+  let touchStart = null;
+  const setTrack = () => { track.style.transform = `translate3d(-${index * 100}%, 0, 0)`; };
+  const realIndex = () => index === 0 ? realCount - 1 : index === realCount + 1 ? 0 : index - 1;
   const paint = () => {
-    track.style.transform = `translate3d(-${index * 100}%, 0, 0)`;
+    const active = realIndex();
     panels.forEach((panel, panelIndex) => {
-      const active = panelIndex === index;
-      panel.toggleAttribute('inert', !active);
-      panel.setAttribute('aria-hidden', String(!active));
+      const isActive = panelIndex === index;
+      panel.setAttribute('aria-hidden', String(!isActive));
+      panel.inert = !isActive;
     });
     dots.forEach((dot, dotIndex) => {
-      const active = dotIndex === index;
-      dot.classList.toggle('is-active', active);
-      dot.setAttribute('aria-pressed', String(active));
+      const selected = dotIndex === active;
+      dot.classList.toggle('is-active', selected);
+      dot.setAttribute('aria-pressed', String(selected));
     });
+    counter.textContent = `${String(active + 1).padStart(2, '0')} / ${String(realCount).padStart(2, '0')}`;
   };
-  const go = (next) => {
-    index = (next + slides.length) % slides.length;
+  const snap = (nextIndex) => {
+    track.classList.add('is-snapping');
+    index = nextIndex;
+    setTrack();
     paint();
+    requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('is-snapping')));
   };
-
-  const dotHandlers = dots.map((dot) => {
-    const handler = () => go(Number(dot.dataset.heroDot));
-    dot.addEventListener('click', handler);
-    return [dot, handler];
-  });
-
-  let touchStart = null;
-  const onTouchStart = (event) => {
-    const touch = event.changedTouches[0];
-    touchStart = { x: touch.clientX, y: touch.clientY };
+  const move = (nextIndex) => {
+    clearTimeout(transitionTimer);
+    index = nextIndex;
+    setTrack();
+    paint();
+    transitionTimer = setTimeout(() => {
+      if (index === 0) snap(realCount);
+      else if (index === realCount + 1) snap(1);
+    }, 720);
   };
+  const next = () => move(index >= realCount ? realCount + 1 : index + 1);
+  const previous = () => move(index <= 1 ? 0 : index - 1);
+  const pauseAuto = () => { clearInterval(timer); timer = null; };
+  const startAuto = () => {
+    pauseAuto();
+    if (!reduceMotion.matches && !slider.matches(':hover') && document.visibilityState === 'visible') {
+      timer = setInterval(() => slider.isConnected ? next() : cleanup(), 6000);
+    }
+  };
+  const onMouseEnter = () => pauseAuto();
+  const onMouseLeave = () => startAuto();
+  const onFocusIn = () => pauseAuto();
+  const onFocusOut = (event) => { if (!slider.contains(event.relatedTarget)) startAuto(); };
+  const onVisibility = () => document.visibilityState === 'visible' ? startAuto() : pauseAuto();
+  const onMotionChange = () => startAuto();
+  const onTransitionEnd = (event) => {
+    if (event.target !== track || event.propertyName !== 'transform') return;
+    if (index === 0) snap(realCount);
+    else if (index === realCount + 1) snap(1);
+  };
+  const onTouchStart = (event) => { const point = event.changedTouches[0]; touchStart = { x: point.clientX, y: point.clientY }; };
   const onTouchEnd = (event) => {
     if (!touchStart) return;
-    const touch = event.changedTouches[0];
-    const dx = touch.clientX - touchStart.x;
-    const dy = touch.clientY - touchStart.y;
+    const point = event.changedTouches[0];
+    const dx = point.clientX - touchStart.x;
+    const dy = point.clientY - touchStart.y;
     touchStart = null;
     if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return;
-    go(index + (dx < 0 ? 1 : -1));
+    dx < 0 ? next() : previous();
+    startAuto();
   };
-  hero.addEventListener('touchstart', onTouchStart, { passive: true });
-  hero.addEventListener('touchend', onTouchEnd, { passive: true });
-
-  hero.addEventListener('click', (event) => {
-    const action = event.target.closest('[data-hero-action]')?.dataset.heroAction;
-    if (!action) return;
-    event.preventDefault();
-    if (action === 'games') {
-      scrollPublicTarget('ggrid');
-      return;
+  const onClick = (event) => {
+    if (event.target.closest('[data-promo-next]')) { next(); startAuto(); return; }
+    if (event.target.closest('[data-promo-prev]')) { previous(); startAuto(); return; }
+    const dot = event.target.closest('[data-promo-dot]');
+    if (dot) { move(Number(dot.dataset.promoDot) + 1); startAuto(); return; }
+    const button = event.target.closest('[data-promo-action]');
+    if (!button) return;
+    const action = button.dataset.promoAction;
+    if (action === 'games') { scrollPublicTarget('ggrid'); return; }
+    if (action === 'wallet') {
+      if (me?.role === 'user') { tab = 'wallet'; render(); }
+      else $('headerLoginBtn')?.click();
     }
-    if (me?.role === 'user') {
-      tab = action === 'withdraw' ? 'withdraw' : 'support';
-      render();
-    } else {
-      $('headerLoginBtn')?.click();
-    }
-  });
-
+    if (action === 'register') authView(app, 'register', promoCode);
+  };
+  track.addEventListener('transitionend', onTransitionEnd);
+  slider.addEventListener('click', onClick);
+  slider.addEventListener('touchstart', onTouchStart, { passive: true });
+  slider.addEventListener('touchend', onTouchEnd, { passive: true });
+  if (hoverCapable) { slider.addEventListener('mouseenter', onMouseEnter); slider.addEventListener('mouseleave', onMouseLeave); }
+  slider.addEventListener('focusin', onFocusIn);
+  slider.addEventListener('focusout', onFocusOut);
+  document.addEventListener('visibilitychange', onVisibility);
+  reduceMotion.addEventListener?.('change', onMotionChange);
+  setTrack();
   paint();
-  homeHeroCleanup = () => {
-    hero.removeEventListener('touchstart', onTouchStart);
-    hero.removeEventListener('touchend', onTouchEnd);
-    dotHandlers.forEach(([dot, handler]) => dot.removeEventListener('click', handler));
+  startAuto();
+  const cleanup = () => {
+    pauseAuto();
+    clearTimeout(transitionTimer);
+    track.removeEventListener('transitionend', onTransitionEnd);
+    slider.removeEventListener('click', onClick);
+    slider.removeEventListener('touchstart', onTouchStart);
+    slider.removeEventListener('touchend', onTouchEnd);
+    slider.removeEventListener('mouseenter', onMouseEnter);
+    slider.removeEventListener('mouseleave', onMouseLeave);
+    slider.removeEventListener('focusin', onFocusIn);
+    slider.removeEventListener('focusout', onFocusOut);
+    document.removeEventListener('visibilitychange', onVisibility);
+    reduceMotion.removeEventListener?.('change', onMotionChange);
   };
+  homePromoCleanup = cleanup;
 }
 
 function syncCustomerTheme(enabled) {
@@ -301,7 +367,10 @@ function renderMobileHeaderMenu() {
       if (action === 'withdraw' || action === 'history') { tab = action; render(); }
       if (action === 'support') { tab = 'support'; render(); }
       if (action === 'games') scrollPublicTarget('ggrid');
-      if (action === 'promo') scrollPublicTarget('guestPromo');
+      if (action === 'promo') {
+        const promo = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code') || '';
+        authView($('app'), 'register', promo);
+      }
       if (action === 'about') scrollPublicTarget('publicInfo');
       if (action === 'help') scrollPublicTarget('publicHelp');
       if (action === 'language') $('langBtn').click();
@@ -495,6 +564,13 @@ document.addEventListener('click', (event) => {
 
 // ---------- NAV ----------
 function nav() {
+  const n = $('nav');
+  if (!me) {
+    n.hidden = true;
+    n.replaceChildren();
+    document.body.classList.remove('has-app-nav');
+    return;
+  }
   const tabs = [];
   if (me && (me.role === 'admin' || me.role === 'superadmin')) {
     tabs.push(['admin', '⚙', 'admin']);
@@ -509,9 +585,9 @@ function nav() {
     tabs.push(['profile', uiIcon('profile'), lang === 'am' ? 'ፕሮፋይል' : 'Profile']);
   }
 
-  const n = $('nav');
-  if (me && me.role !== 'user') {
+  if (me.role !== 'user') {
     n.hidden = true;
+    n.replaceChildren();
     document.body.classList.remove('has-app-nav');
     return;
   }
@@ -1047,18 +1123,27 @@ function mountHomeFooter(app) {
   const site = window.FETAN_SITE || {};
   const legal = site.legal || {};
   const license = site.license || {};
-  const supportHours = site.supportHours || '24/7';
+  const supportHours = String(site.supportHours || '').trim();
   const responsible = '18+ only. Set a personal limit before playing and take regular breaks.';
-  const responsibleDetails = legal.responsibleGaming || responsible;
+  const cleanConfiguredText = (value, fallback) => {
+    const cleaned = String(value || '').replace(/\s*\[YOUR [^\]]+\]\s*/gi, ' ').trim();
+    return cleaned && !/^\[[^\]]+\]$/.test(cleaned) ? cleaned : fallback;
+  };
+  const responsibleDetails = cleanConfiguredText(legal.responsibleGaming, responsible);
+  const termsDetails = cleanConfiguredText(legal.terms, 'Terms information is not available here yet. Please contact support for the current terms.');
+  const privacyDetails = cleanConfiguredText(legal.privacy, 'Privacy information is not available here yet. Please contact support for current information.');
+  const licenseAuthority = String(license.authority || '').trim();
+  const licenseNumber = String(license.number || '').trim();
+  const licenseConfigured = licenseAuthority && licenseNumber && !/^\[/.test(licenseAuthority) && !/^\[/.test(licenseNumber);
   const footer = document.createElement('footer');
   footer.id = 'homeFooter';
   footer.className = 'home-footer';
   footer.innerHTML = `
     <section class="home-support-card" id="publicHelp" aria-labelledby="home-support-title">
       <div class="home-support-copy">
-        <span class="home-support-eyebrow">SUPPORT <span class="home-support-hours">${esc(supportHours)}</span></span>
-        <h2 id="home-support-title">Support, around the clock</h2>
-        <p>Chat or contact the team from your account.</p>
+        <span class="home-support-eyebrow">SUPPORT ${supportHours ? `<span class="home-support-hours">${esc(supportHours)}</span>` : ''}</span>
+        <h2 id="home-support-title">Need help?</h2>
+        <p>Use chat or contact support for account questions.</p>
       </div>
       <div class="home-support-actions">
         <button type="button" class="home-btn home-btn-primary" data-home-support="chat">Chat</button>
@@ -1076,7 +1161,7 @@ function mountHomeFooter(app) {
       <span class="home-18" aria-hidden="true">18+</span>
       <p>${esc(responsible)}</p>
     </div>
-    <p class="home-license">Licensed by ${esc(license.authority || '[YOUR LICENSE AUTHORITY]')} · License ${esc(license.number || '[YOUR LICENSE NO.]')}</p>`;
+    ${licenseConfigured ? `<p class="home-license">Licensed by ${esc(licenseAuthority)} · License ${esc(licenseNumber)}</p>` : ''}`;
   app.append(footer);
 
   const goSupport = () => {
@@ -1103,8 +1188,8 @@ function mountHomeFooter(app) {
         return;
       }
       if (link === 'how') openHomeLegalDialog('How it works', legal.howItWorks || 'Browse the games and open a title to play.');
-      if (link === 'terms') openHomeLegalDialog('Terms', legal.terms || '[YOUR TERMS OF SERVICE PLACEHOLDER]');
-      if (link === 'privacy') openHomeLegalDialog('Privacy', legal.privacy || '[YOUR PRIVACY POLICY PLACEHOLDER]');
+      if (link === 'terms') openHomeLegalDialog('Terms', termsDetails);
+      if (link === 'privacy') openHomeLegalDialog('Privacy', privacyDetails);
       if (link === 'responsible') openHomeLegalDialog('Responsible gaming', responsibleDetails);
     });
   });
@@ -1116,28 +1201,7 @@ function guestView(app) {
     minesState: { active: false, mines: 5 }, guest: true,
     onLogin: () => authView(app, 'login'),
   });
-  mountHomeHero(app);
-
-  const urlPromo = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code');
-
-  const banner = document.createElement('section');
-  banner.className = 'guest-promo-banner';
-  banner.id = 'guestPromo';
-  banner.innerHTML = `
-    <div class="guest-promo-inner">
-      <div class="guest-promo-gift" aria-hidden="true">${iconGift()}</div>
-      <div class="guest-promo-copy">
-        <h2 class="guest-promo-title">${lang === 'am' ? 'የሪፈራል ኮድ አለዎት?' : 'Have a referral code?'}</h2>
-        <p class="guest-promo-text">${lang === 'am' ? 'ከመመዝገብዎ በፊት ያስገቡት።' : 'Enter it before registering to connect your account with its agent.'}</p>
-      </div>
-      <div class="guest-promo-actions">
-        <input type="text" id="guest-promo-code" aria-label="${lang === 'am' ? 'የፕሮሞ ኮድ' : 'Referral promo code'}" placeholder="${lang === 'am' ? 'የፕሮሞ ኮድ ያስገቡ' : 'Enter promo code'}" maxlength="20" value="${esc(urlPromo || '')}">
-        <button type="button" class="btn btn-gold" id="guest-promo-register">${lang === 'am' ? 'ይቀጥሉ' : 'Use code'}</button>
-      </div>
-    </div>`;
-  const catalog = app.querySelector('#ggrid');
-  if (catalog) catalog.before(banner);
-  else app.prepend(banner);
+  mountPromoSlider(app);
 
   const info = document.createElement('section');
   info.id = 'publicInfo';
@@ -1155,14 +1219,6 @@ function guestView(app) {
   app.append(info);
   mountHomeFooter(app);
 
-  $('guest-promo-register')?.addEventListener('click', () => {
-    const promo = String($('guest-promo-code')?.value || '').trim();
-    authView(app, 'register', promo);
-  });
-}
-
-function iconGift() {
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:42px;height:42px"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13"/><path d="M12 8H7.5A2.5 2.5 0 1 1 10 5.5zM12 8h4.5A2.5 2.5 0 1 0 14 5.5z"/></svg>';
 }
 
 // =====================================================
@@ -1202,7 +1258,7 @@ async function gamesView(app, gameRoute = null, bingoState = null) {
     }
   });
   if (!gameRoute) {
-    mountHomeHero(app);
+    mountPromoSlider(app);
     mountHomeFooter(app);
   }
   if (gameRoute) {

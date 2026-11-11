@@ -16,6 +16,7 @@ const chicken = read('public/games/chicken-road-2/js/game.js');
 const penalty = read('public/games/penalty/js/game.js');
 const app = read('public/app.js');
 const index = read('public/index.html');
+const homeCss = read('public/home-v2.css');
 const sharedShell = read('public/game-shell.js');
 const immersiveCss = read('public/immersive-games.css');
 const workspace = read('public/workspace.js');
@@ -34,6 +35,25 @@ assert.match(lobbyGames[1], /id: 'chicken-road-2', title: 'Chicken Road Dash'/);
 assert.match(lobbyGames[1], /id: 'penalty', title: 'Penalty Unlimited'/);
 assert.doesNotMatch(lobbyGames[1], /bingo/, 'retired Bingo is not in the customer lobby');
 assert.match(catalog, /href="#\/game\/\$\{game\.id\}"/, 'lobby cards link to the existing game routes');
+assert.match(app, /function nav\(\)\s*\{\s*const n = \$\('nav'\);\s*if \(!me\)\s*\{\s*n\.hidden = true;/,
+  'guests do not receive customer navigation destinations');
+assert.match(homeCss, /#nav\.app-bottom-tabs\[hidden\]\s*\{\s*display:\s*none !important;/,
+  'the fixed-navigation CSS respects the hidden state for guests');
+assert.match(homeCss, /guest-mode[\s\S]*?#headerLoginBtn[\s\S]*?#headerRegBtn[\s\S]*?display:\s*inline-flex !important/,
+  'guest Login and Register actions are directly visible in the header');
+assert.match(app, /function mountPromoSlider\(app\)[\s\S]*?new Set\(\[\.\.\.app\.querySelectorAll\('\.home-game-card'\)\]\.map/,
+  'the illustrated promotion slider counts unique currently listed games');
+for (const asset of ['daily-winning.svg', 'six-games.svg', 'fast-withdrawals.svg', 'registration-bonus.svg', 'game-collage.svg', 'game-tokens.svg']) {
+  assert.ok(fs.statSync(path.join(root, 'public/images/promotions', asset)).size > 0, `existing campaign asset is available: ${asset}`);
+}
+assert.match(app, /Eligible new accounts receive a one-time reward[\s\S]*?active agent code/,
+  'promo-credit copy keeps its existing eligibility condition');
+assert.match(app, /Terms information is not available here yet[\s\S]*?Privacy information is not available here yet/,
+  'missing legal documents are represented with clear safe copy rather than bracket placeholders');
+assert.match(app, /licenseConfigured[\s\S]*?Licensed by \$\{esc\(licenseAuthority\)\}/,
+  'unconfigured license placeholders are not published in the footer');
+assert.doesNotMatch(read('public/site-config.js'), /supportHours:\s*'24\/7'/,
+  'the public page does not claim unverified round-the-clock support');
 assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1&fetan-shell=1`/);
 assert.match(index, /fetan-game-immersive/);
 assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\)/,
