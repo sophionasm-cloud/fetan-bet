@@ -2,7 +2,7 @@
 'use strict';
 let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0, promoCredits = 0,
     limits = { min: 100, max: 100000 }, tab = 'games', agentSubtab = 'deposits';
-let promoSliderCleanup = null;
+let homeHeroCleanup = null;
 let gameImmersiveScrollY = null;
 
 window.setFetanGameImmersive = (active) => {
@@ -62,6 +62,11 @@ const uiIcon = (name) => {
     login: '<path d="M10 17l5-5-5-5m5 5H3"/><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/>',
     logout: '<path d="M14 17l5-5-5-5m5 5H3"/><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    soundOn: '<path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"/><path d="M15 9.5a4 4 0 0 1 0 5M17.8 6.7a8 8 0 0 1 0 10.6"/>',
+    soundOff: '<path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"/><path d="m16 9 5 5m0-5-5 5"/>',
+    chevronLeft: '<path d="m14.5 6-6 6 6 6"/>',
+    chevronRight: '<path d="m9.5 6 6 6-6 6"/>',
+    arrowRight: '<path d="M4 12h15m-5-5 5 5-5 5"/>',
   };
   return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">${paths[name] || ''}</svg>`;
 };
@@ -77,297 +82,220 @@ function scrollPublicTarget(target) {
 }
 
 function clearPromoSlider() {
-  promoSliderCleanup?.();
-  promoSliderCleanup = null;
+  homeHeroCleanup?.();
+  homeHeroCleanup = null;
 }
 
 function syncPublicNavigation(enabled) {
+  // The new header intentionally exposes only the logo, balance and menu.
+  // guest-mode still drives guest-only styling and header defaults.
   const nav = $('publicPrimaryNav');
-  if (!nav) return;
-  nav.hidden = !enabled;
+  if (nav) nav.hidden = true;
   document.body.classList.toggle('guest-mode', enabled);
-  if (!enabled) return;
-  const links = lang === 'am'
-    ? [['top', 'መነሻ'], ['ggrid', 'ጨዋታዎች'], ['guestPromo', 'የሪፈራል ኮድ'], ['publicInfo', 'ስለ እኛ'], ['publicHelp', 'እገዛ']]
-    : [['top', 'Home'], ['ggrid', 'Games'], ['guestPromo', 'Promo code'], ['publicInfo', 'About'], ['publicHelp', 'Help']];
-  nav.innerHTML = links.map(([target, label], index) => `<button type="button" data-public-target="${target}"${index === 0 ? ' class="is-active"' : ''}>${esc(label)}</button>`).join('') +
-    `<button type="button" class="public-login-link" data-public-action="login">${esc(t('login'))}</button>`;
-  nav.querySelectorAll('[data-public-target]').forEach((button) => {
-    button.addEventListener('click', () => {
-      nav.querySelectorAll('[data-public-target]').forEach((item) => item.classList.toggle('is-active', item === button));
-      scrollPublicTarget(button.dataset.publicTarget);
-    });
-  });
-  nav.querySelector('[data-public-action="login"]')?.addEventListener('click', () => $('headerLoginBtn')?.click());
 }
 
-function mountPromoSlider(app) {
+function balanceMarkup(amount, unit) {
+  return `<span class="balance-dot" aria-hidden="true"></span><span class="balance-value">${fmt(amount)}</span><span class="balance-unit">${esc(unit)}</span>`;
+}
+
+function soundIsMuted() {
+  if (window.Games?.isMuted) return Boolean(window.Games.isMuted());
+  return localStorage.getItem('mute') === '1';
+}
+
+function toggleSound() {
+  const next = !soundIsMuted();
+  if (window.Games?.setMuted) window.Games.setMuted(next);
+  else localStorage.setItem('mute', next ? '1' : '0');
+  renderMobileHeaderMenu();
+}
+
+function mountHomeHero(app) {
   clearPromoSlider();
-  const gameCount = app.querySelectorAll('.gcard').length;
-  const currentCustomer = me?.role === 'user';
-  const gameTokens = [
-    ['road', 'Chicken Road Dash'],
-    ['mines', 'Mines'],
-    ['plinko', 'Plinko'],
-    ['keno', 'Keno'],
-    ['roulette', 'Roulette'],
-    ['star', 'Star Spin'],
-    ['penalty', 'Penalty'],
-  ];
-  const tokenMarkup = () => gameTokens.map(([key, label], index) => `
-    <span class="promo-game-token promo-game-token--${key}" style="--token-index:${index}" title="${esc(label)}">
-      <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><use href="/images/promotions/game-tokens.svg#token-${key}"></use></svg>
-    </span>`).join('');
   const slides = [
     {
-      key: 'daily-winning', image: '/images/promotions/daily-winning.svg',
-      title: 'WIN UP TO 1,000,000 ETB DAILY',
-      copy: 'Enjoy exciting games and discover daily winning opportunities at Fetan Bet.',
-      note: 'Demo play uses virtual credits only. No real-money prizes or cash-out.',
-      action: 'games', cta: 'Explore Games'
+      key: 'withdraw',
+      kicker: lang === 'am' ? 'ለእርስዎ' : 'FOR YOU',
+      title: lang === 'am' ? 'ፈጣን ገንዘብ ማውጣት' : 'Fast withdrawals',
+      copy: lang === 'am'
+        ? 'የማውጣት ጥያቄ ያስገቡና ሁኔታውን በኪስ ቦርሳዎ ይከታተሉ።'
+        : 'Request a payout and follow its status in Wallet.',
+      cta: t('withdraw'),
+      action: 'withdraw',
+      secondary: false
     },
     {
-      key: 'six-games', image: '/images/promotions/six-games.svg',
-      title: `${gameCount} DIFFERENT TYPES OF GAMES`,
-      copy: `Explore ${gameCount} different game experiences, all in one place.`,
-      note: 'Illustrative game artwork.',
-      action: 'games', cta: 'Explore Games'
+      key: 'games',
+      kicker: lang === 'am' ? 'የጨዋታ ማዕከል' : 'GAME LOBBY',
+      title: lang === 'am' ? 'ጨዋታዎን ይምረጡ' : 'Pick your game',
+      copy: lang === 'am'
+        ? 'ኦሪጅናል፣ ኬኖና ክላሲክ ጠረጴዛ ጨዋታዎች በአንድ ቦታ።'
+        : 'Originals, Keno and classic table games in one place.',
+      cta: lang === 'am' ? 'ጨዋታዎችን ይመልከቱ' : 'Browse games',
+      action: 'games',
+      secondary: true
     },
     {
-      key: 'fast-withdrawals', image: '/images/promotions/fast-withdrawals.svg',
-      title: 'FAST WITHDRAWALS',
-      copy: 'Submit a withdrawal request and follow its status in your wallet. Review and processing times vary.',
-      note: 'Demo platform balances are virtual and cannot be cashed out. Request status is shown in your wallet.',
-      action: 'wallet', cta: 'View Wallet'
-    },
-    ...(!currentCustomer ? [{
-      key: 'registration-bonus', image: '/images/promotions/registration-bonus.svg',
-      title: 'REGISTER WITH A PROMO CODE',
-      offer: 'GET 2,000 PROMO CREDITS',
-      copy: 'New customer accounts using an active agent promo code receive 2,000 promotional credits.',
-      note: 'Once per eligible new account. Promotional credits are separate from and cannot be withdrawn as cash from your wallet.',
-      action: 'register', cta: 'Register Now'
-    }] : [])
+      key: 'support',
+      kicker: lang === 'am' ? 'ድጋፍ' : 'SUPPORT',
+      title: lang === 'am' ? 'ሁልጊዜ እኛ እንደዚህ ነን' : 'Here when you need us',
+      copy: lang === 'am'
+        ? 'ከመለያዎ ውስጥ በማንኛውም ሰዓት ከድጋፍ ጋር ይወያዩ።'
+        : 'Chat with support from your account, around the clock.',
+      cta: lang === 'am' ? 'ድጋፍ ያግኙ' : 'Contact support',
+      action: 'support',
+      secondary: true
+    }
   ];
 
-  const slider = document.createElement('section');
-  slider.className = 'promo-slider';
-  slider.id = 'promoSlider';
-  slider.setAttribute('aria-label', 'Fetan Bet promotions');
-  slider.setAttribute('aria-roledescription', 'carousel');
-  const slideMarkup = (slide, index, copy = false) => `
-    <article class="promo-slide promo-slide--${slide.key}" role="group" aria-roledescription="slide" aria-label="${index + 1} of ${slides.length}" data-slide-key="${slide.key}"${copy ? ' data-slide-clone="true" inert aria-hidden="true"' : ''}>
-      <div class="promo-slide-copy">
-        <span class="promo-slide-kicker">FETAN BET <i></i> ${currentCustomer ? 'FOR YOU' : 'PROMOTIONS'}</span>
-        <h2>${esc(slide.title)}</h2>
-        ${slide.offer ? `<strong class="promo-slide-offer">${esc(slide.offer)}</strong>` : ''}
-        <p>${esc(slide.copy)}</p>
-        <small class="promo-slide-note">${esc(slide.note)}</small>
-        <button type="button" class="promo-slide-cta" data-promo-action="${slide.action}">${esc(slide.cta)} <span aria-hidden="true">→</span></button>
+  const hero = document.createElement('section');
+  hero.id = 'homeHero';
+  hero.className = 'home-hero';
+  hero.setAttribute('aria-label', 'Fetan Bet highlights');
+  hero.setAttribute('aria-roledescription', 'carousel');
+  hero.innerHTML = `
+    <div class="home-hero-viewport">
+      <div class="home-hero-track">
+        ${slides.map((slide, index) => `
+          <article class="home-hero-slide" data-hero-slide="${index}" role="group" aria-roledescription="slide" aria-label="${index + 1} of ${slides.length}"${index === 0 ? '' : ' inert aria-hidden="true"'}>
+            <span class="home-hero-kicker">${esc(slide.kicker)}</span>
+            <h2>${esc(slide.title)}</h2>
+            <p>${esc(slide.copy)}</p>
+            <a class="home-hero-cta${slide.secondary ? ' is-secondary' : ''}" href="#/lobby" data-hero-action="${slide.action}">${esc(slide.cta)}</a>
+          </article>`).join('')}
       </div>
-      ${slide.key === 'six-games' ? `
-      <div class="promo-slide-art promo-slide-art--showcase" aria-hidden="true">
-        <span class="promo-art-glow"></span>
-        <div class="promo-showcase">
-          <div class="promo-game-orbit">${tokenMarkup()}</div>
-          <img class="promo-showcase-collage" src="/images/promotions/game-collage.svg" width="640" height="520" alt="" loading="eager" decoding="async">
-        </div>
-      </div>
-      <div class="promo-game-strip" aria-hidden="true">${tokenMarkup()}</div>` : `
-      <div class="promo-slide-art" aria-hidden="true"><span class="promo-art-glow"></span><img src="${slide.image}" alt="" loading="eager" decoding="async"></div>`}
-    </article>`;
-  const copies = [slides[slides.length - 1], ...slides, slides[0]];
-  slider.innerHTML = `
-    <div class="promo-slider-frame">
-      <div class="promo-slider-track">${copies.map((slide, index) => {
-        const isClone = index === 0 || index === copies.length - 1;
-        const logicalIndex = index === 0 ? slides.length - 1 : index === copies.length - 1 ? 0 : index - 1;
-        return slideMarkup(slide, logicalIndex, isClone);
-      }).join('')}</div>
     </div>
-    <div class="promo-slider-bar">
-      <span class="promo-slider-counter" aria-hidden="true">01 / ${String(slides.length).padStart(2, '0')}</span>
-      <div class="promo-slider-controls">
-        <button type="button" class="promo-slider-arrow" data-promo-prev aria-label="Previous promotion">‹</button>
-        <div class="promo-slider-dots" role="group" aria-label="Choose a promotion">${slides.map((slide, i) => `<button type="button" data-promo-dot="${i}" aria-label="Show promotion ${i + 1}" aria-pressed="${i === 0}"${i === 0 ? ' class="is-active"' : ''}></button>`).join('')}</div>
-        <button type="button" class="promo-slider-arrow" data-promo-next aria-label="Next promotion">›</button>
-      </div>
+    <div class="home-hero-dots" role="group" aria-label="Choose a highlight">
+      ${slides.map((slide, index) => `<button type="button" class="home-hero-dot${index === 0 ? ' is-active' : ''}" data-hero-dot="${index}" aria-label="Show ${esc(slide.title)}" aria-pressed="${index === 0}"></button>`).join('')}
     </div>`;
 
-  const hero = app.querySelector('.lobby-hero');
-  if (hero) hero.before(slider);
-  else app.prepend(slider);
+  const catalog = app.querySelector('#ggrid');
+  if (catalog) catalog.before(hero);
+  else app.prepend(hero);
 
-  const track = slider.querySelector('.promo-slider-track');
-  const panels = [...track.children];
-  const realCount = slides.length;
-  let index = 1;
-  let timer = null;
-  let transitionTimer = null;
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  const setTrack = () => { track.style.transform = `translate3d(-${index * 100}%, 0, 0)`; };
-  const realIndex = () => index === 0 ? realCount - 1 : index === realCount + 1 ? 0 : index - 1;
+  const track = hero.querySelector('.home-hero-track');
+  const panels = [...hero.querySelectorAll('[data-hero-slide]')];
+  const dots = [...hero.querySelectorAll('[data-hero-dot]')];
+  let index = 0;
   const paint = () => {
-    const active = realIndex();
+    track.style.transform = `translate3d(-${index * 100}%, 0, 0)`;
     panels.forEach((panel, panelIndex) => {
-      const isActive = panelIndex === index;
-      panel.setAttribute('aria-hidden', String(!isActive));
-      panel.inert = !isActive;
+      const active = panelIndex === index;
+      panel.toggleAttribute('inert', !active);
+      panel.setAttribute('aria-hidden', String(!active));
     });
-    slider.querySelectorAll('[data-promo-dot]').forEach((dot) => {
-      const selected = Number(dot.dataset.promoDot) === active;
-      dot.classList.toggle('is-active', selected);
-      dot.setAttribute('aria-pressed', String(selected));
+    dots.forEach((dot, dotIndex) => {
+      const active = dotIndex === index;
+      dot.classList.toggle('is-active', active);
+      dot.setAttribute('aria-pressed', String(active));
     });
-    slider.querySelector('.promo-slider-counter').textContent = `${String(active + 1).padStart(2, '0')} / ${String(realCount).padStart(2, '0')}`;
   };
-  const snap = (nextIndex) => {
-    track.classList.add('is-snapping');
-    index = nextIndex;
-    setTrack();
+  const go = (next) => {
+    index = (next + slides.length) % slides.length;
     paint();
-    requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('is-snapping')));
   };
-  const move = (nextIndex) => {
-    clearTimeout(transitionTimer);
-    index = nextIndex;
-    setTrack();
-    paint();
-    transitionTimer = setTimeout(() => {
-      if (index === 0) snap(realCount);
-      else if (index === realCount + 1) snap(1);
-    }, 720);
-  };
-  const next = () => move(index >= realCount ? realCount + 1 : index + 1);
-  const previous = () => move(index <= 1 ? 0 : index - 1);
-  const startAuto = () => {
-    clearInterval(timer);
-    timer = null;
-    if (!reduceMotion.matches && !slider.matches(':hover') && document.visibilityState === 'visible') {
-      timer = setInterval(() => {
-        if (!slider.isConnected) { cleanup(); return; }
-        next();
-      }, 6000);
-    }
-  };
-  const pauseAuto = () => { clearInterval(timer); timer = null; };
-  const onMouseEnter = () => pauseAuto();
-  const onMouseLeave = () => startAuto();
-  const onFocusIn = () => pauseAuto();
-  const onFocusOut = (event) => { if (!slider.contains(event.relatedTarget)) startAuto(); };
-  const onVisibility = () => document.visibilityState === 'visible' ? startAuto() : pauseAuto();
-  const onMotionChange = () => startAuto();
-  track.addEventListener('transitionend', (event) => {
-    if (event.target !== track || event.propertyName !== 'transform') return;
-    if (index === 0) snap(realCount);
-    else if (index === realCount + 1) snap(1);
+
+  const dotHandlers = dots.map((dot) => {
+    const handler = () => go(Number(dot.dataset.heroDot));
+    dot.addEventListener('click', handler);
+    return [dot, handler];
   });
-  slider.querySelector('[data-promo-next]').addEventListener('click', () => { next(); startAuto(); });
-  slider.querySelector('[data-promo-prev]').addEventListener('click', () => { previous(); startAuto(); });
-  slider.querySelectorAll('[data-promo-dot]').forEach((dot) => dot.addEventListener('click', () => {
-    const target = Number(dot.dataset.promoDot) + 1;
-    if (target !== index) move(target);
-    startAuto();
-  }));
-  slider.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-promo-action]');
-    if (!button) return;
-    const action = button.dataset.promoAction;
-    if (action === 'games') scrollPublicTarget('ggrid');
-    if (action === 'wallet') {
-      if (me?.role === 'user') { tab = 'wallet'; render(); }
-      else $('headerLoginBtn')?.click();
+
+  let touchStart = null;
+  const onTouchStart = (event) => {
+    const touch = event.changedTouches[0];
+    touchStart = { x: touch.clientX, y: touch.clientY };
+  };
+  const onTouchEnd = (event) => {
+    if (!touchStart) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStart.x;
+    const dy = touch.clientY - touchStart.y;
+    touchStart = null;
+    if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return;
+    go(index + (dx < 0 ? 1 : -1));
+  };
+  hero.addEventListener('touchstart', onTouchStart, { passive: true });
+  hero.addEventListener('touchend', onTouchEnd, { passive: true });
+
+  hero.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-hero-action]')?.dataset.heroAction;
+    if (!action) return;
+    event.preventDefault();
+    if (action === 'games') {
+      scrollPublicTarget('ggrid');
+      return;
     }
-    if (action === 'register') {
-      const code = String($('guest-promo-code')?.value || '').trim();
-      authView(app, 'register', code);
+    if (me?.role === 'user') {
+      tab = action === 'withdraw' ? 'withdraw' : 'support';
+      render();
+    } else {
+      $('headerLoginBtn')?.click();
     }
   });
-  if (hoverCapable) {
-    slider.addEventListener('mouseenter', onMouseEnter);
-    slider.addEventListener('mouseleave', onMouseLeave);
-  }
-  slider.addEventListener('focusin', onFocusIn);
-  slider.addEventListener('focusout', onFocusOut);
-  document.addEventListener('visibilitychange', onVisibility);
-  reduceMotion.addEventListener?.('change', onMotionChange);
-  index = 1;
-  setTrack();
+
   paint();
-  startAuto();
-  const cleanup = () => {
-    pauseAuto();
-    clearTimeout(transitionTimer);
-    document.removeEventListener('visibilitychange', onVisibility);
-    reduceMotion.removeEventListener?.('change', onMotionChange);
-    slider.removeEventListener('mouseenter', onMouseEnter);
-    slider.removeEventListener('mouseleave', onMouseLeave);
-    slider.removeEventListener('focusin', onFocusIn);
-    slider.removeEventListener('focusout', onFocusOut);
+  homeHeroCleanup = () => {
+    hero.removeEventListener('touchstart', onTouchStart);
+    hero.removeEventListener('touchend', onTouchEnd);
+    dotHandlers.forEach(([dot, handler]) => dot.removeEventListener('click', handler));
   };
-  promoSliderCleanup = cleanup;
 }
 
-function applyCustomerTheme(theme = localStorage.getItem('fetan-theme') || 'dark') {
-  const light = theme === 'light';
-  document.body.classList.add('customer-theme');
-  document.body.dataset.customerTheme = light ? 'light' : 'dark';
-  const toggle = $('customerThemeToggle');
-  if (toggle) {
-    toggle.innerHTML = `<span class="theme-toggle-track" aria-hidden="true"><span class="theme-toggle-thumb">${light
-      ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>'
-      : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.1A8.4 8.4 0 0 1 9.9 3.5a8.5 8.5 0 1 0 10.6 10.6Z"/></svg>'
-    }</span></span>`;
-    toggle.setAttribute('aria-pressed', String(light));
-    toggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
-    toggle.title = light ? 'Switch to dark theme' : 'Switch to light theme';
-  }
+function syncCustomerTheme(enabled) {
+  // One dark theme only. Staff workspaces keep their own palette.
+  document.body.classList.toggle('customer-theme', enabled);
+  document.body.dataset.customerTheme = 'dark';
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.content = light ? '#F1E8D9' : '#0B0B0B';
-  window.dispatchEvent(new CustomEvent('fetan-customer-theme-change', {
-    detail: { theme: light ? 'light' : 'dark' }
-  }));
-}
-
-function syncCustomerThemeControl(enabled) {
-  const topRight = document.querySelector('.top-right');
-  let toggle = $('customerThemeToggle');
-  if (!enabled) {
-    toggle?.remove();
-    document.body.classList.remove('customer-theme');
-    delete document.body.dataset.customerTheme;
-    return;
-  }
-  if (!toggle && topRight) {
-    toggle = document.createElement('button');
-    toggle.id = 'customerThemeToggle';
-    toggle.className = 'chip customer-theme-toggle';
-    toggle.type = 'button';
-    topRight.insertBefore(toggle, $('langBtn'));
-    toggle.addEventListener('click', () => {
-      const next = document.body.dataset.customerTheme === 'light' ? 'dark' : 'light';
-      localStorage.setItem('fetan-theme', next);
-      applyCustomerTheme(next);
-    });
-  }
-  applyCustomerTheme();
+  if (themeMeta) themeMeta.content = '#141414';
 }
 
 function renderMobileHeaderMenu() {
   const panel = $('mobileMenuPanel');
   if (!panel) return;
+  const muted = soundIsMuted();
+  const soundEntry = {
+    action: 'sound',
+    icon: uiIcon(muted ? 'soundOff' : 'soundOn'),
+    label: `${t('sound')}: ${muted ? (lang === 'am' ? 'ጠፍቷል' : 'Off') : (lang === 'am' ? 'በርቷል' : 'On')}`,
+    pressed: muted
+  };
   const links = me?.role === 'user'
-    ? [['withdraw', uiIcon('withdraw'), t('withdraw')], ['history', uiIcon('history'), t('history')], ['support', uiIcon('support'), t('support')], ['language', uiIcon('globe'), lang === 'am' ? 'English' : 'አማርኛ'], ['logout', uiIcon('logout'), t('logout')]]
+    ? [
+        { action: 'withdraw', icon: uiIcon('withdraw'), label: t('withdraw') },
+        { action: 'history', icon: uiIcon('history'), label: t('history') },
+        { action: 'support', icon: uiIcon('support'), label: t('support') },
+        soundEntry,
+        { action: 'language', icon: uiIcon('globe'), label: lang === 'am' ? 'English' : 'አማርኛ' },
+        { action: 'logout', icon: uiIcon('logout'), label: t('logout') }
+      ]
     : me
-      ? [['support', '💬', t('support')], ['language', '🌐', lang === 'am' ? 'English' : 'አማርኛ'], ['logout', '↪', t('logout')]]
-    : [['games', uiIcon('games'), t('games')], ['promo', uiIcon('promo'), lang === 'am' ? 'የሪፈራል ኮድ' : 'Promo code'], ['about', uiIcon('home'), lang === 'am' ? 'ስለ ፍጣን ቤት' : 'About'], ['help', uiIcon('support'), lang === 'am' ? 'እገዛ' : 'Help'], ['login', uiIcon('login'), t('login')], ['register', uiIcon('profile'), t('register')], ['language', uiIcon('globe'), lang === 'am' ? 'English' : 'አማርኛ']];
-  panel.innerHTML = links.map(([action, icon, label]) =>
-    `<button type="button" data-mobile-action="${action}"><span aria-hidden="true">${icon}</span>${esc(label)}</button>`
+      ? [
+          { action: 'support', icon: uiIcon('support'), label: t('support') },
+          soundEntry,
+          { action: 'language', icon: uiIcon('globe'), label: lang === 'am' ? 'English' : 'አማርኛ' },
+          { action: 'logout', icon: uiIcon('logout'), label: t('logout') }
+        ]
+      : [
+          { action: 'games', icon: uiIcon('games'), label: t('games') },
+          { action: 'promo', icon: uiIcon('promo'), label: lang === 'am' ? 'የሪፈራል ኮድ' : 'Promo code' },
+          { action: 'about', icon: uiIcon('home'), label: lang === 'am' ? 'ስለ ፍጣን ቤት' : 'About' },
+          { action: 'help', icon: uiIcon('support'), label: lang === 'am' ? 'እገዛ' : 'Help' },
+          soundEntry,
+          { action: 'login', icon: uiIcon('login'), label: t('login') },
+          { action: 'register', icon: uiIcon('profile'), label: t('register') },
+          { action: 'language', icon: uiIcon('globe'), label: lang === 'am' ? 'English' : 'አማርኛ' }
+        ];
+  panel.innerHTML = links.map(({ action, icon, label, pressed }) =>
+    `<button type="button" role="menuitem" data-mobile-action="${action}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}><span aria-hidden="true">${icon}</span>${esc(label)}</button>`
   ).join('');
   panel.querySelectorAll('[data-mobile-action]').forEach((button) => {
     button.onclick = () => {
       const action = button.dataset.mobileAction;
+      if (action === 'sound') {
+        toggleSound();
+        return;
+      }
       panel.hidden = true;
       $('mobileHeaderMenu').setAttribute('aria-expanded', 'false');
       if (action === 'withdraw' || action === 'history') { tab = action; render(); }
@@ -508,7 +436,7 @@ async function refreshMe() {
   // Header controls synchronization
   const isLogged = Boolean(me);
   syncPublicNavigation(!me);
-  syncCustomerThemeControl(!me || me.role === 'user');
+  syncCustomerTheme(!me || me.role === 'user');
   $('balanceBox').hidden = !isLogged;
   $('quickDepositBtn').hidden = !isLogged;
   $('logoutBtn').hidden = !isLogged;
@@ -517,7 +445,8 @@ async function refreshMe() {
 
   if (isLogged) {
     const balanceUnit = me.role === 'user' ? t('currency_etb') : t('credits');
-    $('balanceBox').innerHTML = `🪙 ${fmt(balance)} <small style="color:var(--text-muted);font-weight:400">${balanceUnit}</small>`;
+    $('balanceBox').innerHTML = balanceMarkup(balance, balanceUnit);
+    $('balanceBox').setAttribute('aria-label', `${t('balance')}: ${fmt(balance)} ${balanceUnit}`);
     if (me.role !== 'user') {
       $('quickDepositBtn').hidden = true;
     }
@@ -528,7 +457,8 @@ async function refreshMe() {
 
 function setBalance(b) {
   balance = b;
-  $('balanceBox').innerHTML = `🪙 ${fmt(b)} <small style="color:var(--text-muted);font-weight:400">${t('currency_etb')}</small>`;
+  $('balanceBox').innerHTML = balanceMarkup(b, t('currency_etb'));
+  $('balanceBox').setAttribute('aria-label', `${t('balance')}: ${fmt(b)} ${t('currency_etb')}`);
   window.dispatchEvent(new CustomEvent('fetan-balance-change', { detail: { balance: b } }));
 }
 
@@ -543,6 +473,11 @@ $('logoutBtn').onclick = async () => { await api('/logout', {}); me = null; tab 
 $('quickDepositBtn').onclick = () => { tab = 'deposit'; render(); };
 $('balanceBox').onclick = () => { if (me?.role === 'user') { tab = 'deposit'; render(); } };
 $('brandBtn').onclick = () => { tab = (me && me.role !== 'user') ? me.role : 'games'; render(); };
+$('brandBtn').onkeydown = (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  $('brandBtn').click();
+};
 $('headerLoginBtn').onclick = () => { tab = 'auth'; render('login'); };
 $('headerRegBtn').onclick = () => { tab = 'auth'; render('register'); };
 $('mobileHeaderMenu').onclick = () => {
@@ -561,10 +496,9 @@ document.addEventListener('click', (event) => {
 // ---------- NAV ----------
 function nav() {
   const tabs = [];
-  const mobileUserTabs = me?.role === 'user' && window.matchMedia('(max-width: 1024px)').matches;
-  if (me.role === 'admin' || me.role === 'superadmin') {
+  if (me && (me.role === 'admin' || me.role === 'superadmin')) {
     tabs.push(['admin', '⚙', 'admin']);
-  } else if (me.role === 'agent') {
+  } else if (me?.role === 'agent') {
     tabs.push(['agent', '🔑', 'agent']);
   } else {
     // Customers always get the same four primary destinations. Secondary
@@ -576,19 +510,23 @@ function nav() {
   }
 
   const n = $('nav');
-  if (!me || me.role !== 'user') {
+  if (me && me.role !== 'user') {
     n.hidden = true;
     document.body.classList.remove('has-app-nav');
     return;
   }
   n.hidden = false;
   n.setAttribute('aria-label', 'Customer navigation');
-  n.className = mobileUserTabs ? 'tabs app-bottom-tabs' : 'tabs';
-  document.body.classList.toggle('has-app-nav', mobileUserTabs);
+  n.className = 'tabs app-bottom-tabs';
+  document.body.classList.add('has-app-nav');
   n.innerHTML = tabs.map(([k, icon, label]) =>
     `<button type="button" data-k="${k}" class="${tab === k ? 'on' : ''}"${tab === k ? ' aria-current="page"' : ''}><span class="nav-icon" aria-hidden="true">${icon}</span><span class="nav-label">${esc(label)}</span></button>`
   ).join('');
   n.querySelectorAll('button').forEach((b) => (b.onclick = () => {
+    if (!me && b.dataset.k !== 'games') {
+      $('headerLoginBtn')?.click();
+      return;
+    }
     tab = b.dataset.k;
     if (/^#\/game\//.test(location.hash)) {
       document.body.classList.remove('game-open');
@@ -614,6 +552,8 @@ async function render(subMode = '') {
     }
   }
   window.setFetanGameImmersive(Boolean(gameRoute && me?.role === 'user'));
+  const homeView = !gameRoute && (!me || (me.role === 'user' && tab === 'games'));
+  document.body.classList.toggle('home-view', homeView);
   if ((!me || !['agent', 'superadmin'].includes(me.role)) && window.FetanWorkspace) {
     window.FetanWorkspace.cleanup();
   }
@@ -622,8 +562,8 @@ async function render(subMode = '') {
   if (!me) {
     window.setFetanGameImmersive(false);
     document.body.classList.remove('game-open');
-    document.body.classList.remove('has-app-nav');
-    $('nav').hidden = true;
+    tab = 'games';
+    nav();
     guestView(app);
     if (subMode) authView(app, subMode);
     return;
@@ -704,8 +644,8 @@ if (telegramApp) {
   try {
     telegramApp.ready();
     telegramApp.expand();
-    telegramApp.setHeaderColor?.('#090b09');
-    telegramApp.setBackgroundColor?.('#090b09');
+    telegramApp.setHeaderColor?.('#141414');
+    telegramApp.setBackgroundColor?.('#141414');
     telegramApp.onEvent?.('viewportChanged', () => setAppViewportHeight());
     telegramApp.onEvent?.('fullscreenChanged', () => setAppViewportHeight());
   } catch (_) { /* Telegram APIs vary by client version. */ }
@@ -1080,13 +1020,103 @@ function authView(app, initialMode = 'login', promoPrefill = '') {
   (initialMode === 'register' ? $('r-name') : $('l-phone')).focus();
 }
 
+function openHomeLegalDialog(title, body) {
+  let dialog = $('home-legal-dialog');
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'home-legal-dialog';
+    dialog.className = 'home-legal-dialog';
+    dialog.innerHTML = `
+      <div class="home-legal-dialog-inner">
+        <h2 id="home-legal-title"></h2>
+        <p id="home-legal-copy"></p>
+        <form method="dialog"><button type="submit" class="home-btn home-btn-primary">Close</button></form>
+      </div>`;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  }
+  dialog.querySelector('#home-legal-title').textContent = title;
+  dialog.querySelector('#home-legal-copy').textContent = body;
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open', '');
+}
+
+function mountHomeFooter(app) {
+  const site = window.FETAN_SITE || {};
+  const legal = site.legal || {};
+  const license = site.license || {};
+  const supportHours = site.supportHours || '24/7';
+  const responsible = '18+ only. Set a personal limit before playing and take regular breaks.';
+  const responsibleDetails = legal.responsibleGaming || responsible;
+  const footer = document.createElement('footer');
+  footer.id = 'homeFooter';
+  footer.className = 'home-footer';
+  footer.innerHTML = `
+    <section class="home-support-card" id="publicHelp" aria-labelledby="home-support-title">
+      <div class="home-support-copy">
+        <span class="home-support-eyebrow">SUPPORT <span class="home-support-hours">${esc(supportHours)}</span></span>
+        <h2 id="home-support-title">Support, around the clock</h2>
+        <p>Chat or contact the team from your account.</p>
+      </div>
+      <div class="home-support-actions">
+        <button type="button" class="home-btn home-btn-primary" data-home-support="chat">Chat</button>
+        <button type="button" class="home-btn home-btn-secondary" data-home-support="contact">Contact</button>
+      </div>
+    </section>
+    <nav class="home-footer-links" aria-label="Footer navigation">
+      <button type="button" data-home-link="how">How it works</button>
+      <button type="button" data-home-link="wallet">Deposit and withdraw</button>
+      <button type="button" data-home-link="terms">Terms</button>
+      <button type="button" data-home-link="privacy">Privacy</button>
+      <button type="button" data-home-link="responsible">Responsible gaming</button>
+    </nav>
+    <div class="home-responsible">
+      <span class="home-18" aria-hidden="true">18+</span>
+      <p>${esc(responsible)}</p>
+    </div>
+    <p class="home-license">Licensed by ${esc(license.authority || '[YOUR LICENSE AUTHORITY]')} · License ${esc(license.number || '[YOUR LICENSE NO.]')}</p>`;
+  app.append(footer);
+
+  const goSupport = () => {
+    if (me?.role === 'user') {
+      tab = 'support';
+      render();
+    } else {
+      $('headerLoginBtn')?.click();
+    }
+  };
+  footer.querySelectorAll('[data-home-support]').forEach((button) => {
+    button.addEventListener('click', goSupport);
+  });
+  footer.querySelectorAll('[data-home-link]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const link = button.dataset.homeLink;
+      if (link === 'wallet') {
+        if (me?.role === 'user') {
+          tab = 'wallet';
+          render();
+        } else {
+          $('headerLoginBtn')?.click();
+        }
+        return;
+      }
+      if (link === 'how') openHomeLegalDialog('How it works', legal.howItWorks || 'Browse the games and open a title to play.');
+      if (link === 'terms') openHomeLegalDialog('Terms', legal.terms || '[YOUR TERMS OF SERVICE PLACEHOLDER]');
+      if (link === 'privacy') openHomeLegalDialog('Privacy', legal.privacy || '[YOUR PRIVACY POLICY PLACEHOLDER]');
+      if (link === 'responsible') openHomeLegalDialog('Responsible gaming', responsibleDetails);
+    });
+  });
+}
+
 function guestView(app) {
   Games.mount(app, {
     t, esc, fmt, limits, roadState: { active: false, ladder: [], maxSteps: 10 },
     minesState: { active: false, mines: 5 }, guest: true,
     onLogin: () => authView(app, 'login'),
   });
-  mountPromoSlider(app);
+  mountHomeHero(app);
 
   const urlPromo = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code');
 
@@ -1105,17 +1135,9 @@ function guestView(app) {
         <button type="button" class="btn btn-gold" id="guest-promo-register">${lang === 'am' ? 'ይቀጥሉ' : 'Use code'}</button>
       </div>
     </div>`;
-  app.prepend(banner);
-
-  const hero = app.querySelector('.lobby-hero-content');
-  if (hero) {
-    const actions = document.createElement('div');
-    actions.className = 'guest-hero-actions';
-    actions.innerHTML = `<button type="button" class="btn btn-gold" id="guest-register">${esc(t('register'))}</button><button type="button" class="btn btn-outline" id="guest-explore">${lang === 'am' ? 'ጨዋታዎችን ይመልከቱ' : 'Explore games'}</button>`;
-    hero.appendChild(actions);
-    $('guest-register').onclick = () => authView(app, 'register');
-    $('guest-explore').onclick = () => scrollPublicTarget('ggrid');
-  }
+  const catalog = app.querySelector('#ggrid');
+  if (catalog) catalog.before(banner);
+  else app.prepend(banner);
 
   const info = document.createElement('section');
   info.id = 'publicInfo';
@@ -1130,29 +1152,8 @@ function guestView(app) {
       <article><span aria-hidden="true">${uiIcon('history')}</span><h3>${lang === 'am' ? 'በኃላፊነት ይጫወቱ' : 'Play thoughtfully'}</h3><p>${lang === 'am' ? 'ከመጫወትዎ በፊት የግል ገደብ ያዘጋጁና ዕረፍት ይውሰዱ።' : 'Set a personal limit before playing and take breaks.'}</p></article>
     </div>`;
 
-  const footer = document.createElement('footer');
-  footer.className = 'guest-site-footer';
-  footer.innerHTML = `
-    <div class="guest-footer-brand"><span class="logo" aria-hidden="true">ፈ</span><div><strong>FETAN BET</strong><small>ፍጣን ቤት</small></div></div>
-    <div class="guest-footer-copy">
-      <h2>${lang === 'am' ? 'የፍጣን ቤት ጨዋታዎች' : 'Fetan Bet games'}</h2>
-      <p>${lang === 'am' ? 'ጨዋታዎቹን ይመልከቱ። የኪስ ቦርሳዎን፣ የክፍያ ጥያቄዎችንና ድጋፍን ለማግኘት ይግቡ።' : 'Browse the current game catalog. Sign in to see your wallet, payment requests and support options.'}</p>
-      <p class="guest-footer-note">${lang === 'am' ? 'የሪፈራል ኮድ ካለዎት ከመመዝገብዎ በፊት ያስገቡት።' : 'If you have a referral code, enter it before registering.'}</p>
-    </div>
-    <nav class="guest-footer-links" aria-label="Footer navigation">
-      <button type="button" data-public-target="ggrid">${esc(t('games'))}</button>
-      <button type="button" data-public-target="guestPromo">${lang === 'am' ? 'የሪፈራል ኮድ' : 'Promo code'}</button>
-      <button type="button" data-public-target="publicHelp">${lang === 'am' ? 'እገዛ' : 'Help'}</button>
-      <button type="button" id="guest-footer-language">${lang === 'am' ? 'English' : 'አማርኛ'}</button>
-    </nav>
-    <div class="guest-footer-help" id="publicHelp"><span>${lang === 'am' ? 'የደንበኛ ድጋፍን ለመጠቀም ወደ መለያዎ ይግቡ።' : 'Sign in to open Support from your customer account.'}</span><button type="button" id="guest-footer-login" class="btn btn-outline">${esc(t('login'))}</button></div>
-    <div class="guest-footer-legal">© ${new Date().getFullYear()} Fetan Bet</div>`;
-  app.append(info, footer);
-  footer.querySelectorAll('[data-public-target]').forEach((button) => {
-    button.addEventListener('click', () => scrollPublicTarget(button.dataset.publicTarget));
-  });
-  $('guest-footer-language').onclick = () => $('langBtn').click();
-  $('guest-footer-login').onclick = () => authView(app, 'login');
+  app.append(info);
+  mountHomeFooter(app);
 
   $('guest-promo-register')?.addEventListener('click', () => {
     const promo = String($('guest-promo-code')?.value || '').trim();
@@ -1200,7 +1201,10 @@ async function gamesView(app, gameRoute = null, bingoState = null) {
       render();
     }
   });
-  if (!gameRoute) mountPromoSlider(app);
+  if (!gameRoute) {
+    mountHomeHero(app);
+    mountHomeFooter(app);
+  }
   if (gameRoute) {
     const requestedGame = gameRoute[1] === 'road-dash' ? 'road' : gameRoute[1];
     Games.openRoute(app, requestedGame);

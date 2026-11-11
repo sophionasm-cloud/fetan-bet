@@ -1913,31 +1913,6 @@ body.customer-theme {
   color: var(--text);
   color-scheme: dark;
 }
-body.customer-theme[data-customer-theme="light"] {
-  --bg: #F1E8D9;
-  --bg-secondary: rgba(255, 250, 240, .50);
-  --surface-panel: rgba(255, 250, 240, .50);
-  --surface-card: rgba(255, 250, 240, .50);
-  --surface-hover: #E3D3C0;
-  --surface-active: #E3173E;
-  --surface: rgba(255, 250, 240, .50);
-  --surface2: rgba(92, 64, 51, .08);
-  --gold: #8A6A58;
-  --gold-bright: #5C4033;
-  --gold-muted: #8A6A58;
-  --gold-border: rgba(227, 23, 62, .28);
-  --gold-bg: rgba(227, 23, 62, .08);
-  --text: #3E2B22;
-  --text-secondary: #7A5F50;
-  --text-muted: #7A5F50;
-  --border: rgba(92, 64, 51, .14);
-  --border-soft: rgba(92, 64, 51, .08);
-  --border-subtle: rgba(92, 64, 51, .24);
-  --border-gold: rgba(227, 23, 62, .28);
-  background: #F1E8D9;
-  color: var(--text);
-  color-scheme: light;
-}
 body.customer-theme:not(.game-open) { background: var(--bg); }
 body.customer-theme:not(.game-open) > .top {
   background: color-mix(in srgb, var(--bg-secondary) 94%, transparent);
@@ -1946,10 +1921,6 @@ body.customer-theme:not(.game-open) > .top {
 }
 body.customer-theme .tabs { background: var(--bg-secondary); border-color: var(--border); }
 body.customer-theme .tabs button.on { color: var(--text); background: var(--gold-bg); border-bottom-color: var(--gold); }
-body.customer-theme .customer-theme-toggle { min-width: 42px; font-size: 19px; color: var(--gold-bright); }
-body.customer-theme[data-customer-theme="light"] .balance,
-body.customer-theme[data-customer-theme="light"] .chip:not(.chip-gold),
-body.customer-theme[data-customer-theme="light"] .tabs button { color: var(--text-secondary); }
 body.customer-theme #app .card,
 body.customer-theme #app .stat,
 body.customer-theme #app .notice,
@@ -1961,14 +1932,6 @@ body.customer-theme #app .profile-details > div {
   border-color: var(--border);
   color: var(--text);
   box-shadow: 0 8px 24px rgba(0,0,0,.08);
-}
-body.customer-theme[data-customer-theme="light"] #app .muted,
-body.customer-theme[data-customer-theme="light"] #app .profile-phone,
-body.customer-theme[data-customer-theme="light"] #app .stat-label { color: var(--text-secondary); }
-body.customer-theme[data-customer-theme="light"] #app input,
-body.customer-theme[data-customer-theme="light"] #app select,
-body.customer-theme[data-customer-theme="light"] #app textarea {
-  background: rgba(255, 250, 240, .64); color: var(--text); border-color: var(--border);
 }
 body.customer-theme #app .guest-promo-banner {
   display: flex; align-items: center; min-height: 82px; margin: 0 0 18px;
@@ -1989,7 +1952,6 @@ body.customer-theme #app .lobby-hero { padding: 18px 22px; margin-bottom: 18px; 
 body.customer-theme #app .lobby-hero::before { opacity: .35; }
 body.customer-theme #app .lobby-hero-badge { color: var(--gold-bright); background: var(--gold-bg); border-color: var(--gold-border); }
 body.customer-theme #app .lobby-hero-title { margin: 5px 0; font-size: clamp(25px,3vw,34px); letter-spacing: -.7px; line-height: 1.15; text-transform: none; text-shadow: none; }
-body.customer-theme[data-customer-theme="light"] #app .lobby-hero-title { color: var(--text); }
 body.customer-theme #app .lobby-hero-sub { max-width: 620px; margin: 0; font-size: 14px; }
 body.customer-theme #app .lobby-hero-pills { gap: 8px; margin-top: 10px; }
 body.customer-theme #app .hero-pill { padding: 5px 10px; font-size: 11px; }

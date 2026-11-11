@@ -33,36 +33,6 @@ html.fetan-integrated[data-customer-theme="dark"] {
   --p-blue: #111111;
 }
 
-html.fetan-integrated[data-customer-theme="light"] {
-  color-scheme: light;
-  --embed-page: #F1E8D9;
-  --embed-shell: rgba(250, 244, 234, .92);
-  --embed-panel: rgba(255, 250, 240, .50);
-  --embed-raised: rgba(255, 250, 240, .50);
-  --embed-border: rgba(255, 255, 255, .70);
-  --embed-text: #3E2B22;
-  --embed-strong: #3E2B22;
-  --embed-muted: #7A5F50;
-  --embed-accent: #C11234;
-  --embed-accent-soft: rgba(227, 23, 62, .12);
-  --embed-primary-bg: linear-gradient(135deg, #E3173E, #C11234);
-  --embed-primary-text: #FFFFFF;
-  --cr-bg: #2A1C16;
-  --cr-panel: rgba(255, 250, 240, .50);
-  --cr-panel-2: rgba(255, 250, 240, .50);
-  --cr-line: rgba(255, 255, 255, .70);
-  --cr-muted: #7A5F50;
-  --cr-yellow: #FBF4E8;
-  --cr-yellow-hot: #E3D3C0;
-  --p-bg: #2A1C16;
-  --p-panel: rgba(255, 250, 240, .50);
-  --p-panel-2: rgba(255, 250, 240, .50);
-  --p-line: rgba(255, 255, 255, .70);
-  --p-muted: #7A5F50;
-  --p-gold: #FBF4E8;
-  --p-blue: #2A1C16;
-}
-
 html.fetan-integrated body {
   color: var(--embed-text);
   background: var(--embed-page);
@@ -147,75 +117,10 @@ html.fetan-integrated :is(button, a, input, select, [tabindex]):focus-visible {
   outline-offset: 3px;
 }
 
-html.fetan-integrated[data-customer-theme="light"] .app {
-  border-color: var(--embed-border);
-  box-shadow: 0 6px 20px rgba(80, 50, 35, .12);
-}
-
-html.fetan-integrated[data-customer-theme="light"] :is(.topbar, .penalty-topbar, .penalty-bar,
-  .balance-pill, .home-btn, .icon-btn, .how-btn, .bet-panel, .result-card, .modal-card,
-  .menu-list, .bet-field, .bet-input, .select-wrap select, .mini-btn, .chip, .bet-controls button) {
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
-  box-shadow: 0 6px 20px rgba(80, 50, 35, .12);
-}
-
-html.fetan-integrated[data-customer-theme="light"] :is(.topbar, .penalty-topbar, .penalty-bar) {
-  color: var(--embed-text);
-  background-color: var(--embed-panel);
-}
-
-html.fetan-integrated[data-customer-theme="light"] :is(.home-btn, .icon-btn, .how-btn, .mini-btn, .chip,
-  .bet-controls button, .balance-pill, .bet-field, .bet-input, .select-wrap select) {
-  color: var(--embed-text);
-  background-color: var(--embed-panel);
-}
-
-html.fetan-integrated[data-customer-theme="light"] :is(.bet-input, .select-wrap select, input, select) {
-  color: var(--embed-strong);
-  background-color: var(--embed-raised);
-}
-
-html.fetan-integrated[data-customer-theme="light"] :is(.play-btn, .go-btn, .shoot-btn, .claim-btn,
-  .result-card .btn-primary, .result-card .btn-gold) {
-  border-color: rgba(227, 23, 62, .28);
-  background: var(--embed-primary-bg);
-  color: var(--embed-primary-text);
-  box-shadow: 0 6px 16px rgba(227, 23, 62, .35);
-}
-
-html.fetan-integrated[data-customer-theme="light"] :is(.chip.active, .mult-ladder-item.current,
-  .ladder-node.active .node-dot) {
-  border-color: #E3173E;
-  background: #E3173E;
-  color: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(227, 23, 62, .35);
-}
-
-html.fetan-integrated[data-customer-theme="light"] :is(button, a, input, select, [tabindex]):focus-visible {
-  outline: 2px solid #E3173E;
-  box-shadow: 0 0 0 2px rgba(227, 23, 62, .35);
-}
-
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   html.fetan-integrated :is(.topbar, .penalty-topbar, .penalty-bar, .balance-pill,
     .bet-panel, .result-card, .modal-card, .menu-list) {
     background-color: var(--embed-shell);
-  }
-  html.fetan-integrated[data-customer-theme="light"] :is(.topbar, .penalty-topbar, .penalty-bar,
-    .balance-pill, .home-btn, .icon-btn, .how-btn, .bet-panel, .result-card, .modal-card,
-    .menu-list, .bet-field, .bet-input, .select-wrap select, .mini-btn, .chip, .bet-controls button) {
-    background-color: rgba(250, 244, 234, .92);
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  html.fetan-integrated[data-customer-theme="light"] :is(.topbar, .penalty-topbar, .penalty-bar,
-    .balance-pill, .home-btn, .icon-btn, .how-btn, .bet-panel, .result-card, .modal-card,
-    .menu-list, .bet-field, .bet-input, .select-wrap select, .mini-btn, .chip, .bet-controls button) {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    background-color: rgba(250, 244, 234, .92);
   }
 }
 

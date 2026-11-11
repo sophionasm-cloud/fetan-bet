@@ -83,8 +83,17 @@ window.Games = (function () {
     const b = document.createElement('button');
     b.className = 'chip';
     const paint = () => (b.textContent = (muted ? '🔇 ' : '🔊 ') + C.t('sound'));
-    b.onclick = () => { muted = !muted; localStorage.setItem('mute', muted ? '1' : '0'); paint(); };
+    b.onclick = () => { setMuted(!muted); paint(); };
     paint(); host.appendChild(b);
+  }
+
+  function setMuted(value) {
+    muted = Boolean(value);
+    localStorage.setItem('mute', muted ? '1' : '0');
+  }
+
+  function isMuted() {
+    return muted;
   }
 
   function coinRain(stage) {
@@ -152,146 +161,144 @@ window.Games = (function () {
   function mount(app, ctx) {
     C = ctx;
     const { t, esc } = C;
-    // The customer homepage goes straight from the promotional slider to the
-    // game gallery. Guests keep the welcome hero as their registration entry.
-    const welcomeHero = C.guest ? `
-      <!-- FETAN BET HERO BANNER (guest entry only) -->
-      <div class="lobby-hero">
-        <div class="lobby-hero-art" aria-hidden="true">
-          <div class="hero-art-orbit"></div>
-          <img class="hero-art-main" src="/img/roulette.webp.jpg" alt="" fetchpriority="high" decoding="async">
-          <img class="hero-art-secondary" src="/img/plinko.webp.jpg" alt="" loading="eager" decoding="async">
-          <span class="hero-art-caption">FETAN BET <i></i> GAME LOBBY</span>
-        </div>
-        <div class="lobby-hero-content">
-          <div class="lobby-hero-badge">WELCOME TO FETAN BET</div>
-          <h1 class="lobby-hero-title">${lang === 'am' ? 'የእርስዎ ጨዋታ። የእርስዎ ቅጽበት።' : 'Your game. Your moment.'}</h1>
-          <p class="lobby-hero-sub">${lang === 'am' ? 'ጨዋታዎቹን ይመልከቱና የሚወዱትን ይምረጡ።' : 'Explore the games and discover your next favourite.'}</p>
-          <div class="lobby-hero-pills">
-            <span class="hero-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.3 2.3 4.8-5"/></svg>${lang === 'am' ? 'ኦሪጅናል ጨዋታዎች' : 'Original games'}</span>
-            <span class="hero-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${lang === 'am' ? 'ፍትሃዊ ውጤቶች' : 'Provably fair'}</span>
+    const games = [
+      { id: 'chicken-road-2', title: 'Chicken Road Dash', cat: 'originals', badge: 'HOT', hot: true, eager: true },
+      { id: 'mines', title: t('mines_title'), cat: 'originals', badge: 'ORIGINAL' },
+      { id: 'plinko', title: t('plinko_title'), cat: 'originals', badge: 'ORIGINAL' },
+      { id: 'penalty', title: 'Penalty Unlimited', cat: 'originals', badge: 'ORIGINAL' },
+      { id: 'keno', title: t('keno_title'), cat: 'lottery', badge: 'POPULAR' },
+      { id: 'roulette', title: t('roulette_title'), cat: 'table', badge: 'CLASSIC' },
+      { id: 'star', title: t('star_title'), cat: 'table', badge: 'SLOT' }
+    ];
+    const classicsLabel = lang === 'am' ? t('cat_classic') : 'Classics';
+    const rows = [
+      { id: 'popular', title: lang === 'am' ? 'ተወዳጅ' : 'Popular', games },
+      { id: 'originals', title: t('cat_originals'), games: games.filter((game) => game.cat === 'originals') },
+      { id: 'classics', title: classicsLabel, games: games.filter((game) => game.cat === 'table') }
+    ];
+    const filters = [
+      ['all', t('cat_all')],
+      ['originals', t('cat_originals')],
+      ['table', classicsLabel],
+      ['lottery', lang === 'am' ? 'ኬኖ' : 'Keno']
+    ];
+    const arrow = (direction) => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${direction === 'prev' ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'}"/></svg>`;
+    const cardMarkup = (game) => `
+      <a class="home-game-card" href="#/game/${game.id}" data-game="${game.id}" data-cat="${game.cat}" aria-label="${esc(game.title)}">
+        <img src="${GAME_POSTERS[game.id]}" alt="" loading="${game.eager ? 'eager' : 'lazy'}" decoding="async"${game.eager ? ' fetchpriority="high"' : ''}>
+        <span class="home-card-fallback" aria-hidden="true">${GAME_ART[game.id]}</span>
+        <span class="home-card-shade" aria-hidden="true"></span>
+        <span class="home-card-badge${game.hot ? ' is-hot' : ''}">${esc(game.badge)}</span>
+        <span class="home-card-title">${esc(game.title)}</span>
+      </a>`;
+    const rowMarkup = (row) => `
+      <section class="home-row" data-home-row="${row.id}" aria-labelledby="home-row-${row.id}">
+        <div class="home-row-head">
+          <h2 class="home-row-title" id="home-row-${row.id}">${esc(row.title)}</h2>
+          <div class="home-row-arrows">
+            <button type="button" class="home-row-arrow" data-scroll="prev" aria-label="Scroll ${esc(row.title)} left">${arrow('prev')}</button>
+            <button type="button" class="home-row-arrow" data-scroll="next" aria-label="Scroll ${esc(row.title)} right">${arrow('next')}</button>
           </div>
         </div>
-      </div>` : '';
+        <div class="home-row-scroller" data-row-scroller aria-label="${esc(row.title)} games">${row.games.map(cardMarkup).join('')}</div>
+      </section>`;
 
     app.innerHTML = `
-      ${welcomeHero}
-
-      <div class="lobby-section-head"><div><span class="lobby-section-eyebrow">${lang === 'am' ? 'የጨዋታ ማዕከል' : 'GAME LOBBY'}</span><h2>${lang === 'am' ? 'ጨዋታ ይምረጡ' : 'Browse games'}</h2></div><span class="lobby-section-count">7 ${lang === 'am' ? 'ጨዋታዎች' : 'games'}</span></div>
-
-      <!-- GAME DISCOVERY & CATEGORY TABS -->
-      <div class="lobby-nav-bar">
-        <div class="lobby-filter-pills" id="gfilters">
-          <button type="button" class="gfilter on" data-cat="all">${esc(t('cat_all'))} <span class="gcount">7</span></button>
-          <button type="button" class="gfilter" data-cat="originals">${esc(t('cat_originals'))} <span class="gcount">4</span></button>
-          <button type="button" class="gfilter" data-cat="table">${esc(t('cat_classic'))} <span class="gcount">2</span></button>
-          <button type="button" class="gfilter" data-cat="lottery"><span class="keno-filter-icon" aria-hidden="true">8</span>${lang === 'am' ? 'ኬኖ' : 'Keno'} <span class="gcount">1</span></button>
-        </div>
-        <div class="lobby-sound-slot" id="sbtn"></div>
+      <div class="home-ambient" aria-hidden="true">
+        <span class="ambient-gold-a"></span>
+        <span class="ambient-green"></span>
+        <span class="ambient-gold-b"></span>
       </div>
-
-      <!-- GAMES GRID -->
-      <div class="lobby" id="ggrid">
-        <!-- 1. Chicken Road Dash (replaces the active Road Dash catalogue entry) -->
-        <div class="gcard g1" data-g="chicken-road-2" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-chicken-road-2">
-          <span class="gcard-badge hot">HOT</span>
-          ${posterMarkup('chicken-road-2', 'Chicken Road Dash', 'eager')}
-          <h3 id="gtitle-chicken-road-2">Chicken Road Dash</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
+      <div class="home-catalog" id="ggrid">
+        <div class="home-filters" id="gfilters" role="group" aria-label="${lang === 'am' ? 'ጨዋታዎችን ያጣሩ' : 'Filter games'}">
+          ${filters.map(([cat, label], index) => `<button type="button" class="home-filter${index === 0 ? ' is-active' : ''}" data-cat="${cat}" aria-pressed="${index === 0}">${esc(label)}</button>`).join('')}
         </div>
-
-        <!-- 2. Mines -->
-        <div class="gcard g4" data-g="mines" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-mines">
-          <span class="gcard-badge original">ORIGINAL</span>
-          ${posterMarkup('mines', t('mines_title'), 'eager')}
-          <h3 id="gtitle-mines">${esc(t('mines_title'))}</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
-        </div>
-
-        <!-- 3. Plinko -->
-        <div class="gcard g5" data-g="plinko" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-plinko">
-          <span class="gcard-badge original">ORIGINAL</span>
-          ${posterMarkup('plinko', t('plinko_title'))}
-          <h3 id="gtitle-plinko">${esc(t('plinko_title'))}</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
-        </div>
-
-        <!-- Penalty Unlimited -->
-        <div class="gcard g6" data-g="penalty" data-cat="originals" role="button" tabindex="0" aria-labelledby="gtitle-penalty">
-          <span class="gcard-badge original">ORIGINAL</span>
-          ${posterMarkup('penalty', 'Penalty Unlimited')}
-          <h3 id="gtitle-penalty">Penalty Unlimited</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
-        </div>
-
-        <!-- 4. Keno -->
-        <div class="gcard g-keno" data-g="keno" data-cat="lottery" role="button" tabindex="0" aria-labelledby="gtitle-keno">
-          <span class="gcard-badge popular">POPULAR</span>
-          ${posterMarkup('keno', t('keno_title'))}
-          <h3 id="gtitle-keno">${esc(t('keno_title'))}</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
-        </div>
-
-        <!-- 6. Roulette -->
-        <div class="gcard g2" data-g="roulette" data-cat="table" role="button" tabindex="0" aria-labelledby="gtitle-roulette">
-          <span class="gcard-badge classic">CLASSIC</span>
-          ${posterMarkup('roulette', t('roulette_title'))}
-          <h3 id="gtitle-roulette">${esc(t('roulette_title'))}</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
-        </div>
-
-        <!-- 7. Star Spin -->
-        <div class="gcard g3" data-g="star" data-cat="table" role="button" tabindex="0" aria-labelledby="gtitle-star">
-          <span class="gcard-badge classic">SLOT</span>
-          ${posterMarkup('star', t('star_title'))}
-          <h3 id="gtitle-star">${esc(t('star_title'))}</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
-        </div>
+        <div class="home-rows">${rows.map(rowMarkup).join('')}</div>
       </div>`;
 
-    soundBtn($('sbtn'));
-    
-    // Category filter logic
-    const filterBtns = app.querySelectorAll('.gfilter');
-    const cards = app.querySelectorAll('.gcard');
-    filterBtns.forEach((b) => {
-      b.onclick = () => {
-        filterBtns.forEach((x) => x.classList.remove('on'));
-        b.classList.add('on');
-        const cat = b.dataset.cat;
-        cards.forEach((c) => {
-          if (cat === 'all' || c.dataset.cat === cat) {
-            c.style.display = '';
-          } else {
-            c.style.display = 'none';
-          }
+    const filterButtons = [...app.querySelectorAll('.home-filter')];
+    const rowElements = [...app.querySelectorAll('.home-row')];
+    const cards = [...app.querySelectorAll('.home-game-card')];
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const scrollerFor = (row) => row.querySelector('[data-row-scroller]');
+    const updateArrows = (row) => {
+      const scroller = scrollerFor(row);
+      if (!scroller) return;
+      const max = scroller.scrollWidth - scroller.clientWidth;
+      const prev = row.querySelector('[data-scroll="prev"]');
+      const next = row.querySelector('[data-scroll="next"]');
+      row.classList.toggle('is-static', max <= 4);
+      prev.disabled = max <= 4 || scroller.scrollLeft <= 2;
+      next.disabled = max <= 4 || scroller.scrollLeft >= max - 2;
+    };
+    const applyFilter = (cat) => {
+      filterButtons.forEach((button) => {
+        const active = button.dataset.cat === cat;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      rowElements.forEach((row) => {
+        let visible = 0;
+        row.querySelectorAll('.home-game-card').forEach((card) => {
+          const show = cat === 'all' || card.dataset.cat === cat;
+          card.hidden = !show;
+          if (show) visible += 1;
         });
-      };
+        row.hidden = visible === 0;
+        const scroller = scrollerFor(row);
+        if (scroller) scroller.scrollLeft = 0;
+        if (visible) requestAnimationFrame(() => updateArrows(row));
+      });
+    };
+
+    filterButtons.forEach((button) => {
+      button.addEventListener('click', () => applyFilter(button.dataset.cat));
     });
 
-    cards.forEach((c) => {
-      const activate = () => {
-        if (C.guest) { C.onLogin?.(); return; }
-        open(app, c.dataset.g, true);
-      };
-      const poster = c.querySelector('.game-poster');
+    rowElements.forEach((row) => {
+      const scroller = scrollerFor(row);
+      if (!scroller) return;
+      row.querySelectorAll('.home-row-arrow').forEach((button) => {
+        button.addEventListener('click', () => {
+          const step = Math.max(scroller.clientWidth * 0.82, 148);
+          scroller.scrollBy({
+            left: button.dataset.scroll === 'next' ? step : -step,
+            behavior: reduceMotion.matches ? 'auto' : 'smooth'
+          });
+        });
+      });
+      scroller.addEventListener('scroll', () => updateArrows(row), { passive: true });
+    });
+
+    cards.forEach((card) => {
+      const poster = card.querySelector('img');
       poster?.addEventListener('error', () => {
         poster.remove();
-        c.classList.add('poster-missing');
+        card.classList.add('poster-missing');
       }, { once: true });
-      c.onclick = activate;
-      c.onkeydown = (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          activate();
-        }
-      };
+      card.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (C.guest) { C.onLogin?.(); return; }
+        open(app, card.dataset.game, true);
+      });
     });
+
+    requestAnimationFrame(() => rowElements.forEach(updateArrows));
+    app._homeRowObserver?.disconnect();
+    if (window.ResizeObserver) {
+      const observer = new ResizeObserver(() => rowElements.forEach(updateArrows));
+      rowElements.forEach((row) => {
+        const scroller = scrollerFor(row);
+        if (scroller) observer.observe(scroller);
+      });
+      app._homeRowObserver = observer;
+    }
   }
 
   let stopFns = [];
   let shell = null;
   function open(app, game, pushHistory = false) {
+    app._homeRowObserver?.disconnect();
     if (shell) { shell.cleanup(); shell = null; }
     stopFns.forEach((stop) => stop());
     stopFns = [];
@@ -436,7 +443,7 @@ window.Games = (function () {
       try {
         const frameRoot = frame.contentDocument?.documentElement;
         if (!frameRoot?.classList.contains('fetan-integrated')) return;
-        frameRoot.dataset.customerTheme = document.body.dataset.customerTheme || localStorage.getItem('fetan-theme') || 'dark';
+        frameRoot.dataset.customerTheme = 'dark';
       } catch (_) { /* The embedded game is optional to the customer shell. */ }
     };
     frame.addEventListener('load', syncFrameTheme);
@@ -4695,5 +4702,5 @@ window.Games = (function () {
     shell = null;
   }
 
-  return { mount, openRoute: (app, game) => open(app, game, false), cleanupCurrent };
+  return { mount, openRoute: (app, game) => open(app, game, false), cleanupCurrent, setMuted, isMuted };
 })();

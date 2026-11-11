@@ -28,9 +28,12 @@ for (const route of [
   "app.post('/api/games/penalty/cashout'",
 ]) assert.ok(server.includes(route), `customer route exists: ${route}`);
 
-assert.match(catalog, /data-g="chicken-road-2"[\s\S]*?Chicken Road Dash/);
-assert.match(catalog, /data-g="penalty"[\s\S]*?Penalty Unlimited/);
-assert.doesNotMatch(catalog, /data-g="bingo"/, 'retired Bingo is not in the customer lobby');
+const lobbyGames = catalog.match(/const games = \[([\s\S]*?)\n    \];/);
+assert.ok(lobbyGames, 'customer lobby declares its game list');
+assert.match(lobbyGames[1], /id: 'chicken-road-2', title: 'Chicken Road Dash'/);
+assert.match(lobbyGames[1], /id: 'penalty', title: 'Penalty Unlimited'/);
+assert.doesNotMatch(lobbyGames[1], /bingo/, 'retired Bingo is not in the customer lobby');
+assert.match(catalog, /href="#\/game\/\$\{game\.id\}"/, 'lobby cards link to the existing game routes');
 assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1&fetan-shell=1`/);
 assert.match(index, /fetan-game-immersive/);
 assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\)/,
