@@ -177,15 +177,15 @@ window.Games = (function () {
     app.innerHTML = `
       ${welcomeHero}
 
-      <div class="lobby-section-head"><div><span class="lobby-section-eyebrow">${lang === 'am' ? 'የጨዋታ ማዕከል' : 'GAME LOBBY'}</span><h2>${lang === 'am' ? 'ጨዋታ ይምረጡ' : 'Browse games'}</h2></div><span class="lobby-section-count">8 ${lang === 'am' ? 'ጨዋታዎች' : 'games'}</span></div>
+      <div class="lobby-section-head"><div><span class="lobby-section-eyebrow">${lang === 'am' ? 'የጨዋታ ማዕከል' : 'GAME LOBBY'}</span><h2>${lang === 'am' ? 'ጨዋታ ይምረጡ' : 'Browse games'}</h2></div><span class="lobby-section-count">7 ${lang === 'am' ? 'ጨዋታዎች' : 'games'}</span></div>
 
       <!-- GAME DISCOVERY & CATEGORY TABS -->
       <div class="lobby-nav-bar">
         <div class="lobby-filter-pills" id="gfilters">
-          <button type="button" class="gfilter on" data-cat="all">${esc(t('cat_all'))} <span class="gcount">8</span></button>
+          <button type="button" class="gfilter on" data-cat="all">${esc(t('cat_all'))} <span class="gcount">7</span></button>
           <button type="button" class="gfilter" data-cat="originals">${esc(t('cat_originals'))} <span class="gcount">4</span></button>
           <button type="button" class="gfilter" data-cat="table">${esc(t('cat_classic'))} <span class="gcount">2</span></button>
-          <button type="button" class="gfilter" data-cat="lottery"><span class="keno-filter-icon" aria-hidden="true">8</span>${lang === 'am' ? 'ኬኖ እና ቢንጎ' : 'Keno & Bingo'} <span class="gcount">2</span></button>
+          <button type="button" class="gfilter" data-cat="lottery"><span class="keno-filter-icon" aria-hidden="true">8</span>${lang === 'am' ? 'ኬኖ' : 'Keno'} <span class="gcount">1</span></button>
         </div>
         <div class="lobby-sound-slot" id="sbtn"></div>
       </div>
@@ -229,14 +229,6 @@ window.Games = (function () {
           <span class="gcard-badge popular">POPULAR</span>
           ${posterMarkup('keno', t('keno_title'))}
           <h3 id="gtitle-keno">${esc(t('keno_title'))}</h3>
-          <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
-        </div>
-
-        <!-- 5. Ethiopian Bingo -->
-        <div class="gcard g-bingo" data-g="bingo" data-cat="lottery" role="button" tabindex="0" aria-labelledby="gtitle-bingo">
-          <span class="gcard-badge ethiopia">🇪🇹 ቢንጎ</span>
-          ${posterMarkup('bingo', t('bingo_title'))}
-          <h3 id="gtitle-bingo">${esc(t('bingo_title'))}</h3>
           <span class="btn btn-gold gcard-action" aria-hidden="true">${esc(t('play_now'))}</span>
         </div>
 
@@ -298,150 +290,138 @@ window.Games = (function () {
   }
 
   let stopFns = [];
+  let shell = null;
   function open(app, game, pushHistory = false) {
-    const mobileShell = window.matchMedia('(max-width: 1024px)').matches;
-    const immersiveChicken = game === 'chicken-road-2';
-    let chickenLeaveStarted = false;
-    let chickenFullscreenWasActive = Boolean(document.fullscreenElement);
+    if (shell) { shell.cleanup(); shell = null; }
+    stopFns.forEach((stop) => stop());
+    stopFns = [];
+    let leaveStarted = false;
     const routeSlug = game === 'road' ? 'road-dash' : game;
-    if ((mobileShell || immersiveChicken) && pushHistory && location.hash !== `#/game/${routeSlug}`) {
+    if (pushHistory && location.hash !== `#/game/${routeSlug}`) {
+      history.pushState({ fetanPage: 'game', game }, '', `#/game/${routeSlug}`);
+    } else if (!pushHistory && location.hash === `#/game/${routeSlug}` &&
+        !(history.state?.fetanPage === 'game' &&
+          (!history.state.game || history.state.game === game || history.state.game === routeSlug))) {
+      // A direct game URL or a page reload has no in-app lobby entry behind
+      // it. Add one so Back and the exit control return to the lobby instead
+      // of leaving the site.
+      const lobbyUrl = `${location.pathname}${location.search}#/lobby`;
+      history.replaceState({ fetanPage: 'lobby', gameReturnEntry: true }, '', lobbyUrl);
       history.pushState({ fetanPage: 'game', game }, '', `#/game/${routeSlug}`);
     }
-    if (immersiveChicken) {
-      window.setFetanChickenImmersive?.(true);
-      document.documentElement.classList.add('chicken-road-immersive');
-      window.__fetanManualChickenFullscreenExit = false;
-      const onFullscreenChange = () => {
-        if (document.fullscreenElement) { chickenFullscreenWasActive = true; return; }
-        if (!chickenFullscreenWasActive) return;
-        chickenFullscreenWasActive = false;
-        if (window.__fetanManualChickenFullscreenExit) {
-          window.__fetanManualChickenFullscreenExit = false;
-          return;
-        }
-        if (!chickenLeaveStarted && location.hash === `#/game/${routeSlug}`) {
-          chickenLeaveStarted = true;
-          history.back();
-        }
-      };
-      document.addEventListener('fullscreenchange', onFullscreenChange);
-      stopFns.push(() => {
-        document.removeEventListener('fullscreenchange', onFullscreenChange);
-        if (document.fullscreenElement) {
-          window.__fetanManualChickenFullscreenExit = true;
-          document.exitFullscreen?.().catch(() => {});
-        }
-      });
-    }
-    document.body.classList.toggle('game-open', mobileShell);
+    window.setFetanGameImmersive?.(true);
+    document.body.classList.add('game-open');
     const titles = {
-      road:     '🐔 ' + C.t('road_title'),
+      road: '🐔 ' + C.t('road_title'),
       'chicken-road-2': '🐔 Chicken Road Dash',
       penalty: '⚽ Penalty Unlimited',
-      mines:    '💎 ' + C.t('mines_title'),
-      plinko:   '⚡ ' + C.t('plinko_title'),
+      mines: '💎 ' + C.t('mines_title'),
+      plinko: '⚡ ' + C.t('plinko_title'),
       roulette: C.t('roulette_title'),
-      star:     '🎰 ' + C.t('star_title'),
-      keno:     '🎱 ' + C.t('keno_title'),
-      bingo:    '🇪🇹 ' + C.t('bingo_title'),
+      star: '🎰 ' + C.t('star_title'),
+      keno: '🎱 ' + C.t('keno_title'),
+      bingo: '🇪🇹 ' + C.t('bingo_title'),
     };
-    const rouletteAccount = game === 'roulette' ? `
-      <div class="roulette-account-strip" aria-label="Customer wallet controls">
-        <button class="roulette-account-avatar" id="roulette-account-avatar" type="button" aria-label="${C.esc(C.t('profile'))}">${C.esc(Array.from(String(C.user?.name || 'G').trim())[0] || 'G').toUpperCase()}</button>
-        <div class="roulette-account-value"><span>${C.esc(C.t('wallet'))}</span><strong id="roulette-account-value">•••••• ETB</strong></div>
-        <button class="roulette-account-icon" id="roulette-account-visibility" type="button" aria-label="Show wallet balance" aria-pressed="false">◉</button>
-        <button class="roulette-account-icon" id="roulette-account-dropdown-toggle" type="button" aria-label="Open account menu" aria-expanded="false">⌄</button>
-        <div class="roulette-account-menu" id="roulette-account-menu" hidden>
-          <button type="button" data-roulette-nav="wallet">${C.esc(C.t('wallet'))}</button>
-          <button type="button" data-roulette-nav="profile">${C.esc(C.t('profile'))}</button>
-        </div>
-        <button class="roulette-deposit-button" id="roulette-deposit-button" type="button">${C.esc(C.t('deposit'))}</button>
-      </div>` : '';
+    const title = titles[game] || String(game);
     app.innerHTML = `
-      <div class="mobile-game-shell" data-game="${game}">
-        ${rouletteAccount}
-        <div class="mobile-game-topbar">
-          <button class="mobile-game-icon" id="mobile-game-back" type="button" aria-label="${C.esc(C.t('back'))}">←</button>
-          <strong class="mobile-game-title">${game === 'roulette' ? '<span class="roulette-blue-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7m0 4v7M3 12h7m4 0h7M5.6 5.6l5 5m2.8 2.8 5 5m0-12.8-5 5m-2.8 2.8-5 5"/></svg></span>' : ''}${C.esc(titles[game])}</strong>
-          <button class="mobile-game-balance" id="mobile-game-balance" type="button" aria-label="${C.esc(C.t('balance'))}">🪙 <span id="mobile-game-balance-value">—</span>${game === 'roulette' ? '<small>ETB</small>' : ''}</button>
-          <button class="mobile-game-icon" id="mobile-game-sound" type="button" aria-label="${C.esc(C.t('sound_toggle'))}">🔊</button>
-          <button class="mobile-game-icon" id="mobile-game-menu" type="button" aria-label="${C.esc(C.t('menu'))}">☰</button>
-          <div class="mobile-game-menu" id="mobile-game-menu-panel" hidden>
-            ${game === 'roulette'
-              ? `<button type="button" data-action="history">Recent results</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`
-              : game === 'mines'
-                ? `<button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button><button type="button" data-action="fair">${C.esc(C.t('provably_fair'))}</button><button type="button" data-action="history">${C.esc(C.t('history'))}</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`
-                : `<button type="button" data-action="how">${C.esc(C.t('how_to_play'))}</button><button type="button" data-action="history">${C.esc(C.t('history'))}</button><button type="button" data-action="fullscreen">${C.esc(C.t('fullscreen'))}</button>`}
-          </div>
-        </div>
+      <div class="mobile-game-shell" data-game="${C.esc(game)}">
+        ${window.FetanGameShell.markup(title, C.t, C.esc, game)}
         <div class="stage">
-          <div class="stage-head">
-            <button class="chip" id="gback" type="button">← ${C.esc(C.t('back'))}</button>
-            <span id="sbtn"></span>
-          </div>
-          <h2 class="legacy-game-title" style="text-align:center;margin:0 0 8px;color:var(--text)">${C.esc(titles[game])}</h2>
+          <div class="stage-head"><button class="chip" id="gback" type="button">← ${C.esc(C.t('back'))}</button><span id="sbtn"></span></div>
+          <h2 class="legacy-game-title" style="text-align:center;margin:0 0 8px;color:var(--text)">${C.esc(title)}</h2>
           <div id="gbody"></div>
         </div>
       </div>`;
+    const root = app.querySelector('.mobile-game-shell');
     soundBtn($('sbtn'));
-    const leaveGame = () => {
-      if (immersiveChicken && chickenLeaveStarted) return;
-      if (immersiveChicken) chickenLeaveStarted = true;
-      stopFns.forEach((f) => f()); stopFns = [];
-      if (immersiveChicken && document.fullscreenElement) {
-        window.__fetanManualChickenFullscreenExit = true;
-        document.exitFullscreen?.().catch(() => {});
-      }
-      if ((mobileShell || immersiveChicken) && location.hash === `#/game/${routeSlug}`) history.back();
-      else {
-        if (immersiveChicken) window.setFetanChickenImmersive?.(false);
-        document.body.classList.remove('game-open'); C.reload();
-      }
-    };
-    $('gback').onclick = leaveGame;
-    $('mobile-game-back').onclick = leaveGame;
     const gameView = {
       road, roulette, star, mines, plinko, keno, bingo,
       'chicken-road-2': (body) => integratedFrame(body, 'chicken-road-2', 'Chicken Road Dash'),
       penalty: (body) => integratedFrame(body, 'penalty', 'Penalty Unlimited')
     }[game];
-    if (gameView) gameView($('gbody'), app.querySelector('.stage'));
-    const topSound = $('mobile-game-sound');
-    const roadSound = $('road-sound-btn');
-    if (roadSound) topSound.onclick = () => { roadSound.click(); topSound.textContent = $('road-sound-icon')?.textContent || '🔊'; };
-    else topSound.onclick = () => $('sbtn').querySelector('button')?.click();
-    $('mobile-game-menu').onclick = () => { const menu = $('mobile-game-menu-panel'); menu.hidden = !menu.hidden; };
-    $('mobile-game-menu-panel').onclick = (event) => {
-      const action = event.target.closest('[data-action]')?.dataset.action;
-      if (action === 'how') {
+
+    const readRoundState = () => {
+      if (game === 'bingo') {
+        const button = $('bcall');
+        const active = Boolean(button && !button.disabled);
+        return { active, canAct: active, actionLabel: 'Continue Bingo' };
+      }
+      if (game === 'road') {
+        const button = $('rcashout-btn');
+        const active = Boolean(button && button.style.display !== 'none' && !button.hidden);
+        return { active, canAct: Boolean(active && !button.disabled), actionLabel: 'Cash out now' };
+      }
+      if (game === 'mines') {
+        const button = $('mmob-cash') || $('mcash');
+        const active = Boolean(button && button.style.display !== 'none' && !button.hidden);
+        return { active, canAct: Boolean(active && !button.disabled), actionLabel: 'Cash out now' };
+      }
+      return { active: false, canAct: false, actionLabel: '' };
+    };
+    const initialRound = game === 'road' ? C.roadState : game === 'mines' ? C.minesState : game === 'bingo' ? C.bingoState : null;
+    const initialRoundState = initialRound?.active
+      ? { active: true, canAct: game !== 'road' || Number(initialRound.step) > 0, actionLabel: game === 'bingo' ? 'Continue Bingo' : 'Cash out now' }
+      : readRoundState();
+    let shellSoundOn = localStorage.getItem('mute') !== '1';
+
+    const leaveGame = () => {
+      if (leaveStarted) return;
+      leaveStarted = true;
+      stopFns.forEach((stop) => stop()); stopFns = [];
+      shell?.cleanup(); shell = null;
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+      if (location.hash === `#/game/${routeSlug}`) history.back();
+      else {
+        window.setFetanGameImmersive?.(false);
+        document.body.classList.remove('game-open');
+        C.reload();
+      }
+    };
+    const action = (name) => {
+      if (['chicken-road-2', 'penalty'].includes(game)) {
+        shell?.postFrameAction(name);
+        return;
+      }
+      if (name === 'sound') {
+        const roadSound = $('road-sound-btn');
+        if (roadSound) roadSound.click();
+        else $('sbtn')?.querySelector('button')?.click();
+      } else if (name === 'how') {
         if (game === 'mines') $('mbtn-rules')?.click();
         else $('road-how-btn')?.click();
+      } else if (name === 'fair' && game === 'mines') $('mbtn-fair')?.click();
+      else if (name === 'fair' && game === 'road') {
+        $('tab-fair-btn')?.click();
+        document.querySelector('.road-subtabs')?.classList.add('mobile-overlay');
       }
-      if (action === 'fair' && game === 'mines') $('mbtn-fair')?.click();
-      if (action === 'history' && game === 'roulette') document.querySelector('.roulette-recent-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (action === 'history' && game !== 'roulette') {
+      else if (name === 'history' && game === 'roulette') document.querySelector('.roulette-recent-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else if (name === 'history') {
         $('tab-bets-btn')?.click();
         document.querySelector('.road-subtabs')?.classList.toggle('mobile-overlay');
+      } else if (name === 'critical') {
+        if (game === 'road') $('rcashout-btn')?.click();
+        else if (game === 'mines') ($('mmob-cash') || $('mcash'))?.click();
+        else if (game === 'bingo') $('bcall')?.click();
       }
-      if (action === 'fullscreen' && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
-      $('mobile-game-menu-panel').hidden = true;
     };
-    $('mobile-game-balance').onclick = () => {
-      if (mobileShell) history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);
-      $('quickDepositBtn')?.click();
-    };
-    const paintBalance = () => {
-      const val = $('road-bal-val')?.textContent || document.querySelector('#balanceBox')?.textContent?.replace(/[^\d.,]/g, '').trim() || '—';
-      const target = $('mobile-game-balance-value');
-      if (target) target.textContent = val;
-    };
-    paintBalance();
-    if (mobileShell) {
-      const balanceObserver = new MutationObserver(paintBalance);
-      const watched = $('road-bal-val') || $('balanceBox');
-      if (watched) balanceObserver.observe(watched, { childList: true, characterData: true, subtree: true });
-      stopFns.push(() => balanceObserver.disconnect());
+    $('gback').onclick = leaveGame;
+    if (gameView) gameView($('gbody'), root.querySelector('.stage'));
+    shell = window.FetanGameShell.mount(root, { game, ctx: C, onExit: leaveGame, onAction: action, roundState: initialRoundState });
+    const shellSoundButton = root.querySelector('[data-game-sound]');
+    if (shellSoundButton) {
+      shellSoundButton.textContent = shellSoundOn ? '🔊' : '🔇';
+      shellSoundButton.onclick = () => {
+        action('sound');
+        shellSoundOn = !shellSoundOn;
+        shellSoundButton.textContent = shellSoundOn ? '🔊' : '🔇';
+      };
     }
+
+    const updateRound = () => shell?.setRoundActive(readRoundState());
+    const bodyObserver = new MutationObserver(updateRound);
+    bodyObserver.observe($('gbody'), { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'style', 'hidden'] });
+    stopFns.push(() => bodyObserver.disconnect());
+    if (initialRoundState.active) shell.setRoundActive(initialRoundState);
   }
 
   function integratedFrame(body, game, title) {
@@ -462,19 +442,25 @@ window.Games = (function () {
     frame.addEventListener('load', syncFrameTheme);
     window.addEventListener('fetan-customer-theme-change', syncFrameTheme);
     body.replaceChildren(frame);
-    frame.src = `/games/${game}/?fetan=1`;
+    frame.src = `/games/${game}/?fetan=1&fetan-shell=1`;
     const onMessage = (event) => {
       if (event.origin !== location.origin || event.source !== frame.contentWindow || typeof event.data?.type !== 'string') return;
       if (event.data.type === 'fetan-game-close') {
-        $('mobile-game-back')?.click();
+        document.querySelector('.mobile-game-shell [data-game-exit]')?.click();
         return;
       }
-      if (game === 'chicken-road-2' && event.data.type === 'fetan-game-navigate' &&
-          ['wallet', 'withdraw', 'profile', 'support'].includes(event.data.route)) {
-        if (document.fullscreenElement) {
-          window.__fetanManualChickenFullscreenExit = true;
-          document.exitFullscreen?.().catch(() => {});
-        }
+      if (event.data.type === 'fetan-round-state') {
+        shell?.setRoundActive({ active: Boolean(event.data.active), canAct: Boolean(event.data.canAct), actionLabel: event.data.actionLabel });
+        if (event.data.previousActive && !event.data.active) shell?.refreshBalance().catch(() => {});
+        return;
+      }
+      if (event.data.type === 'fetan-wallet-refresh') { shell?.refreshBalance().catch(() => {}); return; }
+      if (event.data.type === 'fetan-open-wallet') { shell?.openWallet(); return; }
+      if (event.data.type === 'fetan-open-deposit') { shell?.openDeposit(); return; }
+      if (event.data.type === 'fetan-game-navigate' &&
+          ['wallet', 'deposit', 'withdraw', 'profile', 'support', 'history'].includes(event.data.route)) {
+        shell?.cleanup();
+        shell = null;
         stopFns.forEach((stop) => stop());
         stopFns = [];
         C.navigateCustomer?.(event.data.route);
@@ -4541,10 +4527,10 @@ window.Games = (function () {
         </div>
       </div>
       <div class="bingo-controls">
-        <button class="bigbtn green" id="bnew">${esc(t('bingo_new_card'))}</button>
         <button class="bigbtn" id="bcall" disabled>📢 ${esc(t('bingo_call'))}</button>
         <button class="chip" id="bauto" style="margin-left:8px">⏩ Auto</button>
       </div>
+      <p class="bingo-retired-round-note" id="bretired-note" hidden>Bingo has been retired. You can continue this active round until it settles.</p>
       <div class="msg" id="bmsg"></div>`;
 
     const bet = betBar($('bbet'));
@@ -4619,53 +4605,22 @@ window.Games = (function () {
     async function initBingoState() {
       try {
         const st = await C.api('/games/bingo');
-        if (st && st.active) {
-          renderBingoPaytable(st.payout_version || 1);
-          currentBet = st.bet;
-          card = st.card;
-          drawn = st.drawn || [];
-          marked = st.marked || new Array(25).fill(false);
-          gameActive = true;
-          buildGrid();
-          drawn.forEach((n) => addBall(n));
-          $('bcall').disabled = false;
-          $('bnew').textContent = 'Abandon & New';
-          $('bdrawcount').textContent = `Draws: ${drawn.length}`;
-          say($('bmsg'), esc(t('bingo_waiting')), '');
-          bet.lock(true);
-        }
-      } catch (e) { /* no active game */ }
-    }
-
-    $('bnew').onclick = async () => {
-      if (busy) return; busy = true;
-      stopAutoCall();
-      try {
-        if (gameActive) {
-          await C.api('/games/bingo/abandon', {});
-          gameActive = false;
-        }
-        const r = await C.api('/games/bingo/start', { bet: bet.get() });
-        renderBingoPaytable(r.payout_version || GAME_PAYOUT_RULE_VERSION);
-        currentBet = bet.get();
-        C.setBalance(r.balance);
-        card = r.card;
-        drawn = [];
-        marked = new Array(25).fill(false);
+        if (!st?.active) { C.reload(); return; }
+        renderBingoPaytable(st.payout_version || 1);
+        currentBet = st.bet;
+        card = st.card;
+        drawn = st.drawn || [];
+        marked = st.marked || new Array(25).fill(false);
         gameActive = true;
-        $('bballs').innerHTML = '';
-        $('blastball').textContent = '—';
-        $('blastball').style.background = '';
-        $('bdrawcount').textContent = 'Draws: 0';
         buildGrid();
+        drawn.forEach((n) => addBall(n));
         $('bcall').disabled = false;
-        $('bnew').textContent = 'Abandon & New';
-        bet.lock(true);
+        $('bretired-note').hidden = false;
+        $('bdrawcount').textContent = `Draws: ${drawn.length}`;
         say($('bmsg'), esc(t('bingo_waiting')), '');
-        sfx.tick();
-      } catch (e) { C.fail(e); }
-      busy = false;
-    };
+        bet.lock(true);
+      } catch (e) { C.reload(); }
+    }
 
     async function callOne() {
       if (!gameActive || busy) return;
@@ -4695,7 +4650,7 @@ window.Games = (function () {
           gameActive = false;
           renderBingoPaytable(GAME_PAYOUT_RULE_VERSION);
           $('bcall').disabled = true;
-          $('bnew').textContent = esc(t('bingo_new_card'));
+          $('bretired-note').textContent = 'Bingo has been retired. This active round is complete.';
           bet.lock(false);
           $('bdrawcount').textContent = `✅ Bingo in ${drawn.length} draws!`;
         }
@@ -4736,6 +4691,8 @@ window.Games = (function () {
   function cleanupCurrent() {
     stopFns.forEach((stop) => stop());
     stopFns = [];
+    shell?.cleanup();
+    shell = null;
   }
 
   return { mount, openRoute: (app, game) => open(app, game, false), cleanupCurrent };

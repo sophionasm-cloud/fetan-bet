@@ -1469,6 +1469,14 @@ app.post('/api/admin/ai-settings', auth, need('admin.manage'), wrap(async (req) 
 // ---------- games (STRICTLY RESTRICTED TO USERS ONLY) ----------
 // Wallet-backed stakes are gated by WAGERING_MODE. Settlement, continuation,
 // history, verification and Chicken Road demo routes remain available.
+// Bingo is soft-retired: the explicit response is kept ahead of the wagering
+// middleware so disabled global wagering cannot obscure the retirement notice.
+app.post('/api/games/bingo/start', auth, need('customer'), (req, res) =>
+  res.status(410).json({ error: 'BINGO_RETIRED', message: 'Bingo has been retired.' }));
+// A stale client must not forfeit an existing active round before its follow-up
+// start request receives the retirement response.
+app.post('/api/games/bingo/abandon', auth, need('customer'), (req, res) =>
+  res.status(410).json({ error: 'BINGO_RETIRED', message: 'Bingo has been retired. Continue your active round to finish it.' }));
 const wageringPolicy = resolveWageringPolicy(process.env);
 if (!wageringPolicy.stakesAllowed) {
   console.warn(`[wagering] New stakes are blocked (${wageringPolicy.reason}); existing rounds can still settle.`);
@@ -1511,9 +1519,7 @@ app.post('/api/games/plinko', ...g((req) => games.plinko(req.user.id, Number(req
 app.post('/api/games/plinko/verify', ...g((req) => Promise.resolve(games.plinkoVerify(req.body))));
 app.post('/api/games/keno', ...g((req) => games.keno(req.user.id, Number(req.body.bet), req.body.picks)));
 app.get('/api/games/bingo', ...g((req) => games.bingoState(req.user.id)));
-app.post('/api/games/bingo/start', ...g((req) => games.bingoStart(req.user.id, Number(req.body.bet))));
 app.post('/api/games/bingo/call', ...g((req) => games.bingoCall(req.user.id)));
-app.post('/api/games/bingo/abandon', ...g((req) => games.bingoAbandon(req.user.id)));
 
 // ---------- agent performance ----------
 app.get('/api/agent/performance', auth, need('agent.workspace'), wrap(async (req) => {
@@ -3023,6 +3029,21 @@ app.post('/api/superadmin/payout-requests/:id/decide', auth, need('settlements.m
 
 // ---------- admin ----------
 const admin = [auth, need('admin.workspace')];
+app.get('/api/admin/active-bingo-rounds', ...admin, wrap(async () => {
+  const result = await query(
+    `SELECT r.id, r.user_id, u.name AS user_name, r.bet, r.step, r.created_at
+     FROM game_rounds r JOIN users u ON u.id=r.user_id
+     WHERE r.game='bingo' AND r.status='active'
+     ORDER BY r.created_at ASC, r.id ASC`
+  );
+  return {
+    count: result.rows.length,
+    rounds: result.rows.map((round) => ({
+      id: Number(round.id), user_id: Number(round.user_id), user_name: round.user_name,
+      bet: Number(round.bet), step: Number(round.step), created_at: round.created_at
+    }))
+  };
+}));
 app.get('/api/admin/stats', ...admin, wrap(async () => ({
   users: Number((await query("SELECT COUNT(*) c FROM users WHERE role='user'")).rows[0].c),
   agents: Number((await query("SELECT COUNT(*) c FROM users WHERE role='agent'")).rows[0].c),

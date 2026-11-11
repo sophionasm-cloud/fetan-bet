@@ -384,11 +384,9 @@ const server = app.listen(0, async () => {
     const bgState = await user('/games/bingo');
     ok('bingo state retrieves', bgState.status === 200);
     const bgStart = await user('/games/bingo/start', { bet: 1000 });
-    ok('bingo start works', bgStart.status === 200 && bgStart.data.card.length === 5);
-    const bgCall = await user('/games/bingo/call', {});
-    ok('bingo call draws ball', bgCall.status === 200 && bgCall.data.drawn.length === 1 && bgCall.data.called >= 1 && bgCall.data.called <= 75);
+    ok('bingo new rounds are cleanly retired', bgStart.status === 410 && bgStart.data.error === 'BINGO_RETIRED' && /Bingo has been retired/.test(bgStart.data.message));
     const bgAbandon = await user('/games/bingo/abandon', {});
-    ok('bingo abandon cleans up active round', bgAbandon.status === 200 && (await user('/games/bingo')).data.active === false);
+    ok('retired Bingo abandon cannot forfeit an active round', bgAbandon.status === 410 && bgAbandon.data.error === 'BINGO_RETIRED');
 
     // Concurrent cashout safety and legacy payout versions use isolated synthetic active rounds.
     const roadBet = 1000;

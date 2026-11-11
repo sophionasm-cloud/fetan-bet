@@ -85,15 +85,19 @@ const gameHtml = source('public/games/chicken-road-2/index.html');
 const gameCss = source('public/games/chicken-road-2/css/style.css');
 const gameJs = source('public/games/chicken-road-2/js/game.js');
 const parentCss = source('public/games.css');
-assert.ok(parentHtml.indexOf("location.hash)) document.documentElement.classList.add('chicken-road-immersive')") < parentHtml.indexOf('<link rel="stylesheet" href="style.css">'));
-assert.match(appJs, /window\.setFetanChickenImmersive\(Boolean\(gameRoute && gameRoute\[1\] === 'chicken-road-2'\)\)/);
+const sharedShellCss = source('public/immersive-games.css');
+assert.ok(parentHtml.indexOf("document.documentElement.classList.add('fetan-game-immersive')") < parentHtml.indexOf('<link rel="stylesheet" href="style.css">'),
+  'all direct game routes select the immersive layout before first paint');
+assert.match(appJs, /window\.setFetanGameImmersive\(Boolean\(gameRoute && me\?\.role === 'user'\)\)/,
+  'all authenticated game routes use the shared immersive layout');
 assert.match(appJs, /navigateCustomer: \(nextTab\)/);
-assert.match(appJs, /road-dash\|chicken-road-2\|mines/);
-assert.match(gamesJs, /document\.documentElement\.classList\.add\('chicken-road-immersive'\)/);
+assert.match(appJs, /road-dash\|chicken-road-2\|penalty\|mines/,
+  'the game route matcher retains the existing games and includes Penalty');
 assert.match(gamesJs, /event\.origin !== location\.origin \|\| event\.source !== frame\.contentWindow/);
-assert.match(parentCss, /html\.chicken-road-immersive body > :not\(#app\)/);
-assert.match(parentCss, /html\.chicken-road-immersive body\.game-open > #nav\.app-bottom-tabs\s*\{\s*display:\s*none !important;/,
-  'the shared mobile-game navigation cannot override Chicken Road immersive mode');
+assert.match(parentCss, /mobile-game-shell\[data-game="chicken-road-2"\] \.mobile-game-topbar/,
+  'the embedded Chicken Road package does not show its duplicate local header');
+assert.match(sharedShellCss, /mobile-game-shell \.mobile-game-topbar\.immersive-game-header\s*\{\s*display:\s*grid !important;/,
+  'the shared header stays visible for embedded games');
 assert.match(appJs, /wasImmersive && document\.fullscreenElement/,
   'leaving the immersive route exits a fullscreen game container');
 assert.match(gameHtml, /id="walletSheet"/);

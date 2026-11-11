@@ -14,6 +14,11 @@ const gameServer = read('games.js');
 const catalog = read('public/games.js');
 const chicken = read('public/games/chicken-road-2/js/game.js');
 const penalty = read('public/games/penalty/js/game.js');
+const app = read('public/app.js');
+const index = read('public/index.html');
+const sharedShell = read('public/game-shell.js');
+const immersiveCss = read('public/immersive-games.css');
+const workspace = read('public/workspace.js');
 
 assert.match(server, /const g = \(fn\) => \[auth, need\('customer'\), wrap/);
 for (const route of [
@@ -25,7 +30,33 @@ for (const route of [
 
 assert.match(catalog, /data-g="chicken-road-2"[\s\S]*?Chicken Road Dash/);
 assert.match(catalog, /data-g="penalty"[\s\S]*?Penalty Unlimited/);
-assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1`/);
+assert.doesNotMatch(catalog, /data-g="bingo"/, 'retired Bingo is not in the customer lobby');
+assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1&fetan-shell=1`/);
+assert.match(index, /fetan-game-immersive/);
+assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\)/,
+  'direct game routes include every game so the shared immersive shell can render them');
+assert.match(app, /gameRoute\?\.\[1\] === 'bingo'[\s\S]*?bingoRouteState\?\.active/,
+  'only users with an active Bingo round remain on the legacy game route');
+for (const endpoint of ['/providers', '/deposits', '/transactions']) {
+  assert.ok(sharedShell.includes(endpoint), `shared shell uses the existing ${endpoint} API`);
+}
+for (const rule of ['100dvh', 'safe-area-inset-bottom', 'overscroll-behavior: none']) {
+  assert.ok(immersiveCss.includes(rule), `immersive layout supports ${rule}`);
+}
+assert.match(immersiveCss, /body\.game-open > #nav\.app-bottom-tabs\s*\{\s*display:\s*none !important;/,
+  'immersive games hide the legacy customer bottom navigation');
+assert.match(sharedShell, /id="immersive-deposit-receipt" data-deposit-receipt/,
+  'deposit receipt upload has a wired change target');
+assert.match(catalog, /gameReturnEntry/,
+  'direct game URLs establish an in-app lobby entry for Back navigation');
+assert.match(server, /app\.post\('\/api\/games\/bingo\/start',[\s\S]*?status\(410\)\.json\(\{ error: 'BINGO_RETIRED', message: 'Bingo has been retired\.'/);
+assert.match(server, /app\.post\('\/api\/games\/bingo\/abandon',[\s\S]*?status\(410\)/);
+assert.match(server, /app\.get\('\/api\/games\/bingo',[\s\S]*?app\.post\('\/api\/games\/bingo\/call'/,
+  'active Bingo state and continuation endpoints remain registered');
+assert.match(server, /app\.get\('\/api\/admin\/active-bingo-rounds',[\s\S]*?WHERE r\.game='bingo' AND r\.status='active'/,
+  'the admin-only active round note is backed by a read-only active-round query');
+assert.match(workspace, /async function superDashboard\(\)[\s\S]*?ctx\.api\('\/admin\/active-bingo-rounds'\)[\s\S]*?No active Bingo rounds remain/,
+  'Super Admin sees the current active-round list and its zero-round state');
 for (const asset of ['public/img/chicken-road-2-card.jpg', 'public/img/penalty-unlimited-preview.jpg']) {
   assert.ok(fs.statSync(path.join(root, asset)).size > 0, `poster exists: ${asset}`);
 }

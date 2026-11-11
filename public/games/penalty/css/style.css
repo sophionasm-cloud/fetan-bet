@@ -634,3 +634,11 @@ body { background: #070a0f; }
 .menu-item:hover { color: #ffd329; }
 html.fetan-integrated .penalty-disclaimer,
 html.fetan-integrated #menuReset { display: none !important; }
+
+/* In the Fetan game shell, header and wallet are rendered by the parent page. */
+html.fetan-shared-shell,
+html.fetan-shared-shell body { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+html.fetan-shared-shell .app { width: 100%; height: 100dvh; min-height: 0; max-width: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+html.fetan-shared-shell .penalty-topbar,
+html.fetan-shared-shell .penalty-disclaimer { display: none !important; }
+html.fetan-shared-shell .penalty-stage { flex: 1 1 auto; min-height: 0; }

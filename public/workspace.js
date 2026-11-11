@@ -837,9 +837,10 @@
 
   async function superDashboard() {
     const range = state.superRange;
-    const [dash, performance] = await Promise.all([
+    const [dash, performance, bingoRounds] = await Promise.all([
       ctx.api(`/superadmin/dashboard?range=${encodeURIComponent(range)}`),
-      ctx.api(`/superadmin/agent-performance?period=${encodeURIComponent(state.perfPeriod)}`).catch(() => ({ agents: [] }))
+      ctx.api(`/superadmin/agent-performance?period=${encodeURIComponent(state.perfPeriod)}`).catch(() => ({ agents: [] })),
+      ctx.api('/admin/active-bingo-rounds').catch(() => null)
     ]);
     state.pendingApprovals = Number(dash.stats?.pending_approvals?.value || 0);
     state.supportUnread = Number(dash.support?.unread || 0);
@@ -850,6 +851,14 @@
     const donut = dash.donut || {};
     const pendingRows = state.pendingTab === 'withdrawals' ? (dash.pending_withdrawals || []) : (dash.pending_deposits || []);
     const perfRows = (performance.agents || []).slice(0, 8);
+    const bingoRetirementNote = bingoRounds
+      ? `<section class="ws-card" role="status" aria-live="polite">
+          ${sectionHead('Bingo retired · active rounds', 'Existing rounds remain available to their players until they settle.', `<span class="ws-count-chip"><b>${num(bingoRounds.count)}</b> active</span>`)}
+          ${(bingoRounds.rounds || []).length
+            ? table(['Round', 'Player', 'Stake', 'Calls', 'Started'], bingoRounds.rounds.map((round) => `<tr><td><b>#${num(round.id)}</b></td><td>${esc(round.user_name)} <span class="ws-cell-sub">(#${num(round.user_id)})</span></td><td>${money(round.bet)} ETB</td><td>${num(round.step)}</td><td>${dateTime(round.created_at)}</td></tr>`))
+            : empty('check', 'No active Bingo rounds remain', 'The retired game is clear.')}
+        </section>`
+      : `<section class="ws-card" role="status">${sectionHead('Bingo retired · active rounds', 'The active-round count could not be loaded. Refresh the dashboard to retry.')}${empty('clock', 'Round status unavailable', '')}</section>`;
     return `<div class="ws-page-head">
       <div><span class="ws-kicker">PLATFORM</span><h2>Executive Desk</h2><p>Deposits, withdrawals, agents and approvals across FETAN BET.</p></div>
       <div class="ws-head-actions">
@@ -857,6 +866,7 @@
         <button type="button" class="ws-btn ghost" id="ws-super-refresh">${icon('refresh')} Refresh</button>
       </div>
     </div>
+    ${bingoRetirementNote}
     <div class="ws-stats-grid five">
       ${statCard({ label: 'Total Users', value: num(dash.stats.total_users?.value), iconName: 'users', tone: 'yellow', change: dash.stats.total_users?.change, footer: `${dash.stats.total_users?.new || 0} new this period` })}
       ${statCard({ label: 'Active Agents', value: num(dash.stats.active_agents?.value), iconName: 'agents', tone: 'green', footer: `${num(dash.stats.active_agents?.total)} total · ${num(dash.stats.active_agents?.online)} online` })}

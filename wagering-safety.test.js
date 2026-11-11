@@ -155,10 +155,18 @@ const firstGameRoute = server.indexOf("app.post('/api/games/roulette'");
 assert.ok(guardIndex !== -1, 'server mounts the wagering guard');
 assert.ok(firstGameRoute !== -1, 'game routes exist');
 assert.ok(guardIndex < firstGameRoute, 'guard runs before the first game route');
-const gameRoute = /app\.(?:get|post)\('\/api\/games\//g;
+const gameRoute = /app\.(?:get|post)\('\/api\/games\/[^']+'/g;
+const retiredBingoStart = server.indexOf("app.post('/api/games/bingo/start'");
+const retiredBingoAbandon = server.indexOf("app.post('/api/games/bingo/abandon'");
+assert.ok(retiredBingoStart >= 0 && retiredBingoStart < guardIndex,
+  'the Bingo start route returns its explicit retirement response before the wagering guard');
+assert.ok(retiredBingoAbandon >= 0 && retiredBingoAbandon < guardIndex,
+  'stale Bingo abandon requests cannot forfeit an active round before a new start attempt');
+assert.match(server.slice(retiredBingoStart, guardIndex), /status\(410\)\.json\(\{ error: 'BINGO_RETIRED'/);
 let routeMatch;
 let gameRouteCount = 0;
 while ((routeMatch = gameRoute.exec(server))) {
+  if (routeMatch[0].includes('/bingo/start') || routeMatch[0].includes('/bingo/abandon')) continue;
   gameRouteCount++;
   assert.ok(routeMatch.index > guardIndex, `every game route is registered after the guard: ${routeMatch[0]}`);
 }

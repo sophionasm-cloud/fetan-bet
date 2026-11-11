@@ -51,6 +51,15 @@
   const START_BALANCE = 1000000;
   const STORE_KEY = 'fetanbet.penalty.v1';
   const integrated = new URLSearchParams(location.search).get('fetan') === '1';
+  const sharedShell = new URLSearchParams(location.search).get('fetan-shell') === '1';
+  let lastParentRoundState = null;
+
+  function reportParentRoundState(active, canAct = active) {
+    if (!sharedShell || window.parent === window || lastParentRoundState === Boolean(active)) return;
+    const previousActive = Boolean(lastParentRoundState);
+    lastParentRoundState = Boolean(active);
+    window.parent.postMessage({ type: 'fetan-round-state', active: Boolean(active), canAct: Boolean(canAct), actionLabel: 'Collect winnings', previousActive }, location.origin);
+  }
   const AIMS = ['left', 'center', 'right'];
   // Version 3 ladder: optimal play at a 30% return target. Reading the tell
   // and shooting away gives 0.91 / 0.79 / 0.67 goal probabilities.
@@ -301,6 +310,7 @@
       setMessage('Safe settlement limit reached. Claim the current payout to finish this round.');
     }
     renderLadder();
+    reportParentRoundState(state.runActive, !claimBtn.disabled);
   }
 
   // ---------------------------------------------------------------- Scene layout
@@ -2089,6 +2099,16 @@
         state.remoteBusy = false;
         toast(apiErrorMessage(error), 'bad');
         updateHUD();
+      });
+    }
+    if (sharedShell) {
+      window.addEventListener('message', (event) => {
+        if (event.origin !== location.origin || event.source !== parent || event.data?.type !== 'fetan-shell-action') return;
+        const action = event.data.action;
+        if (action === 'critical' && !claimBtn.disabled) claimBtn.click();
+        else if (action === 'sound') soundBtn.click();
+        else if (action === 'how') howBtn.click();
+        else if (action === 'history') menuBtn.click();
       });
     }
   }

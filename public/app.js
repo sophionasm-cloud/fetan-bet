@@ -3,27 +3,29 @@
 let T = {}, lang = localStorage.getItem('lang') || 'en', me = null, balance = 0, promoCredits = 0,
     limits = { min: 100, max: 100000 }, tab = 'games', agentSubtab = 'deposits';
 let promoSliderCleanup = null;
-let chickenRoadScrollY = null;
+let gameImmersiveScrollY = null;
 
-window.setFetanChickenImmersive = (active) => {
+window.setFetanGameImmersive = (active) => {
   const root = document.documentElement;
   if (active) {
-    if (chickenRoadScrollY === null) chickenRoadScrollY = window.scrollY || 0;
-    root.classList.add('chicken-road-immersive');
+    if (gameImmersiveScrollY === null) gameImmersiveScrollY = window.scrollY || 0;
+    root.classList.add('fetan-game-immersive');
+    document.body.classList.add('game-open');
     return;
   }
-  const wasImmersive = root.classList.contains('chicken-road-immersive');
-  root.classList.remove('chicken-road-immersive');
+  const wasImmersive = root.classList.contains('fetan-game-immersive');
+  root.classList.remove('fetan-game-immersive', 'chicken-road-immersive');
+  document.body.classList.remove('game-open', 'immersive-sheet-open');
   if (wasImmersive && document.fullscreenElement) {
-    window.__fetanManualChickenFullscreenExit = true;
     document.exitFullscreen?.().catch(() => {});
   }
-  if (wasImmersive && chickenRoadScrollY !== null) {
-    const restoreY = chickenRoadScrollY;
-    chickenRoadScrollY = null;
+  if (wasImmersive && gameImmersiveScrollY !== null) {
+    const restoreY = gameImmersiveScrollY;
+    gameImmersiveScrollY = null;
     requestAnimationFrame(() => window.scrollTo({ top: restoreY, behavior: 'auto' }));
   }
 };
+window.setFetanChickenImmersive = window.setFetanGameImmersive;
 
 const $ = (id) => document.getElementById(id);
 const t = (k) => T[k] ?? k;
@@ -108,7 +110,6 @@ function mountPromoSlider(app) {
     ['mines', 'Mines'],
     ['plinko', 'Plinko'],
     ['keno', 'Keno'],
-    ['bingo', 'Ethiopian Bingo'],
     ['roulette', 'Roulette'],
     ['star', 'Star Spin'],
     ['penalty', 'Penalty'],
@@ -128,7 +129,7 @@ function mountPromoSlider(app) {
     {
       key: 'six-games', image: '/images/promotions/six-games.svg',
       title: `${gameCount} DIFFERENT TYPES OF GAMES`,
-      copy: 'Explore eight different game experiences, all in one place.',
+      copy: `Explore ${gameCount} different game experiences, all in one place.`,
       note: 'Illustrative game artwork.',
       action: 'games', cta: 'Explore Games'
     },
@@ -528,6 +529,7 @@ async function refreshMe() {
 function setBalance(b) {
   balance = b;
   $('balanceBox').innerHTML = `🪙 ${fmt(b)} <small style="color:var(--text-muted);font-weight:400">${t('currency_etb')}</small>`;
+  window.dispatchEvent(new CustomEvent('fetan-balance-change', { detail: { balance: b } }));
 }
 
 // Header listeners
@@ -599,16 +601,26 @@ function nav() {
 
 async function render(subMode = '') {
   clearPromoSlider();
-  const gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
-  window.setFetanChickenImmersive(Boolean(gameRoute && gameRoute[1] === 'chicken-road-2'));
+  let gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
   await refreshMe();
+  let bingoRouteState = null;
+  if (gameRoute?.[1] === 'bingo') {
+    if (me?.role === 'user') {
+      try { bingoRouteState = await api('/games/bingo'); } catch (_) { bingoRouteState = null; }
+    }
+    if (me?.role !== 'user' || !bingoRouteState?.active) {
+      history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);
+      gameRoute = null;
+    }
+  }
+  window.setFetanGameImmersive(Boolean(gameRoute && me?.role === 'user'));
   if ((!me || !['agent', 'superadmin'].includes(me.role)) && window.FetanWorkspace) {
     window.FetanWorkspace.cleanup();
   }
   const app = $('app');
-  if (!gameRoute || !me || me.role !== 'user' || !matchMedia('(max-width: 1024px)').matches) document.body.classList.remove('game-open');
+  if (!gameRoute || !me || me.role !== 'user') document.body.classList.remove('game-open');
   if (!me) {
-    window.setFetanChickenImmersive(false);
+    window.setFetanGameImmersive(false);
     document.body.classList.remove('game-open');
     document.body.classList.remove('has-app-nav');
     $('nav').hidden = true;
@@ -622,10 +634,10 @@ async function render(subMode = '') {
   // Staff roles use the dedicated premium workspace; they never render
   // customer wallet/deposit/game views.
   if (me.role === 'agent' || me.role === 'superadmin') {
-    window.setFetanChickenImmersive(false);
+    window.setFetanGameImmersive(false);
     tab = 'workspace';
   } else if (me.role === 'admin') {
-    window.setFetanChickenImmersive(false);
+    window.setFetanGameImmersive(false);
     // The legacy admin console remains available for existing admin accounts.
     tab = 'admin';
   } else if (['agent', 'admin', 'workspace'].includes(tab)) {
@@ -636,7 +648,7 @@ async function render(subMode = '') {
   // and responsive classes stay in sync after login, route changes, and resize.
   nav();
   $('nav').hidden = me.role !== 'user';
-  syncTelegramShell(Boolean(gameRoute && me.role === 'user' && matchMedia('(max-width: 1024px)').matches));
+  syncTelegramShell(Boolean(gameRoute && me.role === 'user'));
 
   // While a customer is inside a game, hide the duplicated wallet balance and
   // Deposit chips from the global top header. The game shell renders its own
@@ -651,7 +663,7 @@ async function render(subMode = '') {
   }
 
   const views = {
-    games: (root) => gamesView(root, gameRoute),
+    games: (root) => gamesView(root, gameRoute, bingoRouteState),
     wallet: walletView,
     deposit: depositView,
     withdraw: withdrawView,
@@ -732,7 +744,7 @@ function setAppViewportHeight() {
   document.body.classList.toggle('mobile-app', window.innerWidth <= 1024);
   document.body.classList.toggle('game-landscape', window.innerWidth > height);
   const routeIsGame = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
-  const shouldOpenShell = window.innerWidth <= 1024 && routeIsGame && me?.role === 'user';
+  const shouldOpenShell = routeIsGame && me?.role === 'user';
   syncTelegramShell(shouldOpenShell);
   if (document.body.classList.contains('game-open') !== shouldOpenShell) {
     if (!shouldOpenShell) Games.cleanupCurrent();
@@ -743,7 +755,11 @@ setAppViewportHeight();
 window.visualViewport?.addEventListener('resize', setAppViewportHeight);
 window.addEventListener('resize', setAppViewportHeight, { passive: true });
 window.addEventListener('orientationchange', setAppViewportHeight, { passive: true });
-window.addEventListener('popstate', () => { Games.cleanupCurrent(); render(); });
+window.addEventListener('popstate', () => {
+  Games.cleanupCurrent();
+  if (!/^#\/game\//.test(location.hash)) window.setFetanGameImmersive(false);
+  render();
+});
 
 // =====================================================
 // AUTH VIEW — Stake-style Login & Registration
@@ -1151,7 +1167,7 @@ function iconGift() {
 // =====================================================
 // GAMES VIEW (Primary Landing Page)
 // =====================================================
-async function gamesView(app, gameRoute = null) {
+async function gamesView(app, gameRoute = null, bingoState = null) {
   const [roadState, minesState] = await Promise.all([
     api('/games/road').catch(() => ({ active: false, ladder: [], maxSteps: 10 })),
     api('/games/mines').catch(() => ({ active: false, mines: 5 }))
@@ -1161,12 +1177,23 @@ async function gamesView(app, gameRoute = null) {
     api, t, esc, fmt, setBalance, fail, limits,
     user: me,
     getBalance: () => balance,
-    roadState, minesState,
+    roadState, minesState, bingoState,
     reload: () => render(),
+    refreshAccount: async () => {
+      const response = await api('/me');
+      if (response.user?.role !== 'user') throw new Error('LOGIN');
+      me = response.user;
+      promoCredits = Number(response.promo_credits || 0);
+      limits = response.limits || limits;
+      setBalance(Number(response.balance || 0));
+      return response;
+    },
     navigateCustomer: (nextTab) => {
-      if (me?.role !== 'user' || !['wallet', 'withdraw', 'profile', 'support'].includes(nextTab)) return;
+      if (me?.role !== 'user' || !['wallet', 'deposit', 'withdraw', 'profile', 'support', 'history'].includes(nextTab)) return;
       tab = nextTab;
-      window.setFetanChickenImmersive(false);
+      Games.cleanupCurrent();
+      window.setFetanGameImmersive(false);
+      document.body.classList.remove('game-open');
       if (/^#\/game\//.test(location.hash)) {
         history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);
       }
@@ -1821,7 +1848,7 @@ async function renderWorkspace(app) {
 async function adminView(app) {
   const isSuperAdmin = me.role === 'superadmin';
   const transactionQuery = new URLSearchParams(adminTransactionFilters).toString();
-  const [s, u, aud, fundReqs, depPending, withPending, withApproved, analytics, txs, ticketsRes, aiConfig, annRes, agentsData, agentReport, settlementsData, payoutQueue] = await Promise.all([
+  const [s, u, aud, fundReqs, depPending, withPending, withApproved, analytics, txs, ticketsRes, aiConfig, annRes, agentsData, agentReport, settlementsData, payoutQueue, bingoRounds] = await Promise.all([
     api('/admin/stats'),
     api('/admin/users'),
     api('/admin/audit'),
@@ -1838,6 +1865,7 @@ async function adminView(app) {
     isSuperAdmin ? api(`/superadmin/agent-report${agentReportStart||agentReportEnd?`?start=${encodeURIComponent(agentReportStart)}&end=${encodeURIComponent(agentReportEnd)}`:''}`).catch(() => ({ agents: [] })) : Promise.resolve({ agents: [] }),
     isSuperAdmin ? api('/superadmin/settlements').catch(() => ({ settlements: [] })) : Promise.resolve({ settlements: [] }),
     isSuperAdmin ? api('/superadmin/payout-requests').catch(() => ({ requests: [] })) : Promise.resolve({ requests: [] }),
+    api('/admin/active-bingo-rounds').catch(() => null),
   ]);
 
   const pendingFundingCount = (payoutQueue.requests || []).filter((r) => r.status === 'pending').length;
@@ -1878,6 +1906,12 @@ async function adminView(app) {
         <div class="value">${s.users} customers · ${s.active_agents ?? s.agents} active agents</div>
         <div class="label">${s.suspended_agents ?? 0} suspended · registered agents ${s.agents}</div>
       </div>
+    </div>
+
+    <div class="card bingo-retirement-note" role="status" aria-live="polite">
+      <div class="section-head"><h3>Bingo retired · active rounds</h3>${bingoRounds ? `<strong>${Number(bingoRounds.count || 0)}</strong>` : '<strong>—</strong>'}</div>
+      <p class="muted">New rounds are disabled. Existing rounds remain available to their players until settled; no round or balance is changed by this report.</p>
+      ${!bingoRounds ? '<p class="muted">Active-round status is unavailable. Refresh to retry.</p>' : bingoRounds.rounds?.length ? `<div class="scroll"><table><thead><tr><th>Round</th><th>Player</th><th>Stake</th><th>Calls</th><th>Started</th></tr></thead><tbody>${bingoRounds.rounds.map((round) => `<tr><td>#${Number(round.id)}</td><td>${esc(round.user_name)} (#${Number(round.user_id)})</td><td>${fmt(Number(round.bet))} ETB</td><td>${Number(round.step)}</td><td>${esc(round.created_at)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No active Bingo rounds remain.</p>'}
     </div>
 
     <!-- Admin Subtabs Navigation -->
@@ -2371,7 +2405,7 @@ async function adminView(app) {
 }
 
 // A direct game link still gets an in-app lobby entry for Back navigation.
-const initialGameRoute = /^#\/game\/(road|road-dash|chicken-road-2|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
+const initialGameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
 if (initialGameRoute) {
   const deepLink = location.hash;
   history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);

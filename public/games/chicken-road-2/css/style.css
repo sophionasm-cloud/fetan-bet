@@ -1427,3 +1427,17 @@ html.fetan-integrated .account-sheet :is(button, input, label, p, time, strong, 
     animation-iteration-count: 1 !important;
   }
 }
+
+/* The Fetan parent supplies a single shared header, wallet and deposit sheet. */
+html.fetan-shared-shell,
+html.fetan-shared-shell body { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+html.fetan-shared-shell body { display: flex; align-items: stretch; justify-content: center; }
+html.fetan-shared-shell .app { width: 100%; height: 100dvh; min-height: 0; max-width: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+html.fetan-shared-shell .topbar,
+html.fetan-shared-shell .ticker-row,
+html.fetan-shared-shell .account-sheet-overlay { display: none !important; }
+html.fetan-shared-shell .stage-wrap { flex: 1 1 auto; min-height: 0; padding: 0 max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left)); }
+html.fetan-shared-shell .stage { flex: 1 1 auto; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+html.fetan-shared-shell .stage::after { display: none; }
+html.fetan-shared-shell .bet-panel { flex: 0 0 auto; max-height: 42dvh; overflow-y: auto; margin-bottom: env(safe-area-inset-bottom); }
+html.fetan-shared-shell .disclaimer { display: none !important; }

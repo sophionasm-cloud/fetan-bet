@@ -3385,6 +3385,17 @@
   align-items: center;
   margin-bottom: 10px;
 }
+.bingo-retired-round-note {
+  margin: 8px auto 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(242,217,139,.22);
+  border-radius: 9px;
+  background: rgba(242,217,139,.06);
+  color: #e6d7a4;
+  font-size: 12px;
+  text-align: center;
+}
+.bingo-retired-round-note[hidden] { display: none !important; }
 .bingo-controls .bigbtn.green {
   background: linear-gradient(135deg, #10b981, #047857);
 }

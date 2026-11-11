@@ -64,6 +64,7 @@
   const SIDE_R = 190;
   const CHECKPOINT_INSET = 36;
   const integrated = new URLSearchParams(location.search).get('fetan') === '1';
+  const sharedShell = new URLSearchParams(location.search).get('fetan-shell') === '1';
   const realWalletMode = true;
   const MIN_BET = 1;
   const MAX_BET = 500;
@@ -77,6 +78,14 @@
   let balanceAnimationFrame = 0;
   let displayedBalance = null;
   let wakeLock = null;
+  let lastParentRoundState = null;
+
+  function reportParentRoundState(active, canAct = active) {
+    if (!sharedShell || window.parent === window || lastParentRoundState === Boolean(active)) return;
+    const previousActive = Boolean(lastParentRoundState);
+    lastParentRoundState = Boolean(active);
+    window.parent.postMessage({ type: 'fetan-round-state', active: Boolean(active), canAct: Boolean(canAct), actionLabel: 'Cash out now', previousActive }, location.origin);
+  }
 
   function laneLimit() { return DIFFICULTY[state.difficulty].lanes; }
   function roadWidth() { return laneLimit() * LANE_W; }
@@ -539,6 +548,7 @@
     }
     renderLadder();
     syncAccountSheetState();
+    reportParentRoundState(active, active && state.pos > 0 && !state.hop && !state.remoteBusy);
   }
 
   function renderWalletBalance() {
@@ -2803,16 +2813,25 @@
       $('menuFullscreen').hidden = false;
       $('menuResponsible').hidden = false;
       walletOpen.addEventListener('click', () => {
-        openAccountSheet(walletSheet, walletOpen);
-        refreshAuthoritativeBalance().catch(() => {});
-        loadRecentTransactions();
+        if (sharedShell) parent.postMessage({ type: 'fetan-open-wallet' }, location.origin);
+        else {
+          openAccountSheet(walletSheet, walletOpen);
+          refreshAuthoritativeBalance().catch(() => {});
+          loadRecentTransactions();
+        }
       });
       walletOpen.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); walletOpen.click(); }
       });
-      depositOpen.addEventListener('click', () => openDepositSheet(depositOpen));
-      $('lowBalanceDeposit')?.addEventListener('click', () => openDepositSheet($('lowBalanceDeposit')));
-      $('walletSheetDeposit').addEventListener('click', () => openDepositSheet(depositOpen));
+      depositOpen.addEventListener('click', () => sharedShell
+        ? parent.postMessage({ type: 'fetan-open-deposit' }, location.origin)
+        : openDepositSheet(depositOpen));
+      $('lowBalanceDeposit')?.addEventListener('click', () => sharedShell
+        ? parent.postMessage({ type: 'fetan-open-deposit' }, location.origin)
+        : openDepositSheet($('lowBalanceDeposit')));
+      $('walletSheetDeposit').addEventListener('click', () => sharedShell
+        ? parent.postMessage({ type: 'fetan-open-deposit' }, location.origin)
+        : openDepositSheet(depositOpen));
       $('walletSheetWithdraw').addEventListener('click', () => navigateCustomer('withdraw'));
       $('walletSheetRefresh').addEventListener('click', () => {
         refreshAuthoritativeBalance().catch(() => {});
@@ -3045,6 +3064,16 @@
           event.preventDefault();
           parent.postMessage({ type: 'fetan-game-close' }, location.origin);
         });
+      });
+    }
+    if (sharedShell) {
+      window.addEventListener('message', (event) => {
+        if (event.origin !== location.origin || event.source !== parent || event.data?.type !== 'fetan-shell-action') return;
+        const action = event.data.action;
+        if (action === 'critical' && !cashBtn.disabled) cashBtn.click();
+        else if (action === 'sound') soundBtn.click();
+        else if (action === 'how') menuHow?.click();
+        else if (action === 'history') menuBtn.click();
       });
     }
     updateHUD();

@@ -107,8 +107,8 @@ function getAiResponse(userMessage, context = {}) {
 
   if (lower.includes('bingo') || msg.includes('ቢንጎ')) {
     const reply = isAmharic
-      ? `የኢትዮጵያ ቢንጎ (Ethiopian Bingo)፦ በባህላዊ የአማርኛ ቁጥሮች የሚጫወት 5x5 ካርድ ነው። ቁጥሮቹ ሲሳሉ ረድፍ፣ ዓምድ ወይም ሰያፍ ከሞሉ ቢንጎ ብለው ያሸንፋሉ!`
-      : `Ethiopian Bingo: A traditional 5x5 bingo card featuring Amharic numerals. Complete a full horizontal row, vertical column, or diagonal line to win ቢንጎ!`;
+      ? 'ቢንጎ ከጨዋታዎች ተወግዷል፤ አዲስ ዙር መጀመር አይቻልም። ንቁ ዙር ካለዎት ለመጨረስ ወደ ዙሩ ይመለሱ።'
+      : 'Bingo has been retired, so new rounds cannot begin. If you have an active round, return to it to finish.';
     return { reply, shouldEscalate: false };
   }
 
