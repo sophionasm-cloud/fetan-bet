@@ -35,6 +35,12 @@ assert.match(lobbyGames[1], /id: 'chicken-road-2', title: 'Chicken Road Dash'/);
 assert.match(lobbyGames[1], /id: 'penalty', title: 'Penalty Unlimited'/);
 assert.doesNotMatch(lobbyGames[1], /bingo/, 'retired Bingo is not in the customer lobby');
 assert.match(catalog, /href="#\/game\/\$\{game\.id\}"/, 'lobby cards link to the existing game routes');
+const cardTemplate = catalog.match(/const cardMarkup = \(game\) => `([\s\S]*?)`;/);
+assert.ok(cardTemplate, 'game poster card template exists');
+assert.match(cardTemplate[1], /aria-label="Play \$\{esc\(game\.title\)\}"/, 'poster-only game links have an accessible game name');
+assert.match(cardTemplate[1], /alt="\$\{esc\(game\.title\)\} poster"/, 'game posters have descriptive alt text');
+assert.doesNotMatch(cardTemplate[1], /home-card-title|home-card-badge|home-card-shade|Play now/i,
+  'game cards show only the clickable poster, without title or button overlays');
 assert.match(app, /function nav\(\)\s*\{\s*const n = \$\('nav'\);\s*if \(!me\)\s*\{\s*n\.hidden = true;/,
   'guests do not receive customer navigation destinations');
 assert.match(homeCss, /#nav\.app-bottom-tabs\[hidden\]\s*\{\s*display:\s*none !important;/,

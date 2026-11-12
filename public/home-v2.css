@@ -1085,55 +1085,6 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   transition: transform .35s ease;
 }
 
-.home-card-shade {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(180deg, rgba(20, 20, 20, 0.02) 30%, rgba(20, 20, 20, 0.20) 58%, rgba(20, 20, 20, 0.92) 100%);
-  pointer-events: none;
-}
-
-.home-card-badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  padding: 0 7px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 6px;
-  background: rgba(20, 20, 20, 0.74);
-  color: var(--home-text);
-  font: 800 8px/1 var(--home-font);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-.home-card-badge.is-hot {
-  border-color: #ff6f79;
-  background: #c9344a;
-  color: #fff;
-}
-
-.home-card-title {
-  position: absolute;
-  right: 10px;
-  bottom: 9px;
-  left: 10px;
-  z-index: 3;
-  display: block;
-  overflow: visible;
-  color: var(--home-text);
-  font: 700 12px/1.3 var(--home-font);
-  letter-spacing: -0.005em;
-  overflow-wrap: anywhere;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.58);
-}
-
 .home-card-fallback {
   position: absolute;
   inset: 0;
@@ -1581,13 +1532,6 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-info-g
     border-radius: 18px;
   }
 
-  .home-card-title {
-    right: 12px;
-    bottom: 11px;
-    left: 12px;
-    font-size: 13px;
-  }
-
   .home-row-title {
     font-size: 19px;
   }
@@ -1714,9 +1658,6 @@ body.customer-theme[data-customer-theme][data-customer-theme].home-view #app .ho
     background: #262629;
   }
 
-  .home-card-badge {
-    background: rgba(20, 20, 20, 0.92);
-  }
 }
 
 @media (prefers-reduced-transparency: reduce) {

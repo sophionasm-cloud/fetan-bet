@@ -184,12 +184,9 @@ window.Games = (function () {
     ];
     const arrow = (direction) => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${direction === 'prev' ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'}"/></svg>`;
     const cardMarkup = (game) => `
-      <a class="home-game-card" href="#/game/${game.id}" data-game="${game.id}" data-cat="${game.cat}" aria-label="${esc(game.title)}">
-        <img src="${GAME_POSTERS[game.id]}" alt="" loading="${game.eager ? 'eager' : 'lazy'}" decoding="async"${game.eager ? ' fetchpriority="high"' : ''}>
+      <a class="home-game-card" href="#/game/${game.id}" data-game="${game.id}" data-cat="${game.cat}" aria-label="Play ${esc(game.title)}">
+        <img src="${GAME_POSTERS[game.id]}" alt="${esc(game.title)} poster" loading="${game.eager ? 'eager' : 'lazy'}" decoding="async"${game.eager ? ' fetchpriority="high"' : ''}>
         <span class="home-card-fallback" aria-hidden="true">${GAME_ART[game.id]}</span>
-        <span class="home-card-shade" aria-hidden="true"></span>
-        <span class="home-card-badge${game.hot ? ' is-hot' : ''}">${esc(game.badge)}</span>
-        <span class="home-card-title">${esc(game.title)}</span>
       </a>`;
     const rowMarkup = (row) => `
       <section class="home-row" data-home-row="${row.id}" aria-labelledby="home-row-${row.id}">
