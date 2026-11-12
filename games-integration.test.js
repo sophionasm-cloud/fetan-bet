@@ -29,25 +29,50 @@ for (const route of [
   "app.post('/api/games/penalty/cashout'",
 ]) assert.ok(server.includes(route), `customer route exists: ${route}`);
 
-const lobbyGames = catalog.match(/const games = \[([\s\S]*?)\n    \];/);
-assert.ok(lobbyGames, 'customer lobby declares its game list');
-assert.match(lobbyGames[1], /id: 'chicken-road-2', title: 'Chicken Road Dash'/);
-assert.match(lobbyGames[1], /id: 'penalty', title: 'Penalty Unlimited'/);
-assert.doesNotMatch(lobbyGames[1], /bingo/, 'retired Bingo is not in the customer lobby');
-assert.match(catalog, /href="#\/game\/\$\{game\.id\}"/, 'lobby cards link to the existing game routes');
-const cardTemplate = catalog.match(/const cardMarkup = \(game\) => `([\s\S]*?)`;/);
-assert.ok(cardTemplate, 'game poster card template exists');
-assert.match(cardTemplate[1], /aria-label="Play \$\{esc\(game\.title\)\}"/, 'poster-only game links have an accessible game name');
-assert.match(cardTemplate[1], /alt="\$\{esc\(game\.title\)\} poster"/, 'game posters have descriptive alt text');
-assert.doesNotMatch(cardTemplate[1], /home-card-title|home-card-badge|home-card-shade|Play now/i,
-  'game cards show only the clickable poster, without title or button overlays');
+const lobbyCatalog = catalog.match(/const LOBBY_GAME_CATALOG = Object\.freeze\(\[([\s\S]*?)\n  \]\);/);
+assert.ok(lobbyCatalog, 'customer lobby uses a scalable game catalog');
+for (const game of ['chicken-road-2', 'star', 'roulette', 'mines', 'plinko', 'penalty', 'keno']) {
+  const launchId = game === 'chicken-road-2' ? 'chicken-road-2' : game;
+  assert.match(lobbyCatalog[1], new RegExp(`id: '${game}'.*status: 'available'.*gameUrl: '${launchId}'`),
+    `${game} remains available through its existing launch reference`);
+}
+assert.match(lobbyCatalog[1], /id: 'chicken-road-2'.*name: 'Chicken Road Dash'/);
+assert.match(lobbyCatalog[1], /id: 'penalty'.*name: 'Penalty Unlimited'/);
+assert.doesNotMatch(lobbyCatalog[1], /id: 'bingo'/, 'retired Bingo is not in the customer lobby');
+for (const category of ['crash', 'slots', 'roulette', 'table', 'live', 'more']) {
+  assert.match(catalog, new RegExp(`id: '${category}'`), `${category} category is represented`);
+}
+assert.match(catalog, /status: 'coming_soon'/, 'future games are data-driven promotional entries');
+for (const upcoming of ['aviator-coming', 'pharaoh-coming', 'royal-roulette-coming', 'blackjack-coming']) {
+  assert.match(lobbyCatalog[1], new RegExp(`id: '${upcoming}'.*status: 'coming_soon'.*gameUrl: null`),
+    `${upcoming} is a non-launchable Coming Soon entry`);
+}
+assert.match(catalog, /href="#\/game\/' \+ esc\(game\.gameUrl\)/, 'available game posters use their existing game launch references');
+assert.match(catalog, /aria-label="' \+ \(lang === 'am' \? 'ይጫወቱ' : 'Play'\) \+ ' ' \+ esc\(game\.title\)/,
+  'playable poster links have accessible names');
+assert.match(catalog, /alt="' \+ esc\(game\.title\) \+ ' poster"/, 'game posters have descriptive alt text');
+assert.match(catalog, /class="home-card-title"/, 'playable cards show their game names over the artwork');
+assert.match(catalog, /class="home-live-pill"/, 'verified live counts have a compact poster badge');
+assert.match(catalog, /Number\.isSafeInteger\(game\.livePlayerCount\)/, 'live counts render only from valid real count data');
+assert.match(lobbyCatalog[1], /livePlayerCount: null/, 'no fabricated player counts are configured');
+assert.match(catalog, /No live casino games are currently integrated/, 'empty live-casino section explains current availability');
+assert.match(catalog, /data-view-category=/, 'category sections include View All actions');
+assert.match(catalog, /clone\.setAttribute\('aria-hidden', 'true'\)[\s\S]*?clone\.setAttribute\('inert', ''\)[\s\S]*?clone\.querySelectorAll\('a, button, input, select, textarea'\)/,
+  'infinite-loop visuals are inert and cannot create duplicate interactive links');
+assert.match(catalog, /prefers-reduced-motion: reduce/);
+assert.match(catalog, /scroller\.addEventListener\('pointerdown'/, 'carousel pauses while the user interacts');
+assert.match(catalog, /scroller\.addEventListener\('pointerenter'/, 'carousel pauses on hover-capable devices');
+assert.match(catalog, /scrollCarry \+= \(time - lastFrame\) \* 0\.014[\s\S]*?const wholePixels = Math\.trunc\(scrollCarry\)/,
+  'carousel accumulates subpixel movement so its subtle autoplay advances in pixel-based scroll containers');
+assert.match(catalog, /data-cat="\$\{esc\(filter\.id\)\}"/, 'category filters are populated from the catalog taxonomy');
+assert.match(catalog, /data-scroll="prev"[\s\S]*?data-scroll="next"/, 'manual previous and next controls remain available');
 assert.match(app, /function nav\(\)\s*\{\s*const n = \$\('nav'\);\s*if \(!me\)\s*\{\s*n\.hidden = true;/,
   'guests do not receive customer navigation destinations');
 assert.match(homeCss, /#nav\.app-bottom-tabs\[hidden\]\s*\{\s*display:\s*none !important;/,
   'the fixed-navigation CSS respects the hidden state for guests');
 assert.match(homeCss, /guest-mode[\s\S]*?#headerLoginBtn[\s\S]*?#headerRegBtn[\s\S]*?display:\s*inline-flex !important/,
   'guest Login and Register actions are directly visible in the header');
-assert.match(app, /function mountPromoSlider\(app\)[\s\S]*?new Set\(\[\.\.\.app\.querySelectorAll\('\.home-game-card'\)\]\.map/,
+assert.match(app, /function mountPromoSlider\(app\)[\s\S]*?new Set\(\[\.\.\.app\.querySelectorAll\('\.home-game-card\[data-status="available"\]\[data-game\]'\)\]\.map/,
   'the illustrated promotion slider counts unique currently listed games');
 for (const asset of ['daily-winning.svg', 'six-games.svg', 'fast-withdrawals.svg', 'registration-bonus.svg', 'game-collage.svg', 'game-tokens.svg']) {
   assert.ok(fs.statSync(path.join(root, 'public/images/promotions', asset)).size > 0, `existing campaign asset is available: ${asset}`);

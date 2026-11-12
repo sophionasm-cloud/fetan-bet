@@ -110,7 +110,7 @@ function toggleSound() {
 
 function mountPromoSlider(app) {
   clearPromoSlider();
-  const gameCount = new Set([...app.querySelectorAll('.home-game-card')].map((card) => card.dataset.game)).size;
+  const gameCount = new Set([...app.querySelectorAll('.home-game-card[data-status="available"][data-game]')].map((card) => card.dataset.game)).size;
   const currentCustomer = me?.role === 'user';
   const gameTokens = [
     ['road', 'Chicken Road Dash'], ['mines', 'Mines'], ['plinko', 'Plinko'],

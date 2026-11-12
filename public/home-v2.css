@@ -974,6 +974,13 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   margin: 0 0 11px;
 }
 
+.home-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .home-row-title {
   overflow: visible;
   color: var(--home-text);
@@ -988,6 +995,32 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   align-items: center;
   gap: 4px;
   flex: 0 0 auto;
+}
+
+.home-view-all {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(243, 197, 45, 0.2);
+  border-radius: 999px;
+  background: rgba(243, 197, 45, 0.07);
+  color: var(--home-primary-hover);
+  font: 700 11px/1 var(--home-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease, transform .15s ease;
+}
+
+.home-view-all:hover {
+  border-color: rgba(243, 197, 45, 0.38);
+  background: rgba(243, 197, 45, 0.12);
+}
+
+.home-view-all:active { transform: scale(.97); }
+
+.home-view-all:focus-visible,
+.home-row-arrow:focus-visible {
+  outline: 2px solid var(--home-primary);
+  outline-offset: 3px;
 }
 
 .home-row-arrow {
@@ -1030,10 +1063,6 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   cursor: default;
 }
 
-.home-row.is-static .home-row-arrows {
-  visibility: hidden;
-}
-
 .home-row-scroller {
   display: flex;
   align-items: stretch;
@@ -1046,7 +1075,11 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   scrollbar-width: none;
   overscroll-behavior-inline: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
+
+.home-row-scroller.is-infinite { scroll-snap-type: none; }
+.home-row-scroller.is-auto-scrolling { scroll-behavior: auto; }
 
 .home-row-scroller::-webkit-scrollbar {
   display: none;
@@ -1070,6 +1103,85 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
 }
 
+.home-coming-card {
+  position: relative;
+  display: block;
+  flex: 0 0 148px;
+  width: 148px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(233, 210, 153, 0.22);
+  border-radius: 16px;
+  background: var(--home-surface-raised);
+  color: var(--home-text);
+  scroll-snap-align: start;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26), inset 0 0 24px rgba(243, 197, 45, 0.035);
+}
+
+.home-coming-card img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.home-coming-card.poster-missing {
+  background: radial-gradient(ellipse at 50% 24%, rgba(243, 197, 45, .16), transparent 55%), var(--home-surface-raised);
+}
+
+.home-coming-shade,
+.home-card-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 9, 11, .08) 20%, rgba(8, 9, 11, .12) 46%, rgba(8, 9, 11, .88) 100%);
+}
+
+.home-coming-meta {
+  position: absolute;
+  inset: auto 9px 10px;
+  z-index: 2;
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+}
+
+.home-coming-badge {
+  padding: 5px 7px;
+  border: 1px solid rgba(243, 197, 45, .45);
+  border-radius: 999px;
+  background: rgba(16, 14, 10, .76);
+  color: #ffe18a;
+  font: 800 8px/1 var(--home-font);
+  letter-spacing: .09em;
+}
+
+.home-coming-category {
+  color: rgba(255, 255, 255, .76);
+  font: 700 9px/1.2 var(--home-font);
+}
+
+.home-coming-title {
+  color: #fff;
+  font: 800 14px/1.15 var(--home-font);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+}
+
+.home-row-empty {
+  margin: 0;
+  padding: 17px 16px;
+  border: 1px solid var(--home-glass-border);
+  border-radius: 14px;
+  background: var(--home-glass);
+  color: var(--home-muted);
+  font: 500 12px/1.5 var(--home-font);
+}
+
 .home-game-card[hidden] {
   display: none !important;
 }
@@ -1084,6 +1196,54 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   object-position: center;
   transition: transform .35s ease;
 }
+
+.home-card-shade {
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(8, 9, 11, .04) 34%, rgba(8, 9, 11, .12) 58%, rgba(8, 9, 11, .8) 100%);
+}
+
+.home-card-title {
+  position: absolute;
+  z-index: 2;
+  inset: auto 10px 10px;
+  color: #fff;
+  font: 800 14px/1.15 var(--home-font);
+  letter-spacing: -.01em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
+}
+
+.home-live-pill {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 16px);
+  padding: 5px 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px;
+  background: rgba(12, 16, 15, .78);
+  color: #f2ead5;
+  font: 800 8px/1 var(--home-font);
+  letter-spacing: .045em;
+  white-space: nowrap;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.home-live-pill i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #43d483;
+  box-shadow: 0 0 7px rgba(67, 212, 131, .65);
+}
+
+.home-live-pill b { overflow: hidden; text-overflow: ellipsis; }
 
 .home-card-fallback {
   position: absolute;
@@ -1110,7 +1270,8 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .home-game-card:hover {
+  .home-game-card:hover,
+  .home-coming-card:hover {
     transform: translateY(-4px);
     border-color: rgba(255, 255, 255, 0.20);
     box-shadow: 0 20px 38px rgba(0, 0, 0, 0.36);
@@ -1129,6 +1290,8 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .promo-slider
   outline: 3px solid var(--home-primary);
   outline-offset: 3px;
 }
+
+.home-view-all:focus-visible { outline-offset: 2px; }
 
 /* ---------------------------------------------------------------------------
    8. Guest referral strip + info cards
@@ -1497,7 +1660,8 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-info-g
    11. Responsive tuning
    --------------------------------------------------------------------------- */
 @media (min-width: 560px) {
-  .home-game-card {
+  .home-game-card,
+  .home-coming-card {
     flex-basis: 160px;
     width: 160px;
   }
@@ -1526,7 +1690,8 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-info-g
     font-size: 15px;
   }
 
-  .home-game-card {
+  .home-game-card,
+  .home-coming-card {
     flex-basis: 172px;
     width: 172px;
     border-radius: 18px;
@@ -1555,7 +1720,8 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-info-g
 }
 
 @media (min-width: 1024px) {
-  .home-game-card {
+  .home-game-card,
+  .home-coming-card {
     flex-basis: 180px;
     width: 180px;
   }
@@ -1563,6 +1729,9 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-info-g
   .home-row-scroller {
     gap: 14px;
   }
+
+  .home-coming-meta { inset-inline: 11px; bottom: 12px; }
+  .home-coming-title { font-size: 15px; }
 
   .home-hero {
     border-radius: 28px;
@@ -1646,6 +1815,7 @@ body.customer-theme[data-customer-theme][data-customer-theme].home-view #app .ho
   .home-hero,
   .home-filter,
   .home-row-arrow,
+  .home-view-all,
   .home-support-card,
   .home-footer-links,
   body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-promo-banner,
@@ -1669,6 +1839,7 @@ body.customer-theme[data-customer-theme][data-customer-theme].home-view #app .ho
   .home-hero,
   .home-filter,
   .home-row-arrow,
+  .home-view-all,
   .home-support-card,
   .home-footer-links,
   body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-promo-banner,
@@ -1689,7 +1860,9 @@ body.customer-theme[data-customer-theme][data-customer-theme].home-view #app .ho
   .home-hero-dot::before,
   .home-game-card,
   .home-game-card img,
+  .home-coming-card,
   .home-row-arrow,
+  .home-view-all,
   .home-filter,
   .home-btn,
   .home-hero-cta {
@@ -1698,6 +1871,8 @@ body.customer-theme[data-customer-theme][data-customer-theme].home-view #app .ho
 
   .home-game-card:hover,
   .home-game-card:active,
+  .home-coming-card:hover,
+  .home-coming-card:active,
   .home-filter:active,
   .home-btn:active,
   .home-hero-cta:active,

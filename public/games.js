@@ -52,6 +52,31 @@ window.Games = (function () {
       <span class="poster-fallback" aria-hidden="true">${GAME_ART[id]}</span>
     </div>`;
 
+  const LOBBY_CATEGORIES = Object.freeze([
+    { id: 'crash', en: 'Crash Games', am: 'የክራሽ ጨዋታዎች' },
+    { id: 'slots', en: 'Slots', am: 'ስሎቶች' },
+    { id: 'roulette', en: 'Roulette', am: 'ሩሌት' },
+    { id: 'table', en: 'Table Games', am: 'የጠረጴዛ ጨዋታዎች' },
+    { id: 'live', en: 'Live Casino', am: 'ላይቭ ካሲኖ' },
+    { id: 'more', en: 'More Games', am: 'ተጨማሪ ጨዋታዎች' },
+  ]);
+
+  // One lobby catalog drives sections, filters, poster art and launch routes.
+  // A null player count means there is no verified live source for that game.
+  const LOBBY_GAME_CATALOG = Object.freeze([
+    { id: 'chicken-road-2', name: 'Chicken Road Dash', category: 'crash', image: GAME_POSTERS['chicken-road-2'], status: 'available', gameUrl: 'chicken-road-2', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 10 },
+    { id: 'star', name: 'Star Spin', nameKey: 'star_title', category: 'slots', image: GAME_POSTERS.star, status: 'available', gameUrl: 'star', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 20 },
+    { id: 'roulette', name: 'Roulette', nameKey: 'roulette_title', category: 'roulette', image: GAME_POSTERS.roulette, status: 'available', gameUrl: 'roulette', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 30 },
+    { id: 'mines', name: 'Mines', nameKey: 'mines_title', category: 'more', image: GAME_POSTERS.mines, status: 'available', gameUrl: 'mines', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 40 },
+    { id: 'plinko', name: 'Plinko', nameKey: 'plinko_title', category: 'more', image: GAME_POSTERS.plinko, status: 'available', gameUrl: 'plinko', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 50 },
+    { id: 'penalty', name: 'Penalty Unlimited', category: 'more', image: GAME_POSTERS.penalty, status: 'available', gameUrl: 'penalty', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 60 },
+    { id: 'keno', name: 'Keno', nameKey: 'keno_title', category: 'more', image: GAME_POSTERS.keno, status: 'available', gameUrl: 'keno', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 70 },
+    { id: 'aviator-coming', name: 'Aviator', category: 'crash', image: '/images/coming-soon/aviator.svg', status: 'coming_soon', gameUrl: null, provider: null, livePlayerCount: null, displayOrder: 110 },
+    { id: 'pharaoh-coming', name: 'Golden Pharaoh', category: 'slots', image: '/images/coming-soon/golden-pharaoh.svg', status: 'coming_soon', gameUrl: null, provider: null, livePlayerCount: null, displayOrder: 120 },
+    { id: 'royal-roulette-coming', name: 'Royal Roulette', category: 'roulette', image: '/images/coming-soon/royal-roulette.svg', status: 'coming_soon', gameUrl: null, provider: null, livePlayerCount: null, displayOrder: 130 },
+    { id: 'blackjack-coming', name: 'Blackjack Elite', category: 'table', image: '/images/coming-soon/blackjack-elite.svg', status: 'coming_soon', gameUrl: null, provider: null, livePlayerCount: null, displayOrder: 140 },
+  ]);
+
   // ---------- WebAudio SFX ----------
   let actx = null, muted = localStorage.getItem('mute') === '1';
   function beep(freq, dur, type = 'sine', vol = 0.06, delay = 0) {
@@ -158,47 +183,84 @@ window.Games = (function () {
   // =========================================================
   // LOBBY
   // =========================================================
+  let lobbyCleanup = null;
   function mount(app, ctx) {
     C = ctx;
+    const lang = localStorage.getItem('lang') === 'am' ? 'am' : 'en';
     const { t, esc } = C;
-    const games = [
-      { id: 'chicken-road-2', title: 'Chicken Road Dash', cat: 'originals', badge: 'HOT', hot: true, eager: true },
-      { id: 'mines', title: t('mines_title'), cat: 'originals', badge: 'ORIGINAL' },
-      { id: 'plinko', title: t('plinko_title'), cat: 'originals', badge: 'ORIGINAL' },
-      { id: 'penalty', title: 'Penalty Unlimited', cat: 'originals', badge: 'ORIGINAL' },
-      { id: 'keno', title: t('keno_title'), cat: 'lottery', badge: 'POPULAR' },
-      { id: 'roulette', title: t('roulette_title'), cat: 'table', badge: 'CLASSIC' },
-      { id: 'star', title: t('star_title'), cat: 'table', badge: 'SLOT' }
-    ];
-    const classicsLabel = lang === 'am' ? t('cat_classic') : 'Classics';
+    const previousCleanup = app._homeCarouselCleanup || lobbyCleanup;
+    previousCleanup?.();
+    lobbyCleanup = null;
+    app._homeCarouselCleanup = null;
+    app._homeRowObserver?.disconnect();
+
+    const games = LOBBY_GAME_CATALOG
+      .map((game) => ({ ...game, title: game.nameKey ? t(game.nameKey) : game.name }))
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    const categoryNames = new Map(LOBBY_CATEGORIES.map((category) => [category.id, lang === 'am' ? category.am : category.en]));
+    const categoryTypes = {
+      crash: lang === 'am' ? 'የክራሽ ጨዋታ' : 'Crash game',
+      slots: lang === 'am' ? 'የስሎት ጨዋታ' : 'Slot game',
+      roulette: lang === 'am' ? 'ሩሌት' : 'Roulette',
+      table: lang === 'am' ? 'የጠረጴዛ ጨዋታ' : 'Table game',
+    };
+    const comingSoonGames = games.filter((game) => game.status === 'coming_soon');
     const rows = [
-      { id: 'popular', title: lang === 'am' ? 'ተወዳጅ' : 'Popular', games },
-      { id: 'originals', title: t('cat_originals'), games: games.filter((game) => game.cat === 'originals') },
-      { id: 'classics', title: classicsLabel, games: games.filter((game) => game.cat === 'table') }
+      ...LOBBY_CATEGORIES.map((category) => ({
+        id: category.id,
+        filterCategory: category.id,
+        title: categoryNames.get(category.id),
+        games: games.filter((game) => game.category === category.id),
+      })),
+      {
+        id: 'coming-soon',
+        filterCategory: 'coming-soon',
+        title: lang === 'am' ? 'በቅርብ ቀን የሚመጡ ጨዋታዎች' : 'Coming Soon',
+        games: comingSoonGames,
+      },
     ];
     const filters = [
-      ['all', t('cat_all')],
-      ['originals', t('cat_originals')],
-      ['table', classicsLabel],
-      ['lottery', lang === 'am' ? 'ኬኖ' : 'Keno']
+      { id: 'all', label: t('cat_all') },
+      ...LOBBY_CATEGORIES.map((category) => ({ id: category.id, label: categoryNames.get(category.id) })),
     ];
-    const arrow = (direction) => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="${direction === 'prev' ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'}"/></svg>`;
-    const cardMarkup = (game) => `
-      <a class="home-game-card" href="#/game/${game.id}" data-game="${game.id}" data-cat="${game.cat}" aria-label="Play ${esc(game.title)}">
-        <img src="${GAME_POSTERS[game.id]}" alt="${esc(game.title)} poster" loading="${game.eager ? 'eager' : 'lazy'}" decoding="async"${game.eager ? ' fetchpriority="high"' : ''}>
-        <span class="home-card-fallback" aria-hidden="true">${GAME_ART[game.id]}</span>
-      </a>`;
-    const rowMarkup = (row) => `
-      <section class="home-row" data-home-row="${row.id}" aria-labelledby="home-row-${row.id}">
-        <div class="home-row-head">
-          <h2 class="home-row-title" id="home-row-${row.id}">${esc(row.title)}</h2>
-          <div class="home-row-arrows">
-            <button type="button" class="home-row-arrow" data-scroll="prev" aria-label="Scroll ${esc(row.title)} left">${arrow('prev')}</button>
-            <button type="button" class="home-row-arrow" data-scroll="next" aria-label="Scroll ${esc(row.title)} right">${arrow('next')}</button>
-          </div>
-        </div>
-        <div class="home-row-scroller" data-row-scroller aria-label="${esc(row.title)} games">${row.games.map(cardMarkup).join('')}</div>
-      </section>`;
+    const arrow = (direction) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' + (direction === 'prev' ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6') + '"/></svg>';
+    const livePlayerMarkup = (game) => {
+      if (game.status !== 'available' || !Number.isSafeInteger(game.livePlayerCount) || game.livePlayerCount < 0) return '';
+      const count = new Intl.NumberFormat(lang === 'am' ? 'am-ET' : 'en-US').format(game.livePlayerCount);
+      return '<span class="home-live-pill"><i aria-hidden="true"></i><span>LIVE</span><b>' + esc(count) + ' ' + (lang === 'am' ? 'በመጫወት ላይ' : 'PLAYING') + '</b></span>';
+    };
+    const gameCardMarkup = (game) => {
+      const eager = game.displayOrder === 10;
+      return '<a class="home-game-card" href="#/game/' + esc(game.gameUrl) + '" data-game="' + esc(game.id) + '" data-category="' + esc(game.category) + '" data-status="available" aria-label="' + (lang === 'am' ? 'ይጫወቱ' : 'Play') + ' ' + esc(game.title) + '">' +
+        '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' poster" loading="' + (eager ? 'eager' : 'lazy') + '" decoding="async"' + (eager ? ' fetchpriority="high"' : '') + '>' +
+        '<span class="home-card-fallback" aria-hidden="true">' + (GAME_ART[game.id] || '') + '</span>' +
+        '<span class="home-card-shade" aria-hidden="true"></span>' + livePlayerMarkup(game) +
+        '<span class="home-card-title">' + esc(game.title) + '</span></a>';
+    };
+    const comingSoonCardMarkup = (game) => '<article class="home-coming-card" data-category="' + esc(game.category) + '" data-status="coming_soon" aria-label="' + esc(game.title) + ', ' + (lang === 'am' ? 'በቅርብ ቀን' : 'coming soon') + '">' +
+      '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' promotional poster" loading="lazy" decoding="async">' +
+      '<span class="home-coming-shade" aria-hidden="true"></span><span class="home-coming-meta">' +
+      '<span class="home-coming-badge">' + (lang === 'am' ? 'በቅርብ ቀን' : 'COMING SOON') + '</span>' +
+      '<span class="home-coming-category">' + esc(categoryTypes[game.category] || categoryNames.get(game.category) || '') + '</span>' +
+      '<span class="home-coming-title">' + esc(game.title) + '</span></span></article>';
+    const rowMarkup = (row) => {
+      const hasCards = row.games.length > 0;
+      const cards = row.games.map((game) => game.status === 'available' ? gameCardMarkup(game) : comingSoonCardMarkup(game)).join('');
+      const emptyMessage = row.id === 'live'
+        ? (lang === 'am' ? 'የቀጥታ ካሲኖ ጨዋታዎች ገና አልተዋሃዱም።' : 'No live casino games are currently integrated.')
+        : (lang === 'am' ? 'ጨዋታዎች በቅርብ ቀን ይጨመራሉ።' : 'New games will be added here soon.');
+      const viewAllLabel = lang === 'am' ? 'ሁሉንም ይመልከቱ' : 'View all';
+      const previousLabel = lang === 'am' ? 'ወደ ግራ ያንሸራትቱ' : 'Scroll ' + row.title + ' left';
+      const nextLabel = lang === 'am' ? 'ወደ ቀኝ ያንሸራትቱ' : 'Scroll ' + row.title + ' right';
+      const arrows = hasCards ? '<div class="home-row-arrows">' +
+        '<button type="button" class="home-row-arrow" data-scroll="prev" aria-label="' + esc(previousLabel) + '"' + (row.games.length < 2 ? ' disabled' : '') + '>' + arrow('prev') + '</button>' +
+        '<button type="button" class="home-row-arrow" data-scroll="next" aria-label="' + esc(nextLabel) + '"' + (row.games.length < 2 ? ' disabled' : '') + '>' + arrow('next') + '</button></div>' : '';
+      return '<section class="home-row' + (hasCards ? '' : ' is-empty') + '" data-home-row="' + esc(row.id) + '" data-filter-category="' + esc(row.filterCategory) + '" aria-labelledby="home-row-' + esc(row.id) + '">' +
+        '<div class="home-row-head"><h2 class="home-row-title" id="home-row-' + esc(row.id) + '">' + esc(row.title) + '</h2>' +
+        '<div class="home-row-actions"><button type="button" class="home-view-all" data-view-category="' + esc(row.filterCategory) + '">' + esc(viewAllLabel) + ' <span aria-hidden="true">→</span></button>' + arrows + '</div></div>' +
+        (hasCards ? '<div class="home-row-scroller" data-row-scroller aria-label="' + esc(row.title) + ' games">' + cards + '</div>' : '<p class="home-row-empty">' + esc(emptyMessage) + '</p>') +
+        '</section>';
+    };
 
     app.innerHTML = `
       <div class="home-ambient" aria-hidden="true">
@@ -208,93 +270,229 @@ window.Games = (function () {
       </div>
       <div class="home-catalog" id="ggrid">
         <div class="home-filters" id="gfilters" role="group" aria-label="${lang === 'am' ? 'ጨዋታዎችን ያጣሩ' : 'Filter games'}">
-          ${filters.map(([cat, label], index) => `<button type="button" class="home-filter${index === 0 ? ' is-active' : ''}" data-cat="${cat}" aria-pressed="${index === 0}">${esc(label)}</button>`).join('')}
+          ${filters.map((filter, index) => `<button type="button" class="home-filter${index === 0 ? ' is-active' : ''}" data-cat="${esc(filter.id)}" aria-pressed="${index === 0}">${esc(filter.label)}</button>`).join('')}
         </div>
         <div class="home-rows">${rows.map(rowMarkup).join('')}</div>
       </div>`;
 
     const filterButtons = [...app.querySelectorAll('.home-filter')];
     const rowElements = [...app.querySelectorAll('.home-row')];
-    const cards = [...app.querySelectorAll('.home-game-card')];
+    const cards = [...app.querySelectorAll('.home-game-card[data-status="available"]')];
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const carouselStates = new Map();
     const scrollerFor = (row) => row.querySelector('[data-row-scroller]');
-    const updateArrows = (row) => {
-      const scroller = scrollerFor(row);
-      if (!scroller) return;
-      const max = scroller.scrollWidth - scroller.clientWidth;
-      const prev = row.querySelector('[data-scroll="prev"]');
-      const next = row.querySelector('[data-scroll="next"]');
-      row.classList.toggle('is-static', max <= 4);
-      prev.disabled = max <= 4 || scroller.scrollLeft <= 2;
-      next.disabled = max <= 4 || scroller.scrollLeft >= max - 2;
-    };
-    const applyFilter = (cat) => {
+    const applyFilter = (category) => {
       filterButtons.forEach((button) => {
-        const active = button.dataset.cat === cat;
+        const active = button.dataset.cat === category;
         button.classList.toggle('is-active', active);
         button.setAttribute('aria-pressed', String(active));
       });
       rowElements.forEach((row) => {
-        let visible = 0;
-        row.querySelectorAll('.home-game-card').forEach((card) => {
-          const show = cat === 'all' || card.dataset.cat === cat;
-          card.hidden = !show;
-          if (show) visible += 1;
-        });
-        row.hidden = visible === 0;
-        const scroller = scrollerFor(row);
-        if (scroller) scroller.scrollLeft = 0;
-        if (visible) requestAnimationFrame(() => updateArrows(row));
+        row.hidden = category !== 'all' && row.dataset.filterCategory !== category;
+        const state = carouselStates.get(row);
+        if (row.hidden) state?.stop();
+        else state?.start();
       });
     };
+    filterButtons.forEach((button) => button.addEventListener('click', () => applyFilter(button.dataset.cat)));
+    app.querySelectorAll('[data-view-category]').forEach((button) => button.addEventListener('click', () => {
+      const category = button.dataset.viewCategory;
+      applyFilter(category === 'coming-soon' ? 'all' : category);
+      app.querySelector('#home-row-' + category)?.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+    }));
 
-    filterButtons.forEach((button) => {
-      button.addEventListener('click', () => applyFilter(button.dataset.cat));
-    });
+    const installPosterFallback = (image) => {
+      image.addEventListener('error', () => {
+        const card = image.closest('.home-game-card, .home-coming-card');
+        image.remove();
+        card?.classList.add('poster-missing');
+      }, { once: true });
+    };
+    app.querySelectorAll('.home-game-card img, .home-coming-card img').forEach(installPosterFallback);
+    const makeDecorativeClone = (item) => {
+      const clone = document.createElement('div');
+      clone.className = item.className + ' home-carousel-clone';
+      clone.innerHTML = item.innerHTML;
+      clone.dataset.carouselClone = 'true';
+      clone.setAttribute('aria-hidden', 'true');
+      clone.setAttribute('inert', '');
+      clone.querySelectorAll('a, button, input, select, textarea').forEach((control) => control.remove());
+      clone.querySelectorAll('img').forEach(installPosterFallback);
+      return clone;
+    };
+    const createCarouselState = (row) => {
+      const scroller = scrollerFor(row);
+      const originals = scroller ? [...scroller.children].filter((item) => !item.hasAttribute('data-carousel-clone')) : [];
+      if (!scroller || originals.length < 2 || scroller.clientWidth < 1) return null;
+      const style = getComputedStyle(scroller);
+      const gap = Number.parseFloat(style.columnGap || style.gap) || 0;
+      const cycleWidth = originals.reduce((sum, item) => sum + item.getBoundingClientRect().width, 0) + gap * originals.length;
+      if (!Number.isFinite(cycleWidth) || cycleWidth < 1) return null;
+      const repeats = Math.max(1, Math.ceil(scroller.clientWidth / cycleWidth) + 1);
+      for (let copy = 0; copy < repeats; copy++) originals.forEach((item) => scroller.append(makeDecorativeClone(item)));
+      scroller.classList.add('is-infinite');
+      scroller.dataset.loopWidth = String(cycleWidth);
+      scroller.scrollLeft = cycleWidth;
 
+      let frame = 0;
+      let lastFrame = 0;
+      let scrollCarry = 0;
+      let resumeTimer = 0;
+      let scrollEndTimer = 0;
+      let interacting = false;
+      const normalize = () => {
+        if (scroller.scrollLeft < cycleWidth) scroller.scrollLeft += cycleWidth;
+        else if (scroller.scrollLeft >= cycleWidth * 2) scroller.scrollLeft -= cycleWidth;
+      };
+      const canAutoMove = () => !reduceMotion.matches && document.visibilityState === 'visible' && !row.hidden &&
+        !interacting && !(hoverCapable && scroller.matches(':hover')) && !scroller.contains(document.activeElement);
+      const stop = () => {
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+        lastFrame = 0;
+        scrollCarry = 0;
+        scroller.classList.remove('is-auto-scrolling');
+      };
+      const animate = (time) => {
+        if (!canAutoMove()) { stop(); return; }
+        if (lastFrame) {
+          scrollCarry += (time - lastFrame) * 0.014;
+          const wholePixels = Math.trunc(scrollCarry);
+          if (wholePixels) {
+            scroller.scrollLeft += wholePixels;
+            scrollCarry -= wholePixels;
+            normalize();
+          }
+        }
+        lastFrame = time;
+        frame = requestAnimationFrame(animate);
+      };
+      const start = () => {
+        clearTimeout(resumeTimer);
+        if (frame || !canAutoMove()) return;
+        scroller.classList.add('is-auto-scrolling');
+        frame = requestAnimationFrame(animate);
+      };
+      const scheduleResume = () => {
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(start, 1300);
+      };
+      const onPointerEnter = () => { if (hoverCapable) stop(); };
+      const onPointerLeave = () => { if (hoverCapable && !interacting) scheduleResume(); };
+      const onPointerDown = () => { interacting = true; stop(); };
+      const onPointerUp = () => { interacting = false; scheduleResume(); };
+      const onFocusIn = () => stop();
+      const onFocusOut = (event) => { if (!scroller.contains(event.relatedTarget)) scheduleResume(); };
+      const onWheel = () => { stop(); scheduleResume(); };
+      const onScroll = () => {
+        if (!scroller.classList.contains('is-auto-scrolling')) {
+          clearTimeout(scrollEndTimer);
+          scrollEndTimer = setTimeout(normalize, 120);
+        }
+      };
+      const onVisibility = () => document.visibilityState === 'visible' ? start() : stop();
+      const onMotionChange = () => reduceMotion.matches ? stop() : start();
+      scroller.addEventListener('pointerenter', onPointerEnter);
+      scroller.addEventListener('pointerleave', onPointerLeave);
+      scroller.addEventListener('pointerdown', onPointerDown, { passive: true });
+      window.addEventListener('pointerup', onPointerUp, { passive: true });
+      window.addEventListener('pointercancel', onPointerUp, { passive: true });
+      scroller.addEventListener('focusin', onFocusIn);
+      scroller.addEventListener('focusout', onFocusOut);
+      scroller.addEventListener('wheel', onWheel, { passive: true });
+      scroller.addEventListener('scroll', onScroll, { passive: true });
+      document.addEventListener('visibilitychange', onVisibility);
+      reduceMotion.addEventListener?.('change', onMotionChange);
+      start();
+      return {
+        clientWidth: scroller.clientWidth,
+        start,
+        stop,
+        move: (direction) => {
+          stop();
+          normalize();
+          const distance = Math.min(Math.max(scroller.clientWidth * 0.82, 148), cycleWidth * 0.72);
+          let from = scroller.scrollLeft;
+          let to = from + direction * distance;
+          if (direction > 0 && to >= cycleWidth * 2) { from -= cycleWidth; to -= cycleWidth; }
+          if (direction < 0 && to < cycleWidth) { from += cycleWidth; to += cycleWidth; }
+          if (from !== scroller.scrollLeft) scroller.scrollLeft = from;
+          interacting = false;
+          scroller.scrollTo({ left: to, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+          scheduleResume();
+        },
+        destroy: () => {
+          stop();
+          clearTimeout(resumeTimer);
+          clearTimeout(scrollEndTimer);
+          scroller.removeEventListener('pointerenter', onPointerEnter);
+          scroller.removeEventListener('pointerleave', onPointerLeave);
+          scroller.removeEventListener('pointerdown', onPointerDown);
+          window.removeEventListener('pointerup', onPointerUp);
+          window.removeEventListener('pointercancel', onPointerUp);
+          scroller.removeEventListener('focusin', onFocusIn);
+          scroller.removeEventListener('focusout', onFocusOut);
+          scroller.removeEventListener('wheel', onWheel);
+          scroller.removeEventListener('scroll', onScroll);
+          document.removeEventListener('visibilitychange', onVisibility);
+          reduceMotion.removeEventListener?.('change', onMotionChange);
+          scroller.querySelectorAll('[data-carousel-clone="true"]').forEach((clone) => clone.remove());
+          scroller.classList.remove('is-infinite', 'is-auto-scrolling');
+          delete scroller.dataset.loopWidth;
+        },
+      };
+    };
     rowElements.forEach((row) => {
       const scroller = scrollerFor(row);
       if (!scroller) return;
-      row.querySelectorAll('.home-row-arrow').forEach((button) => {
-        button.addEventListener('click', () => {
-          const step = Math.max(scroller.clientWidth * 0.82, 148);
-          scroller.scrollBy({
-            left: button.dataset.scroll === 'next' ? step : -step,
-            behavior: reduceMotion.matches ? 'auto' : 'smooth'
-          });
-        });
-      });
-      scroller.addEventListener('scroll', () => updateArrows(row), { passive: true });
+      const state = createCarouselState(row);
+      if (state) carouselStates.set(row, state);
+      row.querySelectorAll('.home-row-arrow').forEach((button) => button.addEventListener('click', () => {
+        carouselStates.get(row)?.move(button.dataset.scroll === 'next' ? 1 : -1);
+      }));
     });
 
-    cards.forEach((card) => {
-      const poster = card.querySelector('img');
-      poster?.addEventListener('error', () => {
-        poster.remove();
-        card.classList.add('poster-missing');
-      }, { once: true });
-      card.addEventListener('click', (event) => {
-        event.preventDefault();
-        if (C.guest) { C.onLogin?.(); return; }
-        open(app, card.dataset.game, true);
-      });
-    });
+    cards.forEach((card) => card.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (C.guest) { C.onLogin?.(); return; }
+      open(app, card.dataset.game, true);
+    }));
 
-    requestAnimationFrame(() => rowElements.forEach(updateArrows));
+    let resizeFrame = 0;
+    const observer = window.ResizeObserver ? new ResizeObserver((entries) => {
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => entries.forEach((entry) => {
+        const row = entry.target.closest('.home-row');
+        const oldState = row && carouselStates.get(row);
+        if (!row || !entry.contentRect.width || Math.abs(entry.contentRect.width - (oldState?.clientWidth || 0)) <= 2) return;
+        oldState?.destroy();
+        carouselStates.delete(row);
+        const nextState = createCarouselState(row);
+        if (nextState) carouselStates.set(row, nextState);
+      }));
+    }) : null;
+    if (observer) rowElements.forEach((row) => {
+      const scroller = scrollerFor(row);
+      if (scroller) observer.observe(scroller);
+    });
     app._homeRowObserver?.disconnect();
-    if (window.ResizeObserver) {
-      const observer = new ResizeObserver(() => rowElements.forEach(updateArrows));
-      rowElements.forEach((row) => {
-        const scroller = scrollerFor(row);
-        if (scroller) observer.observe(scroller);
-      });
-      app._homeRowObserver = observer;
-    }
+    app._homeRowObserver = observer;
+    app._homeCarouselCleanup = () => {
+      observer?.disconnect();
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      carouselStates.forEach((state) => state.destroy());
+      carouselStates.clear();
+    };
+    lobbyCleanup = app._homeCarouselCleanup;
   }
 
   let stopFns = [];
   let shell = null;
   function open(app, game, pushHistory = false) {
+    lobbyCleanup?.();
+    lobbyCleanup = null;
+    app._homeCarouselCleanup = null;
     app._homeRowObserver?.disconnect();
     if (shell) { shell.cleanup(); shell = null; }
     stopFns.forEach((stop) => stop());
@@ -4693,6 +4891,8 @@ window.Games = (function () {
   }
 
   function cleanupCurrent() {
+    lobbyCleanup?.();
+    lobbyCleanup = null;
     stopFns.forEach((stop) => stop());
     stopFns = [];
     shell?.cleanup();
