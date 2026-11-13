@@ -53,12 +53,12 @@ window.Games = (function () {
     </div>`;
 
   const LOBBY_CATEGORIES = Object.freeze([
-    { id: 'crash', en: 'Crash Games', am: 'የክራሽ ጨዋታዎች' },
-    { id: 'slots', en: 'Slots', am: 'ስሎቶች' },
-    { id: 'roulette', en: 'Roulette', am: 'ሩሌት' },
-    { id: 'table', en: 'Table Games', am: 'የጠረጴዛ ጨዋታዎች' },
-    { id: 'live', en: 'Live Casino', am: 'ላይቭ ካሲኖ' },
-    { id: 'more', en: 'More Games', am: 'ተጨማሪ ጨዋታዎች' },
+    { id: 'crash', en: 'Crash Games', am: 'የክራሽ ጨዋታዎች', icon: 'crash' },
+    { id: 'slots', en: 'Slots', am: 'ስሎቶች', icon: 'slots' },
+    { id: 'roulette', en: 'Roulette', am: 'ሩሌት', icon: 'roulette' },
+    { id: 'table', en: 'Table Games', am: 'የጠረጴዛ ጨዋታዎች', icon: 'table' },
+    { id: 'live', en: 'Live Casino', am: 'ላይቭ ካሲኖ', icon: 'live' },
+    { id: 'more', en: 'More Games', am: 'ተጨማሪ ጨዋታዎች', icon: 'more' },
   ]);
 
   // One lobby catalog drives sections, filters, poster art and launch routes.
@@ -204,6 +204,18 @@ window.Games = (function () {
       roulette: lang === 'am' ? 'ሩሌት' : 'Roulette',
       table: lang === 'am' ? 'የጠረጴዛ ጨዋታ' : 'Table game',
     };
+    const categoryIcon = (id) => {
+      const paths = {
+        crash: '<path d="M4 18 10 12l4 3 6-9"/><path d="M15 6h5v5"/>',
+        slots: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 9v6m4-6v6m4-6v6M4 10h16"/>',
+        roulette: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6m7.8 3H15m-3 9v-6m-9-3h6"/>',
+        table: '<path d="M4 7h16l-2 10H6L4 7Z"/><path d="M8 17v3m8-3v3M8 11h.01M12 11h.01M16 11h.01"/>',
+        live: '<circle cx="12" cy="12" r="8"/><path d="M9 9a4 4 0 0 1 6 0m-4.5 1.5a2 2 0 0 1 3 0M12 13h.01"/>',
+        more: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
+        soon: '<path d="M5 15c2-6 7-10 14-10-1 7-5 12-11 14l-3-4Z"/><path d="m9 16-4 4m8-8 3-3"/>',
+      };
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (paths[id] || paths.more) + '</svg>';
+    };
     const comingSoonGames = games.filter((game) => game.status === 'coming_soon');
     const rows = [
       ...LOBBY_CATEGORIES.map((category) => ({
@@ -227,7 +239,7 @@ window.Games = (function () {
     const livePlayerMarkup = (game) => {
       if (game.status !== 'available' || !Number.isSafeInteger(game.livePlayerCount) || game.livePlayerCount < 0) return '';
       const count = new Intl.NumberFormat(lang === 'am' ? 'am-ET' : 'en-US').format(game.livePlayerCount);
-      return '<span class="home-live-pill"><i aria-hidden="true"></i><span>LIVE</span><b>' + esc(count) + ' ' + (lang === 'am' ? 'በመጫወት ላይ' : 'PLAYING') + '</b></span>';
+      return '<span class="home-live-pill" aria-label="' + (lang === 'am' ? 'በቀጥታ የሚጫወቱ ተጫዋቾች፡ ' : 'Live players: ') + esc(count) + '"><i aria-hidden="true"></i><span>LIVE</span><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm-4.5 5.5a4.5 4.5 0 0 1 9 0"/></svg><b>' + esc(count) + ' ' + (lang === 'am' ? 'በመጫወት ላይ' : 'PLAYING') + '</b></span>';
     };
     const gameCardMarkup = (game) => {
       const eager = game.displayOrder === 10;
@@ -252,11 +264,12 @@ window.Games = (function () {
       const viewAllLabel = lang === 'am' ? 'ሁሉንም ይመልከቱ' : 'View all';
       const previousLabel = lang === 'am' ? 'ወደ ግራ ያንሸራትቱ' : 'Scroll ' + row.title + ' left';
       const nextLabel = lang === 'am' ? 'ወደ ቀኝ ያንሸራትቱ' : 'Scroll ' + row.title + ' right';
+      const iconId = row.id === 'coming-soon' ? 'soon' : row.id;
       const arrows = hasCards ? '<div class="home-row-arrows">' +
         '<button type="button" class="home-row-arrow" data-scroll="prev" aria-label="' + esc(previousLabel) + '"' + (row.games.length < 2 ? ' disabled' : '') + '>' + arrow('prev') + '</button>' +
         '<button type="button" class="home-row-arrow" data-scroll="next" aria-label="' + esc(nextLabel) + '"' + (row.games.length < 2 ? ' disabled' : '') + '>' + arrow('next') + '</button></div>' : '';
       return '<section class="home-row' + (hasCards ? '' : ' is-empty') + '" data-home-row="' + esc(row.id) + '" data-filter-category="' + esc(row.filterCategory) + '" aria-labelledby="home-row-' + esc(row.id) + '">' +
-        '<div class="home-row-head"><h2 class="home-row-title" id="home-row-' + esc(row.id) + '">' + esc(row.title) + '</h2>' +
+        '<div class="home-row-head"><h2 class="home-row-title" id="home-row-' + esc(row.id) + '"><span class="home-row-icon">' + categoryIcon(iconId) + '</span>' + esc(row.title) + '</h2>' +
         '<div class="home-row-actions"><button type="button" class="home-view-all" data-view-category="' + esc(row.filterCategory) + '">' + esc(viewAllLabel) + ' <span aria-hidden="true">→</span></button>' + arrows + '</div></div>' +
         (hasCards ? '<div class="home-row-scroller" data-row-scroller aria-label="' + esc(row.title) + ' games">' + cards + '</div>' : '<p class="home-row-empty">' + esc(emptyMessage) + '</p>') +
         '</section>';
@@ -333,10 +346,12 @@ window.Games = (function () {
       for (let copy = 0; copy < repeats; copy++) originals.forEach((item) => scroller.append(makeDecorativeClone(item)));
       scroller.classList.add('is-infinite');
       scroller.dataset.loopWidth = String(cycleWidth);
-      scroller.scrollLeft = cycleWidth;
+      const firstCardWidth = originals[0].getBoundingClientRect().width;
+      scroller.scrollLeft = cycleWidth + (firstCardWidth - scroller.clientWidth) / 2;
 
       let frame = 0;
       let lastFrame = 0;
+      let featureFrame = 0;
       let scrollCarry = 0;
       let resumeTimer = 0;
       let scrollEndTimer = 0;
@@ -345,6 +360,24 @@ window.Games = (function () {
         if (scroller.scrollLeft < cycleWidth) scroller.scrollLeft += cycleWidth;
         else if (scroller.scrollLeft >= cycleWidth * 2) scroller.scrollLeft -= cycleWidth;
       };
+      const updateCenteredCard = () => {
+        featureFrame = 0;
+        const center = scroller.getBoundingClientRect().left + scroller.clientWidth / 2;
+        let nearest = null, nearestDistance = Infinity;
+        scroller.querySelectorAll('.home-game-card, .home-coming-card').forEach((item) => {
+          const rect = item.getBoundingClientRect();
+          if (rect.right < scroller.getBoundingClientRect().left || rect.left > scroller.getBoundingClientRect().right) return;
+          const distance = Math.abs((rect.left + rect.right) / 2 - center);
+          if (distance < nearestDistance) { nearest = item; nearestDistance = distance; }
+        });
+        scroller.querySelectorAll('.is-centered').forEach((item) => item.classList.toggle('is-centered', item === nearest));
+        nearest?.classList.add('is-centered');
+      };
+      const scheduleCenteredCard = () => {
+        if (!featureFrame) featureFrame = requestAnimationFrame(updateCenteredCard);
+      };
+      normalize();
+      scheduleCenteredCard();
       const canAutoMove = () => !reduceMotion.matches && document.visibilityState === 'visible' && !row.hidden &&
         !interacting && !(hoverCapable && scroller.matches(':hover')) && !scroller.contains(document.activeElement);
       const stop = () => {
@@ -386,6 +419,7 @@ window.Games = (function () {
       const onFocusOut = (event) => { if (!scroller.contains(event.relatedTarget)) scheduleResume(); };
       const onWheel = () => { stop(); scheduleResume(); };
       const onScroll = () => {
+        scheduleCenteredCard();
         if (!scroller.classList.contains('is-auto-scrolling')) {
           clearTimeout(scrollEndTimer);
           scrollEndTimer = setTimeout(normalize, 120);
@@ -426,6 +460,7 @@ window.Games = (function () {
           stop();
           clearTimeout(resumeTimer);
           clearTimeout(scrollEndTimer);
+          if (featureFrame) cancelAnimationFrame(featureFrame);
           scroller.removeEventListener('pointerenter', onPointerEnter);
           scroller.removeEventListener('pointerleave', onPointerLeave);
           scroller.removeEventListener('pointerdown', onPointerDown);
@@ -438,6 +473,7 @@ window.Games = (function () {
           document.removeEventListener('visibilitychange', onVisibility);
           reduceMotion.removeEventListener?.('change', onMotionChange);
           scroller.querySelectorAll('[data-carousel-clone="true"]').forEach((clone) => clone.remove());
+          scroller.querySelectorAll('.is-centered').forEach((item) => item.classList.remove('is-centered'));
           scroller.classList.remove('is-infinite', 'is-auto-scrolling');
           delete scroller.dataset.loopWidth;
         },
