@@ -1402,19 +1402,20 @@
 
   // ---------------------------------------------------------------- Background art
   const ART = {
-    black: '#07080a',
-    ink: '#0e1013',
-    panel: '#15181d',
-    asphalt: '#262a30',
-    asphaltDark: '#1d2024',
-    steel: '#363b43',
-    steelLight: '#59616b',
-    white: '#f7f5ec',
-    yellow: '#ffc400',
-    yellowHot: '#ffe066',
-    red: '#e5323b',
-    redDark: '#8f1e25',
-    green: '#3ddc8a',
+    black: '#080B12',
+    ink: '#111722',
+    panel: '#111722',
+    asphalt: '#262A32',
+    asphaltDark: '#1B2029',
+    steel: '#343B47',
+    steelLight: '#626D7B',
+    white: '#F7F8FA',
+    yellow: '#FFC400',
+    yellowHot: '#FFDA45',
+    red: '#F32640',
+    redDark: '#8F1E2D',
+    green: '#17C990',
+    blue: '#268EFF',
   };
 
   function hash01(n) {
@@ -1424,9 +1425,9 @@
 
   function drawAsphalt(x, y, w, h, dark = false) {
     const g = ctx.createLinearGradient(x, y, x + w, y + h);
-    g.addColorStop(0, dark ? '#17191d' : '#22252a');
-    g.addColorStop(0.48, dark ? '#1c1f24' : '#2a2e34');
-    g.addColorStop(1, dark ? '#15171b' : '#1e2125');
+    g.addColorStop(0, dark ? '#171C25' : '#20252D');
+    g.addColorStop(0.48, dark ? '#202630' : '#2A3039');
+    g.addColorStop(1, dark ? '#151A22' : '#1C222B');
     ctx.fillStyle = g;
     ctx.fillRect(x, y, w, h);
 
@@ -2106,10 +2107,32 @@
   }
 
   // ---------------------------------------------------------------- Vehicles
+  function arcadeCarPaint(source) {
+    const match = String(source || '').match(/^#([\da-f]{6})$/i);
+    if (!match) return ART.blue;
+    const hex = match[1];
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
+    let hue = 0;
+    if (delta) {
+      if (max === r) hue = 60 * (((g - b) / delta) % 6);
+      else if (max === g) hue = 60 * ((b - r) / delta + 2);
+      else hue = 60 * ((r - g) / delta + 4);
+    }
+    if (hue < 0) hue += 360;
+    if (hue < 28 || hue >= 345) return ART.red;
+    if (hue < 68) return ART.yellow;
+    if (hue < 190) return ART.green;
+    if (hue < 265) return ART.blue;
+    return '#263142';
+  }
+
   function drawCar(car, lane, laneX, alpha = 1) {
     const len = car.len;
     const dir = lane.dir;
-    const base = car.color;
+    const base = arcadeCarPaint(car.color);
     const num = car.num || 7;
     ctx.save();
     ctx.translate(laneX, car.y);
@@ -2117,7 +2140,7 @@
     ctx.globalAlpha = alpha;
 
     // Ground shadow.
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillStyle = 'rgba(0,0,0,0.46)';
     rr(-26, -len / 2 + 7, 58, len, 18);
     ctx.fill();
 
@@ -2138,7 +2161,7 @@
       ctx.fillStyle = '#08090b';
       rr(wx - 5, wy - wheelLen / 2, 10, wheelLen, 4);
       ctx.fill();
-      ctx.fillStyle = '#20242a';
+      ctx.fillStyle = '#202834';
       rr(wx - 2.5, wy - wheelLen / 2 + 3, 5, wheelLen - 6, 2);
       ctx.fill();
       ctx.fillStyle = 'rgba(255,196,0,0.72)';
@@ -2180,18 +2203,33 @@
     ctx.lineWidth = 1.6;
     ctx.stroke();
 
-    // White racing stripe and yellow accent.
-    ctx.fillStyle = 'rgba(247,245,236,0.5)';
+    // Fine racing pinstripes and a gloss pass bring a miniature collector-car
+    // finish while staying inside the original body and wheel silhouette.
+    ctx.fillStyle = 'rgba(247,248,250,0.72)';
     ctx.fillRect(-1.5, -len * 0.28, 3, len * 0.48);
     ctx.fillStyle = ART.yellow;
+    ctx.fillRect(-6, -len * 0.22, 1.5, len * 0.38);
+    ctx.fillRect(4.5, -len * 0.22, 1.5, len * 0.38);
     ctx.fillRect(-8, len * 0.02, 16, 2);
+    const gloss = ctx.createLinearGradient(-14, -len * 0.34, 12, len * 0.2);
+    gloss.addColorStop(0, 'rgba(255,255,255,0.28)');
+    gloss.addColorStop(0.35, 'rgba(255,255,255,0.08)');
+    gloss.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gloss;
+    ctx.beginPath();
+    ctx.moveTo(-9, -len * 0.34);
+    ctx.quadraticCurveTo(0, -len * 0.39, 9, -len * 0.34);
+    ctx.lineTo(7, -len * 0.12);
+    ctx.lineTo(-7, -len * 0.12);
+    ctx.closePath();
+    ctx.fill();
 
     // Cockpit and halo.
     ctx.fillStyle = '#0e1013';
     ctx.beginPath();
     ctx.ellipse(0, -len * 0.06, 9, len * 0.13, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(247,245,236,0.18)';
+    ctx.fillStyle = 'rgba(38,142,255,0.2)';
     ctx.beginPath();
     ctx.ellipse(-2, -len * 0.08, 5, len * 0.09, -0.2, 0, Math.PI * 2);
     ctx.fill();
@@ -2200,6 +2238,14 @@
     ctx.beginPath();
     ctx.arc(0, -len * 0.055, 10, Math.PI * 0.95, Math.PI * 2.05);
     ctx.stroke();
+
+    // Discreet side decals stay inside the original car body bounds.
+    ctx.fillStyle = 'rgba(247,248,250,0.92)';
+    ctx.font = '900 4.5px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FB', -16.5, len * 0.015);
+    ctx.fillText('FB', 16.5, len * 0.015);
 
     // Driver helmet.
     ctx.fillStyle = num % 2 ? ART.yellow : ART.white;
@@ -2254,7 +2300,7 @@
 
     // Speed streaks behind the car.
     const speed = Math.min(1, lane.speed / 160);
-    ctx.strokeStyle = `rgba(255,255,255,${0.06 + speed * 0.06})`;
+    ctx.strokeStyle = `rgba(38,142,255,${0.035 + speed * 0.045})`;
     ctx.lineWidth = 1.5;
     for (let i = 0; i < 3; i++) {
       const sx = -18 + i * 18;
@@ -2397,6 +2443,22 @@
 
     // Shadow stays on the track while the driver jumps.
     const shadowScale = clamp(1 - hopLift / 160, 0.5, 1);
+    // Warm track lighting ties the original SVG mascot into the miniature
+    // circuit without changing its size, crop, or movement.
+    ctx.save();
+    const pool = ctx.createRadialGradient(x, baseY + 20, 4, x, baseY + 20, 62);
+    pool.addColorStop(0, 'rgba(255,196,0,0.12)');
+    pool.addColorStop(0.48, 'rgba(255,196,0,0.055)');
+    pool.addColorStop(1, 'rgba(255,196,0,0)');
+    ctx.fillStyle = pool;
+    ctx.fillRect(x - 64, baseY - 44, 128, 112);
+    ctx.strokeStyle = 'rgba(255,196,0,0.2)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(x, baseY + 35, 35, 9, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
     ctx.save();
     ctx.globalAlpha = 0.38;
     ctx.fillStyle = '#040507';
