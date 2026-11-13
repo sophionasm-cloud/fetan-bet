@@ -1025,6 +1025,18 @@ html.fetan-integrated .integration-blocker[hidden] { display: none; }
 html.fetan-integrated .integration-blocker strong { color: var(--cr-yellow); font-size: clamp(17px, 4vw, 24px); }
 html.fetan-integrated .integration-blocker p { max-width: 620px; margin: 0; color: #c3c8d0; line-height: 1.55; font-size: clamp(13px, 2.6vw, 16px); }
 html.fetan-integrated .integration-blocker p:last-child { color: #f0d67a; }
+html.fetan-integrated .integration-retry {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(255,218,69,.65);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #FFDA45, #FFC400);
+  color: #101722;
+  font: 800 13px/1 var(--font-ui);
+  cursor: pointer;
+}
+html.fetan-integrated .integration-retry:disabled { opacity: .65; cursor: wait; }
+html.fetan-integrated .integration-retry[hidden] { display: none; }
 
 /* Responsive ------------------------------------------------------- */
 @media (max-width: 520px) {
@@ -1446,33 +1458,33 @@ html.fetan-shared-shell .disclaimer { display: none !important; }
    in this game package; the outer Fetan Bet frame and other games stay intact. */
 :root {
   color-scheme: dark;
-  --cr-bg: #080B12;
-  --cr-panel: #111722;
-  --cr-panel-2: #171E29;
-  --cr-line: rgba(167, 175, 188, .16);
-  --cr-muted: #A7AFBC;
+  --cr-bg: #12181D;
+  --cr-panel: #1D252B;
+  --cr-panel-2: #283238;
+  --cr-line: rgba(190, 207, 222, .2);
+  --cr-muted: #C1C6CA;
   --cr-yellow: #FFC400;
   --cr-yellow-hot: #FFDA45;
   --cr-red: #F32640;
   --cr-green: #17C990;
   --cr-blue: #268EFF;
-  --race-black: #080B12;
-  --race-ink: #111722;
-  --race-asphalt: #262A32;
+  --race-black: #12181D;
+  --race-ink: #1D252B;
+  --race-asphalt: #454B50;
   --race-white: #F7F8FA;
 }
 
 body {
   color: var(--race-white);
   background:
-    radial-gradient(680px 420px at 12% 4%, rgba(38,142,255,.065), transparent 66%),
-    radial-gradient(640px 420px at 88% 100%, rgba(255,196,0,.055), transparent 68%),
-    #080B12;
+    radial-gradient(680px 420px at 12% 4%, rgba(94,137,164,.12), transparent 66%),
+    radial-gradient(640px 420px at 88% 100%, rgba(255,196,0,.09), transparent 68%),
+    #12181D;
 }
 .app {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(38,142,255,.075), transparent 45%),
-    linear-gradient(180deg, #111722 0%, #0B1018 54%, #080B12 100%);
+    radial-gradient(ellipse at 50% 0%, rgba(113,153,177,.14), transparent 45%),
+    linear-gradient(180deg, #202A30 0%, #182126 54%, #11181D 100%);
 }
 
 .topbar {
@@ -1512,17 +1524,17 @@ html.fetan-integrated .deposit-open { color: #FFC400; }
 
 .stage {
   background:
-    radial-gradient(ellipse at 28% 45%, rgba(255,196,0,.045), transparent 44%),
-    linear-gradient(145deg, #151C27, #0C1119 72%);
-  border-color: rgba(167,175,188,.18);
+    radial-gradient(ellipse at 28% 45%, rgba(255,196,0,.07), transparent 44%),
+    linear-gradient(145deg, #3D474D, #303A40 72%);
+  border-color: rgba(190,207,222,.24);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 18px 42px rgba(0,0,0,.34);
 }
 html.fetan-integrated .stage,
-html.fetan-shared-shell .stage { background: #0D131D; }
+html.fetan-shared-shell .stage { background: #303A40; }
 
 .mult-ladder {
-  border-color: rgba(255,196,0,.42);
-  background: linear-gradient(180deg, rgba(17,23,34,.97), rgba(8,11,18,.97));
+  border-color: rgba(255,196,0,.48);
+  background: linear-gradient(180deg, rgba(31,43,56,.98), rgba(22,32,43,.98));
   box-shadow: 0 12px 32px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.08), 0 0 16px rgba(255,196,0,.055);
 }
 .mult-ladder-title {
@@ -1555,7 +1567,7 @@ html.fetan-shared-shell .stage { background: #0D131D; }
 }
 .mult-badge {
   border-color: rgba(255,196,0,.8);
-  background: radial-gradient(circle at 38% 28%, #273243 0%, #131B26 55%, #090D14 100%);
+  background: radial-gradient(circle at 38% 28%, #394A5A 0%, #243342 55%, #15202B 100%);
   box-shadow: 0 10px 26px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.08), 0 0 20px rgba(255,196,0,.1);
 }
 .mult-badge::before { border-color: rgba(255,218,69,.28); }
@@ -1567,14 +1579,14 @@ html.fetan-shared-shell .stage { background: #0D131D; }
 
 .bet-panel {
   border-color: rgba(255,196,0,.28);
-  background: linear-gradient(165deg, rgba(26,35,48,.98), rgba(14,20,29,.99) 72%);
+  background: linear-gradient(165deg, rgba(35,48,63,.98), rgba(24,35,47,.99) 72%);
   box-shadow: 0 -10px 26px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.07);
 }
 .bet-panel::before { opacity: .48; }
 .bet-field,
 .select-wrap select {
-  background: #0F1621;
-  border-color: rgba(167,175,188,.18);
+  background: #1A2632;
+  border-color: rgba(190,207,222,.2);
 }
 .mini-btn { background: #202A37; border-color: rgba(167,175,188,.16); }
 .mini-btn:hover { background: #293545; }
@@ -1621,12 +1633,12 @@ html.fetan-shared-shell .stage { background: #0D131D; }
 
 html.fetan-integrated .bet-panel,
 html.fetan-shared-shell .bet-panel {
-  border-color: rgba(255,196,0,.24);
-  background: linear-gradient(165deg, #1A2330, #111722 78%);
+  border-color: rgba(255,196,0,.3);
+  background: linear-gradient(165deg, #253342, #1A2632 78%);
   box-shadow: 0 -8px 24px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.055);
 }
 html.fetan-integrated .bet-field,
-html.fetan-integrated .select-wrap select { background: #0F1621; border-color: rgba(167,175,188,.18); }
+html.fetan-integrated .select-wrap select { background: #1A2632; border-color: rgba(190,207,222,.2); }
 html.fetan-integrated .mini-btn,
 html.fetan-integrated .chip { background: #202A37; border-color: rgba(167,175,188,.18); }
 html.fetan-integrated .chip.active { background: #FFC400; border-color: #FFDA45; color: #101722; }
@@ -1645,6 +1657,78 @@ html.fetan-integrated .cash-btn b { color: #FFDA45; }
   .mult-ladder { background: linear-gradient(180deg, rgba(17,23,34,.98), rgba(8,11,18,.98)); }
   .bet-panel { border-radius: 15px; }
   .play-btn, .play-actions .btn { min-height: 48px; }
+}
+
+/* Give the miniature circuit a real arcade cabinet stage on larger screens.
+   The canvas game world and all wager controls remain the existing ones. */
+@media (min-width: 640px) and (max-width: 899px) {
+  .app {
+    width: min(840px, calc(100vw - 28px));
+    height: min(980px, calc(100dvh - 24px));
+  }
+}
+
+@media (min-width: 760px) and (max-width: 899px) {
+  .bet-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 176px;
+    grid-template-areas: "bet action" "low action" "difficulty action" "foot action";
+    align-items: center;
+    gap: 8px 12px;
+    padding: 12px 14px;
+  }
+  .bet-top { grid-area: bet; flex-wrap: nowrap; }
+  .low-balance-note { grid-area: low; }
+  .difficulty-row { grid-area: difficulty; margin-top: 0; }
+  .panel-foot { grid-area: foot; justify-content: flex-start; margin-top: 0; }
+  .action-row { grid-area: action; display: flex; align-self: stretch; min-height: 90px; margin-top: 0; }
+  .play-btn { height: 100%; min-height: 90px; font-size: 19px; }
+  .play-actions { flex: 1; flex-direction: column; }
+  .play-actions .btn { flex: 1; min-height: 40px; height: auto; }
+  .go-btn { flex-basis: auto; }
+}
+
+@media (min-width: 900px) and (min-height: 620px) {
+  body { align-items: center; }
+  .app {
+    width: min(1540px, calc(100vw - 32px));
+    height: min(980px, calc(100dvh - 24px));
+    border-radius: 22px;
+  }
+  .topbar { min-height: 68px; padding: 10px 22px 8px; }
+  .ticker-row { padding: 0 24px 8px; font-size: 12px; }
+  .stage-wrap { padding-inline: 16px; }
+  .stage { border-radius: 18px; }
+  .bet-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 25%);
+    grid-template-areas: "bet action" "low action" "difficulty action" "foot action";
+    align-items: center;
+    gap: 8px 16px;
+    margin: 9px 16px 10px;
+    padding: 13px 16px;
+    border-radius: 16px;
+  }
+  .bet-top { grid-area: bet; flex-wrap: nowrap; gap: 10px; }
+  .bet-field { height: 48px; }
+  .chips { gap: 7px; }
+  .chip { width: 46px; height: 40px; }
+  .mini-btn { height: 36px; padding-inline: 12px; }
+  .low-balance-note { grid-area: low; }
+  .difficulty-row { grid-area: difficulty; margin-top: 0; font-size: 12px; }
+  .select-wrap select { height: 38px; padding-inline: 13px 32px; }
+  .panel-foot { grid-area: foot; justify-content: flex-start; margin-top: 0; font-size: 10px; }
+  .action-row { grid-area: action; display: flex; align-self: stretch; min-height: 112px; margin: 0; }
+  .play-btn { height: 100%; min-height: 112px; border-radius: 15px; font-size: clamp(21px, 2vw, 29px); letter-spacing: 1.8px; }
+  .play-btn svg { width: 22px; height: 22px; }
+  .play-actions { flex: 1; flex-direction: column; gap: 8px; }
+  .play-actions .btn { flex: 1; min-height: 48px; height: auto; border-radius: 12px; }
+  .go-btn { flex-basis: auto; }
+  .go-btn, .cash-btn { font-size: 14px; }
+  .cash-btn b { font-size: 16px; }
+  .mult-ladder { width: 140px; right: 14px; }
+  .mult-ladder-item { min-height: 30px; padding: 6px 8px; }
+  .mult-ladder-item b { font-size: 13px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

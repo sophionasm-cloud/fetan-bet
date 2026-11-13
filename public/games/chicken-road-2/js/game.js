@@ -55,13 +55,15 @@
   const menuReset = $('menuReset');
   const integrationBlocker = $('integrationBlocker');
   const integrationWalletStatus = $('integrationWalletStatus');
+  const integrationRetryBtn = $('integrationRetryBtn');
+  const playBtnLabel = $('playBtnLabel');
   const modelCNote = $('modelCNote');
   const multLadderTrack = $('multLadderTrack');
 
   // ---------------------------------------------------------------- Constants
   const LANE_W = 112;
   let SIDE_L = 200;
-  const SIDE_R = 190;
+  let SIDE_R = 190;
   const CHECKPOINT_INSET = 36;
   const integrated = new URLSearchParams(location.search).get('fetan') === '1';
   const sharedShell = new URLSearchParams(location.search).get('fetan-shell') === '1';
@@ -447,8 +449,35 @@
     const heading = integrationBlocker?.querySelector('strong');
     if (heading) heading.textContent = 'WALLET UNAVAILABLE';
     if (integrationWalletStatus) integrationWalletStatus.textContent = state.remoteError;
+    if (integrationRetryBtn) {
+      integrationRetryBtn.hidden = false;
+      integrationRetryBtn.disabled = false;
+      integrationRetryBtn.textContent = 'Retry connection';
+    }
     if (menuReset) menuReset.disabled = true;
     updateHUD();
+  }
+
+  function loadIntegratedSession() {
+    if (!integrated || state.remoteBusy) return;
+    state.remoteError = null;
+    state.remoteBusy = true;
+    if (integrationWalletStatus) integrationWalletStatus.textContent = 'Checking your authenticated Fetan Bet wallet…';
+    if (integrationRetryBtn) {
+      integrationRetryBtn.hidden = false;
+      integrationRetryBtn.disabled = true;
+      integrationRetryBtn.textContent = 'Checking…';
+    }
+    updateHUD();
+    fetanApi('').then((data) => {
+      useServerRound(data);
+      difficultyEl.value = state.difficulty;
+      if (integrationWalletStatus) integrationWalletStatus.textContent = 'ETB wallet connected · outcomes are confirmed by the server.';
+      updateHUD();
+    }).catch((error) => {
+      showGameServiceError(error);
+      toast(apiErrorMessage(error), 'bad');
+    });
   }
 
   // ---------------------------------------------------------------- UI
@@ -532,8 +561,13 @@
     const insufficient = integrated && state.remoteReady && state.bet > state.balance;
     if (lowBalanceNote) lowBalanceNote.hidden = !insufficient || state.phase !== 'idle';
     playBtn.disabled = integrated && (!state.remoteReady || state.remoteBusy || Boolean(activeAccountSheet) || insufficient);
-    if (integrated && !state.remoteReady) {
-      playBtn.querySelector('span')?.replaceChildren(document.createTextNode('Unavailable'));
+    if (playBtnLabel) {
+      const unavailable = integrated && !state.remoteReady && Boolean(state.remoteError);
+      const connecting = integrated && !state.remoteReady && !state.remoteError;
+      playBtnLabel.textContent = unavailable ? 'Unavailable' : connecting ? 'Connecting…' : state.remoteBusy && state.phase === 'idle' ? 'Starting…' : 'Play';
+      playBtn.setAttribute('aria-label', unavailable
+        ? 'Chicken Road is unavailable because the wallet connection failed'
+        : connecting ? 'Connecting to the Fetan Bet wallet' : 'Play Chicken Road Dash');
     }
 
     if (state.phase === 'idle') {
@@ -1402,13 +1436,13 @@
 
   // ---------------------------------------------------------------- Background art
   const ART = {
-    black: '#080B12',
-    ink: '#111722',
-    panel: '#111722',
-    asphalt: '#262A32',
-    asphaltDark: '#1B2029',
-    steel: '#343B47',
-    steelLight: '#626D7B',
+    black: '#101720',
+    ink: '#1B2632',
+    panel: '#1B2632',
+    asphalt: '#454B50',
+    asphaltDark: '#343B40',
+    steel: '#51585E',
+    steelLight: '#92999E',
     white: '#F7F8FA',
     yellow: '#FFC400',
     yellowHot: '#FFDA45',
@@ -1425,10 +1459,18 @@
 
   function drawAsphalt(x, y, w, h, dark = false) {
     const g = ctx.createLinearGradient(x, y, x + w, y + h);
-    g.addColorStop(0, dark ? '#171C25' : '#20252D');
-    g.addColorStop(0.48, dark ? '#202630' : '#2A3039');
-    g.addColorStop(1, dark ? '#151A22' : '#1C222B');
+    g.addColorStop(0, dark ? '#303A40' : '#41484D');
+    g.addColorStop(0.48, dark ? '#3E484E' : '#51585D');
+    g.addColorStop(1, dark ? '#2B353B' : '#3B4348');
     ctx.fillStyle = g;
+    ctx.fillRect(x, y, w, h);
+
+    // A soft cool stadium wash lifts the asphalt without flattening its depth.
+    const wash = ctx.createLinearGradient(x, y, x + w, y);
+    wash.addColorStop(0, 'rgba(118,164,205,0.035)');
+    wash.addColorStop(0.5, 'rgba(215,228,239,0.055)');
+    wash.addColorStop(1, 'rgba(255,196,0,0.035)');
+    ctx.fillStyle = wash;
     ctx.fillRect(x, y, w, h);
 
     ctx.save();
@@ -1440,10 +1482,10 @@
       const sx = x + hash01(i * 3.17 + 1) * w;
       const sy = y + hash01(i * 7.31 + 2) * h;
       const light = i % 5 === 0;
-      ctx.fillStyle = light ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.16)';
+      ctx.fillStyle = light ? 'rgba(255,255,255,0.055)' : 'rgba(5,12,20,0.13)';
       ctx.fillRect(sx, sy, light ? 2 : 1.5, light ? 2 : 4);
     }
-    ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+    ctx.strokeStyle = 'rgba(5,12,20,0.17)';
     ctx.lineWidth = 1;
     for (let i = 0; i < 7; i++) {
       const cx = x + hash01(i * 11.3) * w;
@@ -1482,7 +1524,7 @@
     ctx.rect(x, 28, w, h - 56);
     ctx.clip();
     // Concrete pit slabs.
-    ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+    ctx.strokeStyle = 'rgba(235,243,250,0.105)';
     ctx.lineWidth = 1;
     for (let yy = 30; yy < h - 28; yy += 64) {
       ctx.beginPath();
@@ -1497,7 +1539,7 @@
       ctx.stroke();
     }
     // Painted pit boxes.
-    ctx.strokeStyle = 'rgba(255,196,0,0.2)';
+    ctx.strokeStyle = 'rgba(255,196,0,0.28)';
     ctx.lineWidth = 2;
     for (let yy = 62; yy < h - 40; yy += 150) {
       ctx.strokeRect(x + 12, yy, Math.max(20, w - 24), 76);
@@ -1923,7 +1965,7 @@
       const lx = roadX + i * LANE_W;
       const edge = i === 0 || i === laneLimit();
       ctx.save();
-      ctx.strokeStyle = edge ? 'rgba(247,245,236,0.82)' : 'rgba(247,245,236,0.22)';
+      ctx.strokeStyle = edge ? 'rgba(247,248,250,0.88)' : 'rgba(247,248,250,0.34)';
       ctx.lineWidth = edge ? 3 : 2;
       ctx.setLineDash(edge ? [] : [16, 20]);
       ctx.beginPath();
@@ -2670,9 +2712,9 @@
 
     // Outside-world backdrop
     const bg = ctx.createLinearGradient(0, 0, 0, h);
-    bg.addColorStop(0, '#08090b');
-    bg.addColorStop(0.5, '#101216');
-    bg.addColorStop(1, '#060708');
+    bg.addColorStop(0, '#17212C');
+    bg.addColorStop(0.5, '#202B37');
+    bg.addColorStop(1, '#121A23');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
@@ -2823,6 +2865,7 @@
       startAudio();
       startRound();
     });
+    integrationRetryBtn?.addEventListener('click', loadIntegratedSession);
     goBtn.addEventListener('click', hop);
     cashBtn.addEventListener('click', cashOut);
     resultBtn.addEventListener('click', () => {
@@ -3071,6 +3114,10 @@
     const w = Math.max(1, Math.round(rect.width));
     const h = Math.max(1, Math.round(rect.height));
     SIDE_L = w < 360 ? 128 : 200;
+    // Fill wide arcade stages with the existing finish-side scenery rather
+    // than leaving an unused strip beyond the track. Lane and car geometry
+    // stay fixed, so this only changes the decorative apron width.
+    SIDE_R = Math.max(190, w - SIDE_L - roadWidth());
     state.viewW = w;
     state.viewH = h;
     state.dpr = dpr;
@@ -3160,15 +3207,7 @@
       state.started = false;
     }
     if (integrated) {
-      fetanApi('').then((data) => {
-        useServerRound(data);
-        difficultyEl.value = state.difficulty;
-        integrationWalletStatus.textContent = 'ETB wallet · committed outcomes · traffic is visual only';
-        updateHUD();
-      }).catch((error) => {
-        showGameServiceError(error);
-        toast(apiErrorMessage(error), 'bad');
-      });
+      loadIntegratedSession();
     }
   }
 

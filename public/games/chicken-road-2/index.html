@@ -87,6 +87,7 @@
           <strong>WALLET UNAVAILABLE</strong>
           <p>Chicken Road uses your Fetan Bet wallet. A wallet or database error blocks play; no local balance is used.</p>
           <p id="integrationWalletStatus">Loading your Fetan Bet wallet…</p>
+          <button class="integration-retry" id="integrationRetryBtn" type="button" hidden>Retry connection</button>
         </aside>
         <div class="mult-badge" id="multBadge">
           <span class="mult-value" id="multiplier">1.18x</span>
@@ -144,7 +145,7 @@
       <div class="action-row">
         <button class="btn btn-primary play-btn" id="playBtn">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          Play
+          <span id="playBtnLabel">Play</span>
         </button>
         <div class="play-actions hidden" id="playActions">
           <button class="btn btn-primary go-btn" id="goBtn">GO <span>→</span></button>
