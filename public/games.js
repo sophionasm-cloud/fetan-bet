@@ -258,7 +258,8 @@ window.Games = (function () {
       return '<a class="home-game-card" href="#/game/' + esc(game.gameUrl) + '" data-game="' + esc(game.id) + '" data-category="' + esc(game.category) + '" data-status="available" aria-label="' + (lang === 'am' ? 'ይጫወቱ' : 'Play') + ' ' + esc(game.title) + '">' +
         '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' poster" loading="' + (eager ? 'eager' : 'lazy') + '" decoding="async"' + (eager ? ' fetchpriority="high"' : '') + '>' +
         '<span class="home-card-fallback" aria-hidden="true">' + (GAME_ART[game.id] || '') + '</span>' +
-        '<span class="home-card-shade" aria-hidden="true"></span>' + livePlayerMarkup(game) +
+        '<span class="home-card-shade" aria-hidden="true"></span>' +
+        '<span class="home-card-title">' + esc(game.title) + '</span>' + livePlayerMarkup(game) +
         '</a>';
     };
     const comingSoonCardMarkup = (game) => '<article class="home-coming-card" data-category="' + esc(game.category) + '" data-status="coming_soon" aria-label="' + esc(game.title) + ', ' + (lang === 'am' ? 'በቅርብ ቀን' : 'coming soon') + '">' +

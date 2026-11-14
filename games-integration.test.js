@@ -19,6 +19,7 @@ const index = read('public/index.html');
 const homeCss = read('public/home-v2.css');
 const sharedShell = read('public/game-shell.js');
 const immersiveCss = read('public/immersive-games.css');
+const bomberCss = read('public/games/b2b-bomber/css/style.css');
 const workspace = read('public/workspace.js');
 
 assert.match(server, /const g = \(fn\) => \[auth, need\('customer'\), wrap/);
@@ -67,7 +68,9 @@ assert.match(catalog, /href="#\/game\/' \+ esc\(game\.gameUrl\)/, 'available gam
 assert.match(catalog, /aria-label="' \+ \(lang === 'am' \? 'ይጫወቱ' : 'Play'\) \+ ' ' \+ esc\(game\.title\)/,
   'playable poster links have accessible names');
 assert.match(catalog, /alt="' \+ esc\(game\.title\) \+ ' poster"/, 'game posters have descriptive alt text');
-assert.match(catalog, /class="home-card-title"/, 'playable cards show their game names over the artwork');
+assert.match(catalog, /id: 'available-games'[\s\S]*?title: lang === 'am' \? 'የሚገኙ ጨዋታዎች' : 'Available Games'[\s\S]*?status === 'available'/,
+  'the first lobby row is reserved for games that can actually be launched');
+assert.doesNotMatch(catalog, /class="home-card-title"/, 'playable poster cards have no title plaque over the artwork');
 assert.match(catalog, /class="home-live-pill"/, 'verified live counts have a compact poster badge');
 assert.match(catalog, /Number\.isSafeInteger\(game\.livePlayerCount\)/, 'live counts render only from valid real count data');
 assert.match(lobbyCatalog[1], /livePlayerCount: null/, 'no fabricated player counts are configured');
@@ -108,6 +111,10 @@ assert.match(app, /licenseConfigured[\s\S]*?Licensed by \$\{esc\(licenseAuthorit
 assert.doesNotMatch(read('public/site-config.js'), /supportHours:\s*'24\/7'/,
   'the public page does not claim unverified round-the-clock support');
 assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1&fetan-shell=1`/);
+assert.match(catalog, /document\.documentElement\.requestFullscreen\?\.\(\{ navigationUI: 'hide' \}\)/,
+  'tapping a game requests native fullscreen where supported');
+assert.match(catalog, /window\.setFetanGameImmersive\?\.\(true\)/,
+  'game routes enter the CSS immersive layout even where native fullscreen is unavailable');
 assert.match(index, /fetan-game-immersive/);
 assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\|b2b-bomber\|crash\)/,
   'direct game routes include every game so the shared immersive shell can render them');
@@ -123,6 +130,16 @@ assert.match(immersiveCss, /body\.game-open > #nav\.app-bottom-tabs\s*\{\s*displ
   'immersive games hide the legacy customer bottom navigation');
 assert.match(sharedShell, /id="immersive-deposit-receipt" data-deposit-receipt/,
   'deposit receipt upload has a wired change target');
+assert.match(homeCss, /button\.on,[\s\S]*?background: #f5c928;[\s\S]*?color: #17130a;/,
+  'the active customer Games tab uses gold rather than a white tile');
+assert.match(homeCss, /\.home-game-card img[\s\S]*?object-fit: contain;/,
+  'game poster art remains uncropped inside the lobby cards');
+assert.match(bomberCss, /html\.fetan-integrated\.fetan-shared-shell \.bb-wallet \{ display: none !important; \}/,
+  'embedded B2B uses the shared Fetan wallet instead of showing a duplicate');
+assert.match(bomberCss, /html\.fetan-integrated\.fetan-shared-shell \.bb-panel \{[\s\S]*?background: linear-gradient\(155deg, rgba\(29, 33, 40, \.98\), rgba\(18, 22, 28, \.98\)\)/,
+  'embedded B2B controls use the dark Fetan glass style, not the standalone white panel');
+assert.match(bomberCss, /html\.fetan-integrated\.fetan-shared-shell \.bb-fair \{ display: none !important; \}/,
+  'embedded fairness controls remain accessible from the shared game menu without a duplicate panel');
 assert.match(catalog, /gameReturnEntry/,
   'direct game URLs establish an in-app lobby entry for Back navigation');
 assert.match(server, /app\.post\('\/api\/games\/bingo\/start',[\s\S]*?status\(410\)\.json\(\{ error: 'BINGO_RETIRED', message: 'Bingo has been retired\.'/);
@@ -341,6 +358,11 @@ assert.match(crashHtml, /data-panel="2"/, 'Rocket Crash exposes two independent 
 assert.match(crashHtml, /id="historyStrip"/);
 assert.match(crashHtml, /id="autoDialog"/);
 assert.match(crashHtml, /role="status"/);
+assert.match(crashHtml, /<h1 class="sr-only">Rocket Crash<\/h1>/, 'the game page has a level-one heading');
+assert.match(crashHtml, /class="brand" role="img" aria-label="Rocket Crash"/,
+  'the wordmark exposes a valid accessible image role');
+assert.match(crashHtml, /<section class="history-row" aria-label="Recent rounds">/,
+  'recent rounds sit inside a named landmark');
 assert.match(crashFrontend, /new EventSource\('\/api\/games\/crash\/stream', \{ withCredentials: true \}\)/,
   'Rocket Crash reads its shared-round stream with same-origin cookies');
 assert.match(crashFrontend, /credentials: 'same-origin'/, 'Rocket Crash API calls use the authenticated cookie');
@@ -349,10 +371,13 @@ assert.match(crashFrontend, /\/api\/games\/crash\/cashout/);
 assert.match(crashFrontend, /fetan-shell-action/, 'Rocket Crash accepts shared-shell actions');
 assert.match(crashFrontend, /fetan-wallet-refresh/, 'Rocket Crash asks the shell to refresh the wallet after settlement');
 assert.doesNotMatch(crashFrontend, /Math\.random|toFixed/, 'client maths never uses floats or unseeded randomness');
+assert.doesNotMatch(crashFrontend, /state\.now\(/, 'the canvas reads the store clock through its public method');
 assert.match(crashFrontend, /savedReduced == null \? prefersReduced : savedReduced === '1'/,
   'first visit follows the operating-system reduced-motion preference');
 assert.match(crashFrontend, /if \('reducedEffects' in patch\) localStorage\.setItem\('crash-reduced'/,
   'only an explicit reduced-effects choice overrides the system preference');
+assert.match(crashFrontend, /if \(!slice\.length\) \{[\s\S]{0,200}?setAttribute\('role', 'listitem'\)/,
+  'an empty history strip keeps a named listitem');
 assert.doesNotMatch(crashFrontend, /localhost:4173|127\.0\.0\.1:4173/);
 
 assert.match(crashService, /ledger\s*=\s*db\.postLedger/, 'Crash settlement reuses the existing ledger');

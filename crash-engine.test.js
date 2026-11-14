@@ -424,6 +424,28 @@ async function testRestartRecovery() {
   }
 }
 
+async function testOrphanSweepRecovery() {
+  const world = makeWorld();
+  const engine = makeEngine(world, { seeds: seeded });
+  await engine.reconcile();
+  world.placeBet({ roundId: 1, panel: 1, stakeSantim: 100, requestId: 'orphan-bet-1' });
+  world.state.now = world.findRound(1).bettingClosesAt;
+  await engine.reconcile();
+  const round = world.findRound(1);
+  const crashAt = round.startedAt + M.crashDurationMs(round.crashHundredths, round.growthKMicro);
+  // Simulate a process exit after markCrashed but before the sweep.
+  round.status = 'crashed';
+  round.crashedAt = crashAt;
+  world.state.now = crashAt + 1;
+  assert.equal(world.findBet(1).status, 'open');
+
+  const restarted = makeEngine(world, { seeds: seeded });
+  await restarted.reconcile();
+  assert.equal(world.findBet(1).status, 'lost');
+  assert.equal(world.state.bets.filter((bet) => bet.status === 'open').length, 0);
+  assert.equal(world.state.credits, 0, 'an unresolved losing bet never receives a credit');
+}
+
 function findInstantCrashSeed(nonce) {
   for (let i = 0; i < 5000; i++) {
     const seed = M.sha256Hex(`instant-crash-seed-${i}`);
@@ -490,10 +512,11 @@ async function testSecrecyProjection() {
   await testCashoutCrashRace();
   await testDuplicateRequests();
   await testRestartRecovery();
+  await testOrphanSweepRecovery();
   await testInstantCrash();
   await testSecrecyProjection();
   console.log('crash-engine.test.js OK');
-  console.log('  lifecycle, pre-bet, late auto target, crash race, retries, recovery, instant crash, secrecy');
+  console.log('  lifecycle, pre-bet, late auto target, crash race, retries, recovery, orphan sweep, instant crash, secrecy');
 })().catch((err) => {
   console.error(err);
   process.exitCode = 1;

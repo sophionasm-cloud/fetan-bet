@@ -104,23 +104,23 @@ body.customer-theme[data-customer-theme="dark"] {
   --glass-shadow-hover: rgba(0, 0, 0, .62);
   --inset-highlight: inset 0 1px 0 var(--glass-highlight);
 
-  --page-glow-1: rgba(213, 151, 38, .12);
-  --page-glow-2: rgba(111, 67, 34, .16);
-  --page-glow-3: rgba(245, 201, 40, .055);
+  --page-glow-1: rgba(213, 151, 38, .16);
+  --page-glow-2: rgba(111, 67, 34, .14);
+  --page-glow-3: rgba(245, 201, 40, .075);
   --page-bg: radial-gradient(ellipse 70% 55% at 12% -8%, var(--page-glow-1), transparent 60%),
     radial-gradient(ellipse 55% 45% at 94% 4%, var(--page-glow-2), transparent 65%),
     radial-gradient(ellipse 70% 50% at 50% 108%, var(--page-glow-3), transparent 70%),
     var(--bg);
 
   --header-bg: var(--glass-bg-strong);
-  --header-border: var(--glass-border);
-  --header-shadow: 0 18px 50px var(--glass-shadow-soft);
+  --header-border: rgba(245, 201, 40, .24);
+  --header-shadow: 0 18px 50px var(--glass-shadow-soft), 0 0 24px rgba(213, 151, 38, .09);
   --nav-bg: var(--glass-bg-soft);
-  --bottom-nav-bg: var(--glass-bg-strong);
+  --bottom-nav-bg: rgba(20, 18, 15, .90);
   --nav-item-hover: var(--glass-raised);
   --nav-active-bg: var(--accent);
   --nav-active-text: var(--accent-contrast);
-  --nav-active-shadow: 0 8px 24px var(--accent-glow);
+  --nav-active-shadow: 0 0 20px rgba(245, 201, 40, .24), 0 8px 24px var(--accent-glow);
 
   --chip-bg: var(--glass-bg);
   --chip-text: var(--text);

@@ -41,7 +41,7 @@
         </button>
       </div>
 
-      <div class="brand" aria-label="Rocket Crash">
+      <div class="brand" role="img" aria-label="Rocket Crash">
         <svg class="brand-svg" viewBox="0 0 414 76" role="img" aria-hidden="true">
           <defs>
             <linearGradient id="brandYellow" x1="0" y1="0" x2="1" y2="0">
@@ -61,7 +61,7 @@
       </div>
 
       <div class="topbar-right">
-        <div class="conn" id="conn" data-state="connecting" title="Connecting">
+        <div class="conn" id="conn" data-state="connecting" role="status" title="Connecting">
           <span class="conn-dot" id="connDot" aria-hidden="true"></span>
           <span id="currencyCode">ETB</span>
         </div>
@@ -69,16 +69,17 @@
       </div>
     </header>
 
-    <div class="history-row">
+    <section class="history-row" aria-label="Recent rounds">
       <div class="strip-mask">
-        <div class="strip" id="historyStrip" role="list" aria-label="Recent crash multipliers"></div>
+        <div class="strip" id="historyStrip" role="list" aria-label="Recent crash multipliers"><span class="sr-only" role="listitem">No completed rounds yet.</span></div>
       </div>
       <button class="icon-btn history-btn" id="historyBtn" type="button" aria-label="Open round history" aria-haspopup="dialog">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2M4.5 12a7.5 7.5 0 1 0 2-5.2M4 4v4h4" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-    </div>
+    </section>
 
     <main class="stage-grid">
+      <h1 class="sr-only">Rocket Crash</h1>
       <section class="bets-panel" aria-label="Live bets">
         <button class="bets-toggle" id="betsToggle" type="button" aria-expanded="true" aria-controls="feed">
           <span data-i18n="live_bets">Live bets</span>
@@ -91,7 +92,7 @@
 
       <section class="chart-panel" aria-label="Rocket flight chart">
         <canvas id="chart" aria-hidden="true"></canvas>
-        <div class="readout" id="readout">
+        <div class="readout" id="readout" role="group">
           <div class="readout-kicker" id="readoutKicker">NEXT ROUND</div>
           <div class="readout-mult" id="multiplier"><span class="mult-value">1.00</span><span class="x">×</span></div>
           <div class="readout-track"><i id="countdownBar"></i></div>
@@ -115,7 +116,7 @@
         <span class="balance-cur" id="balanceCurrency">ETB</span>
       </div>
 
-      <button class="auto-btn" id="autoBtn" type="button" aria-haspopup="dialog" aria-controls="autoDialog">
+      <button class="auto-btn" id="autoBtn" type="button" aria-haspopup="dialog">
         <span>AUTO</span>
         <small id="autoRemaining" hidden></small>
       </button>

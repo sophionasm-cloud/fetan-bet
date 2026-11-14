@@ -1495,3 +1495,181 @@ html.fetan-integrated .bb-notice { margin-bottom: 2px; }
   }
   .bb-cta:hover:not(:disabled)::after { left: -30%; }
 }
+
+/* B2B Bomber inside Fetan's shared immersive game frame only. */
+html.fetan-integrated.fetan-shared-shell {
+  color-scheme: dark;
+  --bb-bg: #090b10;
+  --bb-bg-2: #111720;
+  --bb-blue: #d59a2b;
+  --bb-blue-bright: #f0b93f;
+  --bb-blue-soft: #f2d68c;
+  --bb-navy: #11151b;
+  --bb-navy-deep: #090b10;
+  --bb-white: #f4f1e9;
+  --bb-paper: #151a21;
+  --bb-yellow: #f5c928;
+  --bb-yellow-soft: #ffe17a;
+  --bb-slate: #9aa3af;
+  --bb-slate-light: #c0c6cf;
+  --bb-line: rgba(245, 201, 40, .18);
+  --bb-line-dark: rgba(245, 201, 40, .22);
+  --bb-panel-soft: #202630;
+}
+
+html.fetan-integrated.fetan-shared-shell,
+html.fetan-integrated.fetan-shared-shell body {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 0%, rgba(213, 151, 38, .10), transparent 52%), #090b10;
+}
+
+html.fetan-integrated.fetan-shared-shell body::before { opacity: .08; }
+
+html.fetan-integrated.fetan-shared-shell .bb-app {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 201, 40, .28) transparent;
+}
+
+html.fetan-integrated.fetan-shared-shell .bb-layout {
+  width: min(1180px, 100%);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px clamp(10px, 2vw, 20px) 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  align-items: center;
+  gap: 14px;
+  flex: 1 0 auto;
+}
+
+html.fetan-integrated.fetan-shared-shell .bb-flight { display: flex; flex-direction: column; min-height: 0; }
+html.fetan-integrated.fetan-shared-shell .bb-flight-bar { min-height: 30px; margin-bottom: 7px; }
+html.fetan-integrated.fetan-shared-shell .bb-wallet { display: none !important; }
+html.fetan-integrated.fetan-shared-shell .bb-notice,
+html.fetan-integrated.fetan-shared-shell .bb-panel-foot,
+html.fetan-integrated.fetan-shared-shell .bb-panel-rule,
+html.fetan-integrated.fetan-shared-shell .bb-fair { display: none !important; }
+html.fetan-integrated.fetan-shared-shell .bb-panel-head > div { display: none; }
+html.fetan-integrated.fetan-shared-shell .bb-panel-head { justify-content: flex-end; padding-top: 0; }
+html.fetan-integrated.fetan-shared-shell .bb-result .bb-link { display: none; }
+
+html.fetan-integrated.fetan-shared-shell .bb-stage {
+  height: clamp(340px, calc(100dvh - 250px), 620px);
+  min-height: 300px;
+  border-color: rgba(245, 201, 40, .28);
+  background: #111720;
+  box-shadow: 0 20px 52px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 24px rgba(213, 151, 38, .07);
+}
+
+html.fetan-integrated.fetan-shared-shell .bb-panel {
+  padding: clamp(13px, 1.6vw, 18px);
+  border: 1px solid rgba(245, 201, 40, .20);
+  border-radius: 17px;
+  background: linear-gradient(155deg, rgba(29, 33, 40, .98), rgba(18, 22, 28, .98));
+  color: #f4f1e9;
+  box-shadow: 0 20px 54px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .055);
+}
+
+html.fetan-integrated.fetan-shared-shell .bb-panel::before { height: 2px; background: linear-gradient(90deg, transparent, #d59a2b 20% 80%, transparent); }
+html.fetan-integrated.fetan-shared-shell .bb-state-pill { border-color: rgba(245, 201, 40, .32); background: rgba(245, 201, 40, .10); color: #ffe17a; }
+html.fetan-integrated.fetan-shared-shell .bb-state-pill[data-state="flying"],
+html.fetan-integrated.fetan-shared-shell .bb-state-pill[data-state="won"] { background: #f5c928; color: #17130a; }
+html.fetan-integrated.fetan-shared-shell .bb-state-pill[data-state="lost"] { border-color: rgba(217, 54, 67, .56); background: rgba(217, 54, 67, .18); color: #ff9da4; }
+html.fetan-integrated.fetan-shared-shell .bb-field-head label,
+html.fetan-integrated.fetan-shared-shell .bb-auto-copy label { color: #f4f1e9; }
+html.fetan-integrated.fetan-shared-shell .bb-field-head span,
+html.fetan-integrated.fetan-shared-shell .bb-auto-copy small,
+html.fetan-integrated.fetan-shared-shell .bb-action-hint { color: #aeb6c1; }
+html.fetan-integrated.fetan-shared-shell .bb-step,
+html.fetan-integrated.fetan-shared-shell .bb-chips button,
+html.fetan-integrated.fetan-shared-shell .bb-target-row input,
+html.fetan-integrated.fetan-shared-shell .bb-stake-input input,
+html.fetan-integrated.fetan-shared-shell .bb-auto-row {
+  border-color: rgba(255, 255, 255, .12);
+  background: #171d25;
+  color: #f4f1e9;
+}
+html.fetan-integrated.fetan-shared-shell .bb-step { color: #f5c928; }
+html.fetan-integrated.fetan-shared-shell .bb-step:hover:not(:disabled) { border-color: #f5c928; background: rgba(245, 201, 40, .14); color: #ffe17a; }
+html.fetan-integrated.fetan-shared-shell .bb-stake-input input:disabled,
+html.fetan-integrated.fetan-shared-shell .bb-target-row input:disabled { background: #202630; color: #aeb6c1; }
+html.fetan-integrated.fetan-shared-shell .bb-stake-input span,
+html.fetan-integrated.fetan-shared-shell .bb-target-row > span { color: #f5c928; }
+html.fetan-integrated.fetan-shared-shell .bb-chips button { min-height: 34px; color: #e6e2d8; }
+html.fetan-integrated.fetan-shared-shell .bb-chips button:hover:not(:disabled),
+html.fetan-integrated.fetan-shared-shell .bb-chips button[aria-pressed="true"] { border-color: #f5c928; background: rgba(245, 201, 40, .14); color: #ffe17a; }
+html.fetan-integrated.fetan-shared-shell .bb-switch { background: #353d48; }
+html.fetan-integrated.fetan-shared-shell .bb-switch[aria-checked="true"] { background: #b98225; }
+html.fetan-integrated.fetan-shared-shell .bb-preview { background: #10151c; border: 1px solid rgba(245, 201, 40, .16); }
+html.fetan-integrated.fetan-shared-shell .bb-preview span { color: #b9c0ca; }
+html.fetan-integrated.fetan-shared-shell .bb-preview b { color: #ffe17a; }
+html.fetan-integrated.fetan-shared-shell .bb-cta {
+  min-height: 56px;
+  border: 1px solid rgba(255, 231, 148, .68);
+  background: linear-gradient(135deg, #f8d85f, #efaa27 68%, #c98317);
+  color: #17130a;
+  box-shadow: 0 8px 24px rgba(213, 151, 38, .22), inset 0 1px 0 rgba(255, 255, 255, .4);
+}
+html.fetan-integrated.fetan-shared-shell .bb-cta:hover:not(:disabled) { box-shadow: 0 10px 28px rgba(213, 151, 38, .30), inset 0 1px 0 rgba(255, 255, 255, .4); }
+html.fetan-integrated.fetan-shared-shell .bb-cta[data-mode="cashout"] { background: linear-gradient(135deg, #ffe17a, #f5c928 60%, #d9981f); color: #17130a; }
+html.fetan-integrated.fetan-shared-shell .bb-cta[data-mode="wait"] { background: #323946; color: #b8c0ca; }
+html.fetan-integrated.fetan-shared-shell .bb-action-hint { min-height: 18px; font-size: 10px; }
+html.fetan-integrated.fetan-shared-shell :where(button, input):focus-visible { outline-color: #ffe17a; }
+html.fetan-integrated.fetan-shared-shell .bb-mobile-cash { bottom: max(10px, env(safe-area-inset-bottom)); z-index: 15; }
+
+@media (max-width: 900px) {
+  html.fetan-integrated.fetan-shared-shell .bb-layout {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    align-items: stretch;
+    gap: 7px;
+    padding: 7px max(10px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+  html.fetan-integrated.fetan-shared-shell .bb-flight-bar { min-height: 26px; margin-bottom: 6px; }
+  html.fetan-integrated.fetan-shared-shell .bb-stage { height: clamp(190px, 32dvh, 285px); min-height: 190px; border-radius: 15px; }
+  html.fetan-integrated.fetan-shared-shell .bb-readout { padding: 38px 12px 46px; }
+  html.fetan-integrated.fetan-shared-shell .bb-multiplier { font-size: clamp(44px, 12vw, 66px); }
+  html.fetan-integrated.fetan-shared-shell .bb-result { bottom: 45px; }
+  html.fetan-integrated.fetan-shared-shell .bb-panel { padding: 12px; border-radius: 15px; }
+  html.fetan-integrated.fetan-shared-shell .bb-bet-form { margin-top: 6px; }
+  html.fetan-integrated.fetan-shared-shell .bb-stake-row { margin-top: 4px; }
+  html.fetan-integrated.fetan-shared-shell .bb-stake-input input { height: 44px; font-size: 19px; }
+  html.fetan-integrated.fetan-shared-shell .bb-step { height: 44px; }
+  html.fetan-integrated.fetan-shared-shell .bb-chips { gap: 5px; margin-top: 6px; }
+  html.fetan-integrated.fetan-shared-shell .bb-chips button { height: 30px; min-height: 32px; padding-inline: 8px; }
+  html.fetan-integrated.fetan-shared-shell .bb-auto-row { margin-top: 7px; padding: 8px 9px; }
+  html.fetan-integrated.fetan-shared-shell .bb-preview { margin-top: 7px; padding: 7px 10px; }
+  html.fetan-integrated.fetan-shared-shell .bb-cta { min-height: 49px; margin-top: 7px; padding-block: 6px; }
+  html.fetan-integrated.fetan-shared-shell .bb-cta-main { font-size: 15px; }
+  html.fetan-integrated.fetan-shared-shell .bb-cta-sub { font-size: 9px; }
+  html.fetan-integrated.fetan-shared-shell .bb-action-hint { margin-top: 4px; }
+}
+
+@media (max-width: 560px) {
+  html.fetan-integrated.fetan-shared-shell .bb-layout { padding-top: 5px; }
+  html.fetan-integrated.fetan-shared-shell .bb-recent-wrap { justify-content: flex-start; }
+  html.fetan-integrated.fetan-shared-shell .bb-recent-label { font-size: 9px; }
+  html.fetan-integrated.fetan-shared-shell .bb-recent { min-height: 25px; }
+  html.fetan-integrated.fetan-shared-shell .bb-panel-head > .bb-state-pill { height: 22px; }
+  html.fetan-integrated.fetan-shared-shell .bb-target-row input { height: 38px; font-size: 16px; }
+  html.fetan-integrated.fetan-shared-shell .bb-auto-copy label { font-size: 11px; }
+}
+
+@media (max-height: 720px) {
+  html.fetan-integrated.fetan-shared-shell .bb-stage { height: clamp(175px, 29dvh, 235px); min-height: 175px; }
+  html.fetan-integrated.fetan-shared-shell .bb-readout { padding-block: 28px 36px; }
+  html.fetan-integrated.fetan-shared-shell .bb-multiplier { font-size: clamp(40px, 10vw, 56px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.fetan-integrated.fetan-shared-shell .bb-cta[data-mode="cashout"] { animation: none; }
+}

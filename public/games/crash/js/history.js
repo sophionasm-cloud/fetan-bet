@@ -180,6 +180,13 @@ window.CrashHistory = (function () {
     const previousNewest = lastStripKey ? Number(lastStripKey.split('|').pop().split(':')[0]) : null;
     lastStripKey = key;
     stripEl.replaceChildren();
+    if (!slice.length) {
+      const empty = el('span', 'sr-only', T('no_history'));
+      empty.setAttribute('role', 'listitem');
+      stripEl.appendChild(empty);
+      stripEl.setAttribute('aria-label', T('no_history'));
+      return;
+    }
     for (const round of slice) {
       const pill = el('span', 'pill', F.formatMultiplier(round.crashHundredths));
       if (Number(round.crashHundredths) >= C.redPillThreshold) pill.classList.add('is-hot');

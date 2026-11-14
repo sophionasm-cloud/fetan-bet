@@ -36,6 +36,7 @@ function createCrashEngine({
   let queued = false;
   let timerId = null;
   let nextWakeAt = null;
+  let lastSweptRoundId = 0;
 
   const safeEmit = (event) => {
     try {
@@ -47,6 +48,22 @@ function createCrashEngine({
 
   const autoTime = (round, bet) =>
     round.startedAt + M.crashDurationMs(bet.autoCashoutHundredths, round.growthKMicro || growthKMicro);
+
+  // `markCrashed` and the losing-bet sweep are separate statements. If the
+  // process exits, or the sweep fails, between them, the round is already
+  // crashed but bets can still be open. Sweeping every recently crashed round
+  // once on reconciliation closes that window; the aggregate update is
+  // idempotent, so a restart can safely repeat it.
+  async function sweepCrashedRounds(rounds) {
+    for (const round of rounds) {
+      if (round.status !== 'crashed' || round.id <= lastSweptRoundId) continue;
+      const swept = await repo.sweepOpenBets(round.id);
+      lastSweptRoundId = Math.max(lastSweptRoundId, round.id);
+      if (swept) {
+        log.info(`[crash] round ${round.id} recovery swept ${swept} unresolved bet(s)`);
+      }
+    }
+  }
 
   function schedule(at) {
     nextWakeAt = Number.isFinite(at) ? at : null;
@@ -156,6 +173,7 @@ function createCrashEngine({
       }
       const crashed = await repo.markCrashed(round.id, now);
       const swept = await repo.sweepOpenBets(round.id);
+      lastSweptRoundId = Math.max(lastSweptRoundId, round.id);
       const finalRound = crashed || (await repo.getRoundById(round.id)) || round;
       log.info(`[crash] round ${round.id} crashed at ${finalRound.crashHundredths / 100}x; swept ${swept} losing bet(s)`);
       safeEmit({ type: 'crash', round: finalRound, swept });
@@ -181,6 +199,7 @@ function createCrashEngine({
     busy = true;
     try {
       let rounds = await repo.getRecentRounds(3);
+      await sweepCrashedRounds(rounds);
       if (!rounds.length) {
         const round = await createRound(clock() + bettingMs);
         schedule(round ? round.bettingClosesAt : clock() + C.ENGINE_POLL_MS);
