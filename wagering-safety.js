@@ -41,6 +41,10 @@ const NON_STAKE_POST_PATHS = Object.freeze([
   '/plinko/verify',
   '/bingo/call',
   '/bingo/abandon',
+  // B2B Bomber settlement and verification never create a new stake. The bet
+  // route remains gated as a normal new-stake request.
+  '/b2b-bomber/cashout',
+  '/b2b-bomber/verify',
 ]);
 
 function normalizeMode(value) {

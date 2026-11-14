@@ -15,6 +15,8 @@ const { createChickenRoadDemoService } = require('./chicken-road-demo-service');
 const chickenRoadDemo = createChickenRoadDemoService({ query, withTx });
 const { createChickenRoadRealService } = require('./chicken-road-real-service');
 const chickenRoadReal = createChickenRoadRealService({ query, withTx, ledger: postLedger });
+const { createB2BBomberService } = require('./b2b-bomber-service');
+const b2bBomber = createB2BBomberService({ query, withTx, ledger: postLedger });
 const { getAiResponse } = require('./ai-support');
 const { hasPermission } = require('./permissions');
 const { createHealthHandler } = require('./health-check');
@@ -1510,6 +1512,20 @@ app.post('/api/games/chicken-road-dash/real/start', ...g((req) => chickenRoadRea
 app.post('/api/games/chicken-road-dash/real/cross', ...g((req) => chickenRoadReal.cross(req.user.id, req.body.round_id, req.body.action_id)));
 app.post('/api/games/chicken-road-dash/real/cashout', ...g((req) => chickenRoadReal.cashout(req.user.id, req.body.round_id, req.body.action_id)));
 app.get('/api/games/chicken-road-dash/real/verify/:roundId', ...g((req) => chickenRoadReal.verify(req.user.id, req.params.roundId)));
+// B2B Bomber uses only the existing game_rounds table. The server owns the
+// crash, flight clock, cash-out validity and payout; the browser only displays
+// the state returned here.
+app.use('/api/games/b2b-bomber', (req, res, next) => {
+  // State is wallet- and clock-specific. A shared cache must never serve it.
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+app.get('/api/games/b2b-bomber/state', ...g((req) => b2bBomber.current(req.user.id)));
+app.post('/api/games/b2b-bomber/bet', ...g((req) => b2bBomber.start(req.user.id, req.body)));
+app.post('/api/games/b2b-bomber/cashout', ...g((req) => b2bBomber.cashout(req.user.id, req.body)));
+app.get('/api/games/b2b-bomber/history', ...g((req) => b2bBomber.history(req.user.id)));
+app.get('/api/games/b2b-bomber/rounds/:roundId/fairness', ...g((req) => b2bBomber.verifyOwned(req.user.id, req.params.roundId)));
+app.post('/api/games/b2b-bomber/verify', ...g((req) => Promise.resolve(b2bBomber.verifyPayload(req.body))));
 app.get('/api/games/mines', ...g((req) => games.minesState(req.user.id)));
 app.post('/api/games/mines/start', ...g((req) => games.minesStart(req.user.id, Number(req.body.bet), req.body.mines, req.body.grid, req.body.client_seed)));
 app.post('/api/games/mines/step', ...g((req) => games.minesStep(req.user.id, req.body.cell)));
@@ -3274,6 +3290,8 @@ app.get('/api/admin/support', ...admin, wrap(async () => {
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
+  b2bBomber.startSweeper();
+  b2bBomber.sweep().catch((err) => console.error('[b2b-bomber] startup sweep:', err.message));
   app.listen(PORT, () => console.log(`ፈጣን ቤት / Fetan Bet running at http://localhost:${PORT}`));
 }
 module.exports = app;

@@ -64,6 +64,8 @@ const uiIcon = (name) => {
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
     soundOn: '<path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"/><path d="M15 9.5a4 4 0 0 1 0 5M17.8 6.7a8 8 0 0 1 0 10.6"/>',
     soundOff: '<path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"/><path d="m16 9 5 5m0-5-5 5"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>',
+    moon: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"/>',
     chevronLeft: '<path d="m14.5 6-6 6 6 6"/>',
     chevronRight: '<path d="m9.5 6 6 6-6 6"/>',
     arrowRight: '<path d="M4 12h15m-5-5 5 5-5 5"/>',
@@ -309,11 +311,30 @@ function mountPromoSlider(app) {
 }
 
 function syncCustomerTheme(enabled) {
-  // One dark theme only. Staff workspaces keep their own palette.
+  let theme = 'dark';
+  try { theme = localStorage.getItem('fetan-theme-preference') === 'light' ? 'light' : 'dark'; } catch (_) {}
   document.body.classList.toggle('customer-theme', enabled);
-  document.body.dataset.customerTheme = 'dark';
+  if (enabled) {
+    document.body.dataset.customerTheme = theme;
+    document.documentElement.dataset.customerTheme = theme;
+  }
+  const themeButton = $('themeBtn');
+  if (themeButton) {
+    themeButton.hidden = !enabled;
+    themeButton.innerHTML = uiIcon(theme === 'dark' ? 'sun' : 'moon');
+    const nextLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    themeButton.setAttribute('aria-label', nextLabel);
+    themeButton.title = nextLabel;
+  }
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.content = '#141414';
+  if (themeMeta && enabled) themeMeta.content = theme === 'light' ? '#F2E9FF' : '#0B0B0B';
+}
+
+function setCustomerTheme(theme) {
+  const nextTheme = theme === 'light' ? 'light' : 'dark';
+  try { localStorage.setItem('fetan-theme-preference', nextTheme); } catch (_) {}
+  syncCustomerTheme(Boolean(document.body.classList.contains('customer-theme')));
+  renderMobileHeaderMenu();
 }
 
 function renderMobileHeaderMenu() {
@@ -326,12 +347,19 @@ function renderMobileHeaderMenu() {
     label: `${t('sound')}: ${muted ? (lang === 'am' ? 'ጠፍቷል' : 'Off') : (lang === 'am' ? 'በርቷል' : 'On')}`,
     pressed: muted
   };
+  const theme = document.body.dataset.customerTheme === 'light' ? 'light' : 'dark';
+  const themeEntry = {
+    action: 'theme',
+    icon: uiIcon(theme === 'dark' ? 'sun' : 'moon'),
+    label: theme === 'dark' ? (lang === 'am' ? 'ወደ ብርሃን ሁኔታ ቀይር' : 'Switch to light mode') : (lang === 'am' ? 'ወደ ጨለማ ሁኔታ ቀይር' : 'Switch to dark mode')
+  };
   const links = me?.role === 'user'
     ? [
         { action: 'withdraw', icon: uiIcon('withdraw'), label: t('withdraw') },
         { action: 'history', icon: uiIcon('history'), label: t('history') },
         { action: 'support', icon: uiIcon('support'), label: t('support') },
         soundEntry,
+        themeEntry,
         { action: 'language', icon: uiIcon('globe'), label: lang === 'am' ? 'English' : 'አማርኛ' },
         { action: 'logout', icon: uiIcon('logout'), label: t('logout') }
       ]
@@ -348,6 +376,7 @@ function renderMobileHeaderMenu() {
           { action: 'about', icon: uiIcon('home'), label: lang === 'am' ? 'ስለ ፍጣን ቤት' : 'About' },
           { action: 'help', icon: uiIcon('support'), label: lang === 'am' ? 'እገዛ' : 'Help' },
           soundEntry,
+          themeEntry,
           { action: 'login', icon: uiIcon('login'), label: t('login') },
           { action: 'register', icon: uiIcon('profile'), label: t('register') },
           { action: 'language', icon: uiIcon('globe'), label: lang === 'am' ? 'English' : 'አማርኛ' }
@@ -360,6 +389,10 @@ function renderMobileHeaderMenu() {
       const action = button.dataset.mobileAction;
       if (action === 'sound') {
         toggleSound();
+        return;
+      }
+      if (action === 'theme') {
+        setCustomerTheme(document.body.dataset.customerTheme === 'light' ? 'dark' : 'light');
         return;
       }
       panel.hidden = true;
@@ -554,6 +587,7 @@ $('mobileHeaderMenu').onclick = () => {
   panel.hidden = !panel.hidden;
   $('mobileHeaderMenu').setAttribute('aria-expanded', String(!panel.hidden));
 };
+$('themeBtn').onclick = () => setCustomerTheme(document.body.dataset.customerTheme === 'light' ? 'dark' : 'light');
 document.addEventListener('click', (event) => {
   const menu = $('mobileMenuPanel');
   if (menu && !event.target.closest('.mobile-header-menu') && !menu.hidden) {
@@ -615,7 +649,7 @@ function nav() {
 
 async function render(subMode = '') {
   clearPromoSlider();
-  let gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.exec(location.hash);
+  let gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.exec(location.hash);
   await refreshMe();
   let bingoRouteState = null;
   if (gameRoute?.[1] === 'bingo') {
@@ -759,7 +793,7 @@ function setAppViewportHeight() {
   document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`);
   document.body.classList.toggle('mobile-app', window.innerWidth <= 1024);
   document.body.classList.toggle('game-landscape', window.innerWidth > height);
-  const routeIsGame = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
+  const routeIsGame = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.test(location.hash);
   const shouldOpenShell = routeIsGame && me?.role === 'user';
   syncTelegramShell(shouldOpenShell);
   if (document.body.classList.contains('game-open') !== shouldOpenShell) {
@@ -2465,7 +2499,7 @@ async function adminView(app) {
 }
 
 // A direct game link still gets an in-app lobby entry for Back navigation.
-const initialGameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star)$/.test(location.hash);
+const initialGameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.test(location.hash);
 if (initialGameRoute) {
   const deepLink = location.hash;
   history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);

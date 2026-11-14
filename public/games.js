@@ -27,6 +27,7 @@ window.Games = (function () {
   const GAME_POSTERS = {
     road: '/img/road-dash.webp.jpg',
     'chicken-road-2': '/img/chicken-road-2-card.jpg',
+    'b2b-bomber': '/img/b2b-bomber-card.svg',
     penalty: '/img/penalty-unlimited-preview.jpg',
     mines: '/img/mines.webp.jpg',
     plinko: '/img/plinko.webp.jpg',
@@ -38,6 +39,7 @@ window.Games = (function () {
   const GAME_ART = {
     road: '<svg viewBox="0 0 64 64" fill="none"><path d="M18 42c0-11 7-19 18-19 7 0 13 4 16 10l-6 11H18Z" fill="#F2D98B"/><path d="m22 45-5 8m24-8 4 8" stroke="#F2D98B" stroke-width="4" stroke-linecap="round"/><path d="m26 22 4-7 5 6 5-5 2 8" fill="#E66A45"/><circle cx="44" cy="29" r="2" fill="#0B0E0D"/><path d="m51 34 9 3-9 4" fill="#E9A23B"/></svg>',
     'chicken-road-2': '<svg viewBox="0 0 64 64" fill="none"><path d="M18 42c0-11 7-19 18-19 7 0 13 4 16 10l-6 11H18Z" fill="#F2D98B"/><path d="m22 45-5 8m24-8 4 8" stroke="#F2D98B" stroke-width="4" stroke-linecap="round"/><path d="m26 22 4-7 5 6 5-5 2 8" fill="#E66A45"/><circle cx="44" cy="29" r="2" fill="#0B0E0D"/><path d="m51 34 9 3-9 4" fill="#E9A23B"/></svg>',
+    'b2b-bomber': '<svg viewBox="0 0 64 64" fill="none"><rect width="64" height="64" rx="14" fill="#102747"/><circle cx="45" cy="18" r="6" fill="#F5C52B"/><path d="M49 16c-8 2-16 7-22 14L12 34l8 4 5 8 4-10c7-6 12-14 20-20Z" fill="#F7FAFF"/><path d="m39 26 7-8 3 3-7 8-3-3Z" fill="#2467B9"/><path d="m20 40 10 10" stroke="#F5C52B" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="49" r="4" fill="#D93643"/></svg>',
     penalty: '<svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="23" stroke="#D6BD72" stroke-width="3"/><path d="M32 14v8m17 10h-8M32 50v-8M15 32h8M20 20l6 6m18 18-6-6m6-18-6 6M20 44l6-6" stroke="#F2D98B" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="32" r="8" fill="#F2D98B"/></svg>',
     mines: '<svg viewBox="0 0 64 64" fill="none"><path d="m32 7 23 17-9 29H18L9 24 32 7Z" fill="#28C895"/><path d="m32 7-4 17h27L32 7Z" fill="#9BF0CA"/><path d="m28 24-10 29 14-14 13 14-8-29H28Z" fill="#087B60"/><path d="M9 24h46" stroke="#D6BD72" stroke-width="2"/></svg>',
     plinko: '<svg viewBox="0 0 64 64" fill="none"><path d="M13 12h38L45 52H19L13 12Z" stroke="#D6BD72" stroke-width="3"/><g fill="#F2D98B"><circle cx="25" cy="21" r="2.5"/><circle cx="38" cy="21" r="2.5"/><circle cx="19" cy="31" r="2.5"/><circle cx="32" cy="31" r="2.5"/><circle cx="45" cy="31" r="2.5"/><circle cx="25" cy="41" r="2.5"/><circle cx="38" cy="41" r="2.5"/></g><circle cx="32" cy="12" r="4" fill="#F27C3D"/></svg>',
@@ -65,6 +67,7 @@ window.Games = (function () {
   // A null player count means there is no verified live source for that game.
   const LOBBY_GAME_CATALOG = Object.freeze([
     { id: 'chicken-road-2', name: 'Chicken Road Dash', category: 'crash', image: GAME_POSTERS['chicken-road-2'], status: 'available', gameUrl: 'chicken-road-2', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 10 },
+    { id: 'b2b-bomber', name: 'B2B Bomber', category: 'crash', image: GAME_POSTERS['b2b-bomber'], status: 'available', gameUrl: 'b2b-bomber', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 15 },
     { id: 'star', name: 'Star Spin', nameKey: 'star_title', category: 'slots', image: GAME_POSTERS.star, status: 'available', gameUrl: 'star', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 20 },
     { id: 'roulette', name: 'Roulette', nameKey: 'roulette_title', category: 'roulette', image: GAME_POSTERS.roulette, status: 'available', gameUrl: 'roulette', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 30 },
     { id: 'mines', name: 'Mines', nameKey: 'mines_title', category: 'more', image: GAME_POSTERS.mines, status: 'available', gameUrl: 'mines', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 40 },
@@ -328,8 +331,10 @@ window.Games = (function () {
       clone.className = item.className + ' home-carousel-clone';
       clone.innerHTML = item.innerHTML;
       clone.dataset.carouselClone = 'true';
+      if (item.dataset.game) clone.dataset.game = item.dataset.game;
+      if (item.dataset.category) clone.dataset.category = item.dataset.category;
+      if (item.dataset.status) clone.dataset.status = item.dataset.status;
       clone.setAttribute('aria-hidden', 'true');
-      clone.setAttribute('inert', '');
       clone.querySelectorAll('a, button, input, select, textarea').forEach((control) => control.remove());
       clone.querySelectorAll('img').forEach(installPosterFallback);
       return clone;
@@ -487,6 +492,12 @@ window.Games = (function () {
       row.querySelectorAll('.home-row-arrow').forEach((button) => button.addEventListener('click', () => {
         carouselStates.get(row)?.move(button.dataset.scroll === 'next' ? 1 : -1);
       }));
+      scroller.addEventListener('click', (event) => {
+        const clone = event.target.closest('.home-carousel-clone[data-game][data-status="available"]');
+        if (!clone || !scroller.contains(clone)) return;
+        if (C.guest) { C.onLogin?.(); return; }
+        open(app, clone.dataset.game, true);
+      });
     });
 
     cards.forEach((card) => card.addEventListener('click', (event) => {
@@ -552,6 +563,7 @@ window.Games = (function () {
     const titles = {
       road: '🐔 ' + C.t('road_title'),
       'chicken-road-2': '🐔 Chicken Road Dash',
+      'b2b-bomber': '💣 B2B Bomber',
       penalty: '⚽ Penalty Unlimited',
       mines: '💎 ' + C.t('mines_title'),
       plinko: '⚡ ' + C.t('plinko_title'),
@@ -575,6 +587,7 @@ window.Games = (function () {
     const gameView = {
       road, roulette, star, mines, plinko, keno, bingo,
       'chicken-road-2': (body) => integratedFrame(body, 'chicken-road-2', 'Chicken Road Dash'),
+      'b2b-bomber': (body) => integratedFrame(body, 'b2b-bomber', 'B2B Bomber'),
       penalty: (body) => integratedFrame(body, 'penalty', 'Penalty Unlimited')
     }[game];
 
@@ -616,7 +629,7 @@ window.Games = (function () {
       }
     };
     const action = (name) => {
-      if (['chicken-road-2', 'penalty'].includes(game)) {
+      if (['chicken-road-2', 'penalty', 'b2b-bomber'].includes(game)) {
         shell?.postFrameAction(name);
         return;
       }

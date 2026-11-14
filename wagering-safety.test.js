@@ -74,6 +74,7 @@ const stakePosts = [
   '/api/games/plinko',
   '/api/games/keno',
   '/api/games/bingo/start',
+  '/api/games/b2b-bomber/bet',
 ];
 for (const route of stakePosts) {
   assert.equal(isNewStakeRequest('POST', route), true, `stake route gated: ${route}`);
@@ -101,6 +102,8 @@ const nonStakePosts = [
   '/api/games/plinko/verify',
   '/api/games/bingo/call',
   '/api/games/bingo/abandon',
+  '/api/games/b2b-bomber/cashout',
+  '/api/games/b2b-bomber/verify',
 ];
 for (const route of nonStakePosts) {
   assert.equal(isNewStakeRequest('POST', route), false, `settlement/demo route stays available: ${route}`);

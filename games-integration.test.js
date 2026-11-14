@@ -27,16 +27,23 @@ for (const route of [
   "app.post('/api/games/penalty/start'",
   "app.post('/api/games/penalty/shoot'",
   "app.post('/api/games/penalty/cashout'",
+  "app.get('/api/games/b2b-bomber/state'",
+  "app.post('/api/games/b2b-bomber/bet'",
+  "app.post('/api/games/b2b-bomber/cashout'",
+  "app.get('/api/games/b2b-bomber/history'",
+  "app.get('/api/games/b2b-bomber/rounds/:roundId/fairness'",
+  "app.post('/api/games/b2b-bomber/verify'",
 ]) assert.ok(server.includes(route), `customer route exists: ${route}`);
 
 const lobbyCatalog = catalog.match(/const LOBBY_GAME_CATALOG = Object\.freeze\(\[([\s\S]*?)\n  \]\);/);
 assert.ok(lobbyCatalog, 'customer lobby uses a scalable game catalog');
-for (const game of ['chicken-road-2', 'star', 'roulette', 'mines', 'plinko', 'penalty', 'keno']) {
+for (const game of ['chicken-road-2', 'b2b-bomber', 'star', 'roulette', 'mines', 'plinko', 'penalty', 'keno']) {
   const launchId = game === 'chicken-road-2' ? 'chicken-road-2' : game;
   assert.match(lobbyCatalog[1], new RegExp(`id: '${game}'.*status: 'available'.*gameUrl: '${launchId}'`),
     `${game} remains available through its existing launch reference`);
 }
 assert.match(lobbyCatalog[1], /id: 'chicken-road-2'.*name: 'Chicken Road Dash'/);
+assert.match(lobbyCatalog[1], /id: 'b2b-bomber'.*name: 'B2B Bomber'/);
 assert.match(lobbyCatalog[1], /id: 'penalty'.*name: 'Penalty Unlimited'/);
 assert.doesNotMatch(lobbyCatalog[1], /id: 'bingo'/, 'retired Bingo is not in the customer lobby');
 for (const category of ['crash', 'slots', 'roulette', 'table', 'live', 'more']) {
@@ -57,8 +64,14 @@ assert.match(catalog, /Number\.isSafeInteger\(game\.livePlayerCount\)/, 'live co
 assert.match(lobbyCatalog[1], /livePlayerCount: null/, 'no fabricated player counts are configured');
 assert.match(catalog, /No live casino games are currently integrated/, 'empty live-casino section explains current availability');
 assert.match(catalog, /data-view-category=/, 'category sections include View All actions');
-assert.match(catalog, /clone\.setAttribute\('aria-hidden', 'true'\)[\s\S]*?clone\.setAttribute\('inert', ''\)[\s\S]*?clone\.querySelectorAll\('a, button, input, select, textarea'\)/,
-  'infinite-loop visuals are inert and cannot create duplicate interactive links');
+assert.match(catalog, /clone\.dataset\.game = item\.dataset\.game/,
+  'infinite-loop poster copies retain the original game identifier');
+assert.match(catalog, /clone\.setAttribute\('aria-hidden', 'true'\)[\s\S]*?clone\.querySelectorAll\('a, button, input, select, textarea'\)/,
+  'infinite-loop visuals stay out of the accessibility tree without duplicate interactive links');
+assert.doesNotMatch(catalog, /clone\.setAttribute\('inert', ''\)/,
+  'visible carousel poster copies remain available for pointer/touch activation');
+assert.match(catalog, /scroller\.addEventListener\('click', \(event\) => \{[\s\S]*?home-carousel-clone\[data-game\]\[data-status="available"\][\s\S]*?open\(app, clone\.dataset\.game, true\)/,
+  'tapping a visible carousel poster copy launches the same existing game route');
 assert.match(catalog, /prefers-reduced-motion: reduce/);
 assert.match(catalog, /scroller\.addEventListener\('pointerdown'/, 'carousel pauses while the user interacts');
 assert.match(catalog, /scroller\.addEventListener\('pointerenter'/, 'carousel pauses on hover-capable devices');
@@ -87,7 +100,7 @@ assert.doesNotMatch(read('public/site-config.js'), /supportHours:\s*'24\/7'/,
   'the public page does not claim unverified round-the-clock support');
 assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1&fetan-shell=1`/);
 assert.match(index, /fetan-game-immersive/);
-assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\)/,
+assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\|b2b-bomber\)/,
   'direct game routes include every game so the shared immersive shell can render them');
 assert.match(app, /gameRoute\?\.\[1\] === 'bingo'[\s\S]*?bingoRouteState\?\.active/,
   'only users with an active Bingo round remain on the legacy game route');
@@ -127,6 +140,23 @@ for (const game of ['chicken-road-2', 'penalty']) {
   assert.doesNotMatch(`${html}\n${bundle}`, /localhost:4173|127\.0\.0\.1:4173/);
   assert.match(bundle, /credentials:\s*'same-origin'/, `${game} sends the authenticated same-origin cookie`);
 }
+
+const b2bHtml = read('public/games/b2b-bomber/index.html');
+const b2bBundle = read('public/games/b2b-bomber/js/game.js');
+assert.ok(fs.statSync(path.join(root, 'public/img/b2b-bomber-card.svg')).size > 0, 'B2B Bomber poster exists');
+assert.match(b2bHtml, /Theoretical RTP 40% · house edge 60%/, 'B2B Bomber discloses the exact RTP before play');
+assert.match(b2bHtml, /id="balance">—</, 'B2B Bomber does not flash a demo balance');
+assert.match(b2bBundle, /credentials:\s*'same-origin'/, 'B2B Bomber sends the authenticated same-origin cookie');
+assert.match(b2bBundle, /const API = '\/api\/games\/b2b-bomber'/, 'B2B Bomber uses its authenticated API');
+assert.match(b2bBundle, /api\('\/state'/, 'B2B Bomber restores active rounds from the server');
+assert.match(b2bBundle, /const savedBet = Number\(storeGet\('bb-bet'\)\)/,
+  'saved stake restores as integer santim, not user-facing ETB text');
+assert.match(b2bBundle, /const savedAuto = Number\(storeGet\('bb-auto-target'\)\)/,
+  'saved auto target restores as integer hundredths');
+assert.match(b2bBundle, /fetan-shell-action/, 'B2B Bomber accepts shared-shell actions');
+assert.doesNotMatch(`${b2bHtml}\n${b2bBundle}`, /localhost:4173|127\.0\.0\.1:4173/);
+assert.doesNotMatch(b2bBundle, /Math\.random\(\)\s*\*\s*100|fake.?player|simulated.?win/i,
+  'B2B Bomber does not invent outcomes or social proof');
 
 assert.match(chicken, /const realWalletMode = true/, 'Chicken Road 2.0 uses the real-wallet API');
 assert.match(chicken, /lanes: 15[\s\S]*?multipliers: \[1\.01, 1\.06, 1\.15, 1\.24, 1\.35, 1\.48, 1\.65, 1\.85, 2\.12, 2\.47, 2\.96, 3\.70, 4\.64, 6\.50, 12\.08\]/, 'Easy shows the exact approved ladder');

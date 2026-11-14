@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07111f" />
+  <meta name="description" content="B2B Bomber — an original crash-style arcade game on Fetan Bet. Fly the multiplier, bank before the boom. Theoretical RTP 40%, house edge 60%." />
+  <title>B2B Bomber — Fetan Bet</title>
+  <script>
+    if (new URLSearchParams(location.search).get('fetan') === '1') {
+      document.documentElement.classList.add('fetan-integrated');
+      if (new URLSearchParams(location.search).get('fetan-shell') === '1') document.documentElement.classList.add('fetan-shared-shell');
+      try { document.documentElement.dataset.customerTheme = localStorage.getItem('fetan-theme') || 'dark'; } catch (_) { document.documentElement.dataset.customerTheme = 'dark'; }
+    }
+  </script>
+  <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../../shared/fonts.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="bb-app" id="app">
+    <header class="bb-topbar" data-standalone-only>
+      <a class="bb-brand" href="/" data-fetan-back aria-label="Back to Fetan Bet">
+        <span class="bb-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M29 16c-2.8-2.4-7-3.8-11.4-3.8L13 7.4 9.8 7.6l2.1 4.9c-2.4.4-4.6 1-6.3 1.9L2 12.6v6.8l3.6-1.8c1.7.9 3.9 1.5 6.3 1.9l-2.1 4.9 3.2.2 4.6-4.8C22 20.2 26.2 18.4 29 16Z" fill="currentColor"/><circle cx="21.5" cy="16" r="1.8" fill="#F5C52B"/></svg>
+        </span>
+        <span class="bb-brand-text"><b>B2B</b> BOMBER<small>BANK BEFORE BOOM</small></span>
+      </a>
+      <div class="bb-topbar-actions">
+        <span class="bb-rtp-pill">RTP 40%</span>
+        <button class="bb-icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Mute sound" title="Sound">
+          <span class="bb-sound-on" aria-hidden="true">◉</span>
+          <span class="bb-sound-off" aria-hidden="true">◌</span>
+        </button>
+        <button class="bb-icon-btn" id="howBtn" type="button" aria-label="How to play" title="How to play">?</button>
+      </div>
+    </header>
+
+    <main class="bb-layout">
+      <section class="bb-flight" aria-label="B2B Bomber flight deck">
+        <div class="bb-flight-bar">
+          <button class="bb-wallet" id="balanceBtn" type="button" title="Open wallet">
+            <span class="bb-wallet-label">Wallet</span>
+            <strong id="balance">—</strong>
+            <span class="bb-wallet-unit">ETB</span>
+          </button>
+          <div class="bb-recent-wrap">
+            <span class="bb-recent-label">Your last sorties</span>
+            <div class="bb-recent" id="recentList" role="list" aria-label="Your recent B2B Bomber rounds">
+              <span class="bb-recent-empty">No sorties yet</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bb-stage" id="stage">
+          <canvas id="sky" aria-hidden="true"></canvas>
+          <div class="bb-stage-top">
+            <div class="bb-stage-brand" aria-hidden="true">
+              <span class="bb-stage-mark">B2B</span>
+              <span class="bb-stage-name">BOMBER<small>NIGHT SORTIE</small></span>
+            </div>
+            <div class="bb-stage-status">
+              <span class="bb-sync" id="syncDot" data-state="ok" title="Connected to the game server"><i></i><span>LIVE</span></span>
+              <span class="bb-phase" id="phaseChip" data-phase="idle">Ready</span>
+            </div>
+          </div>
+
+          <div class="bb-readout">
+            <span class="bb-readout-kicker" id="multKicker">Next sortie</span>
+            <div class="bb-multiplier" id="multiplier" data-tone="normal">1.00<span class="bb-x">x</span></div>
+            <p class="bb-readout-sub" id="multSub">Bank before boom.</p>
+          </div>
+
+          <div class="bb-result" id="resultCard" hidden>
+            <div class="bb-result-copy">
+              <span class="bb-result-kicker" id="resultKicker">BANKED</span>
+              <strong id="resultTitle">2.34x</strong>
+              <span class="bb-result-detail" id="resultDetail">+ ETB 23.40</span>
+              <span class="bb-result-extra" id="resultExtra"></span>
+            </div>
+            <div class="bb-result-actions">
+              <button class="bb-link" id="resultFairBtn" type="button">Verify round</button>
+              <button class="bb-result-close" id="resultClose" type="button" aria-label="Dismiss result">×</button>
+            </div>
+          </div>
+
+          <div class="bb-stage-bottom">
+            <div class="bb-stage-stat">
+              <span id="potentialLabel">Cash-out value</span>
+              <b id="potentialPayout">—</b>
+            </div>
+            <div class="bb-stage-stat bb-stage-stat-right">
+              <span>Auto target</span>
+              <b id="autoBadge">Off</b>
+            </div>
+          </div>
+          <div class="bb-flash" id="boomFlash" aria-hidden="true"></div>
+        </div>
+
+        <div class="bb-notice">
+          <span class="bb-notice-mark" aria-hidden="true">40%</span>
+          <p><strong>Theoretical RTP 40% · house edge 60%.</strong> Every sortie is independent. The multiplier can crash at 1.00x; past results never predict the next one. Virtual credits only.</p>
+        </div>
+      </section>
+
+      <aside class="bb-panel" aria-label="Bet controls">
+        <div class="bb-panel-head">
+          <div>
+            <span class="bb-eyebrow">Flight manifest</span>
+            <h1>B2B Bomber</h1>
+          </div>
+          <span class="bb-state-pill" id="statePill" data-state="ready">Ready</span>
+        </div>
+
+        <form class="bb-bet-form" id="betForm" novalidate>
+          <div class="bb-field-head">
+            <label for="betInput">Stake</label>
+            <span>1.00 – 1,000.00 ETB</span>
+          </div>
+          <div class="bb-stake-row">
+            <button class="bb-step" id="stakeMinus" type="button" aria-label="Decrease stake">−</button>
+            <div class="bb-stake-input">
+              <input id="betInput" name="bet" type="text" inputmode="decimal" autocomplete="off" value="10.00" aria-describedby="actionHint" />
+              <span>ETB</span>
+            </div>
+            <button class="bb-step" id="stakePlus" type="button" aria-label="Increase stake">+</button>
+          </div>
+          <div class="bb-chips" id="quickStakes" aria-label="Quick stake amounts">
+            <button type="button" data-stake="1">1</button>
+            <button type="button" data-stake="5">5</button>
+            <button type="button" data-stake="10">10</button>
+            <button type="button" data-stake="50">50</button>
+            <button type="button" data-stake="100">100</button>
+            <button type="button" data-stake="500">500</button>
+          </div>
+
+          <div class="bb-auto-row">
+            <div class="bb-auto-copy">
+              <label for="autoToggle">Auto cash-out</label>
+              <small>Settles on the server, even if you close the browser.</small>
+            </div>
+            <button class="bb-switch" id="autoToggle" type="button" role="switch" aria-checked="false" aria-controls="autoTargetWrap">
+              <span></span>
+            </button>
+          </div>
+
+          <div class="bb-auto-target" id="autoTargetWrap" hidden>
+            <div class="bb-field-head">
+              <label for="autoInput">Target multiplier</label>
+              <span>1.01x – 100.00x</span>
+            </div>
+            <div class="bb-target-row">
+              <input id="autoInput" name="auto" type="text" inputmode="decimal" autocomplete="off" value="2.00" />
+              <span>x</span>
+            </div>
+            <div class="bb-chips bb-chips-auto" id="autoChips" aria-label="Quick auto cash-out targets">
+              <button type="button" data-auto="1.5">1.50x</button>
+              <button type="button" data-auto="2">2.00x</button>
+              <button type="button" data-auto="5">5.00x</button>
+              <button type="button" data-auto="10">10.00x</button>
+            </div>
+          </div>
+
+          <div class="bb-preview">
+            <span>Potential at <b id="previewMult">2.00x</b></span>
+            <strong id="previewPayout">ETB 20.00</strong>
+          </div>
+
+          <button class="bb-cta" id="actionBtn" type="submit" data-mode="bet">
+            <span class="bb-cta-main" id="ctaMain">Place bet</span>
+            <span class="bb-cta-sub" id="ctaSub">Lock in your stake</span>
+          </button>
+          <p class="bb-action-hint" id="actionHint" aria-live="polite">One bet per sortie. Cash out any time before the crash.</p>
+        </form>
+
+        <div class="bb-panel-rule"></div>
+
+        <section class="bb-fair" aria-label="Provably fair controls">
+          <div class="bb-fair-head">
+            <div>
+              <span class="bb-eyebrow">Commit / reveal</span>
+              <h2>Provably fair</h2>
+            </div>
+            <button class="bb-link" id="fairBtn" type="button">How it works</button>
+          </div>
+          <div class="bb-hash-row">
+            <span>Round commitment</span>
+            <code id="commitHash">Published before takeoff</code>
+          </div>
+          <label class="bb-seed-label" for="clientSeed">Your client seed</label>
+          <div class="bb-seed-row">
+            <input id="clientSeed" type="text" maxlength="64" spellcheck="false" autocomplete="off" aria-describedby="seedHint" />
+            <button class="bb-seed-btn" id="seedBtn" type="button" aria-label="Generate a new client seed" title="New client seed">↻</button>
+          </div>
+          <p class="bb-hint" id="seedHint">Used in the next sortie. The server publishes the hash first and reveals the seed after settlement.</p>
+          <button class="bb-verify-btn" id="fairVerifyBtn" type="button" hidden>Verify last round in this browser</button>
+        </section>
+
+        <div class="bb-panel-foot">
+          <span class="bb-chip-virtual">Virtual credits</span>
+          <span>18+ · Play responsibly</span>
+        </div>
+      </aside>
+    </main>
+
+    <button class="bb-mobile-cash" id="mobileCash" type="button" hidden>Cash out <b>ETB 0.00</b></button>
+
+    <footer class="bb-footer">
+      <p>B2B Bomber is an original Fetan Bet arcade game. Theoretical return to player <strong>40%</strong>; house edge <strong>60%</strong>. No outcome can be influenced by the browser.</p>
+      <nav aria-label="Game information">
+        <button type="button" id="howBtn2">How to play</button>
+        <button type="button" id="fairBtn2">Fairness</button>
+        <button type="button" id="historyBtn">History</button>
+      </nav>
+    </footer>
+  </div>
+
+  <div class="bb-toast" id="toast" role="status" aria-live="polite" hidden>
+    <span id="toastText"></span>
+    <button class="bb-toast-action" id="toastAction" type="button" hidden></button>
+    <button class="bb-toast-close" id="toastClose" type="button" aria-label="Dismiss message">×</button>
+  </div>
+  <p class="bb-sr-only" id="liveStatus" aria-live="polite"></p>
+
+  <div class="bb-gate" id="gate" hidden>
+    <div class="bb-gate-card">
+      <span class="bb-gate-mark" aria-hidden="true">B2B</span>
+      <h2>Sign in to fly</h2>
+      <p>B2B Bomber uses your Fetan Bet wallet. Return to the lobby and sign in to start a sortie.</p>
+      <a class="bb-cta bb-gate-link" href="/" id="gateLink">Back to Fetan Bet</a>
+    </div>
+  </div>
+
+  <dialog class="bb-dialog" id="howDialog" aria-labelledby="howTitle">
+    <div class="bb-dialog-inner">
+      <div class="bb-dialog-head">
+        <div><span class="bb-eyebrow">Flight school</span><h2 id="howTitle">How to play</h2></div>
+        <button class="bb-dialog-close" type="button" data-close aria-label="Close">×</button>
+      </div>
+      <div class="bb-dialog-body">
+        <ol class="bb-steps">
+          <li><span>1</span><div><b>Set a stake and take off.</b><p>Each sortie is a separate round. The stake is debited once when the round is created.</p></div></li>
+          <li><span>2</span><div><b>Watch the multiplier climb.</b><p>The bomber can be shot down at any moment, including immediately at 1.00x. The crash point is fixed by the server before takeoff.</p></div></li>
+          <li><span>3</span><div><b>Bank before the boom.</b><p>Press cash out to settle at the live multiplier. You can also set an auto cash-out target before takeoff; it is stored and settled by the server even if you close the page.</p></div></li>
+          <li><span>4</span><div><b>Verify the round.</b><p>The server publishes a SHA-256 commitment before takeoff and reveals the seed after settlement. The verifier recomputes the crash in your browser.</p></div></li>
+        </ol>
+        <div class="bb-math-note">
+          <h3>The mathematics, disclosed</h3>
+          <p>The intended theoretical RTP is exactly <strong>40%</strong> and the house edge is <strong>60%</strong>. For a fixed cash-out target <code>x</code> above 1.00x:</p>
+          <p class="bb-formula">P(reach x) = 0.40 / x</p>
+          <div class="bb-prob-table" role="table" aria-label="Approximate probability of reaching a multiplier">
+            <div role="row"><span role="columnheader">Target</span><span role="columnheader">Chance to reach</span></div>
+            <div role="row"><span role="cell">1.50x</span><span role="cell">26.67%</span></div>
+            <div role="row"><span role="cell">2.00x</span><span role="cell">20.00%</span></div>
+            <div role="row"><span role="cell">5.00x</span><span role="cell">8.00%</span></div>
+            <div role="row"><span role="cell">10.00x</span><span role="cell">4.00%</span></div>
+            <div role="row"><span role="cell">50.00x</span><span role="cell">0.80%</span></div>
+          </div>
+          <p>The immediate 1.00x crash chance is <strong>60.396%</strong>. Exact integer probabilities differ from 0.40/x by less than one part in 2<sup>256</sup> because of floor rounding; payouts are floored to whole santim. The 100.00x cap does not change the 40% return at or below the cap.</p>
+          <p><strong>Equality rule:</strong> a cash-out at exactly the crash multiplier is a win. This is required for the 40/X relationship and applies to both manual and automatic cash-out. A manual cash-out is validated when the server receives it, so a slow connection can miss the final tick; automatic cash-out is timed by the server.</p>
+        </div>
+        <div class="bb-dialog-callout">The browser never decides the crash or the payout. It only renders server state and asks the server to settle a cash-out.</div>
+        <button class="bb-dialog-primary" type="button" data-close>Understood</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="bb-dialog" id="fairDialog" aria-labelledby="fairTitle">
+    <div class="bb-dialog-inner">
+      <div class="bb-dialog-head">
+        <div><span class="bb-eyebrow">Commit / reveal</span><h2 id="fairTitle">Provably fair</h2></div>
+        <button class="bb-dialog-close" type="button" data-close aria-label="Close">×</button>
+      </div>
+      <div class="bb-dialog-body">
+        <p>Every sortie uses a fresh 32-byte server seed. The SHA-256 hash is published before the flight. After settlement, the seed is revealed and the crash can be recomputed.</p>
+        <div class="bb-hash-stack">
+          <div><span>Commitment</span><code id="fairCommit">—</code></div>
+          <div><span>Your client seed</span><code id="fairClient">—</code></div>
+          <div><span>Nonce</span><code id="fairNonce">—</code></div>
+        </div>
+        <p class="bb-hint">The uniform value is HMAC-SHA256(server seed, client seed + ":" + nonce + ":b2b-bomber:v1"). The crash is <code>max(100, floor(40 × 2<sup>256</sup> / (2<sup>256</sup> − h)))</code> in hundredths, capped at 100.00x.</p>
+        <div class="bb-fair-actions">
+          <button class="bb-dialog-primary" id="fairVerifyRound" type="button">Verify settled round</button>
+          <span class="bb-hint" id="fairVerifyHint">Settlement happens on the server first.</span>
+        </div>
+        <div class="bb-fair-output" id="fairOutput" hidden></div>
+        <button class="bb-dialog-secondary" type="button" data-close>Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="bb-dialog bb-dialog-wide" id="historyDialog" aria-labelledby="historyTitle">
+    <div class="bb-dialog-inner">
+      <div class="bb-dialog-head">
+        <div><span class="bb-eyebrow">Flight log</span><h2 id="historyTitle">Your history</h2></div>
+        <button class="bb-dialog-close" type="button" data-close aria-label="Close">×</button>
+      </div>
+      <div class="bb-dialog-body">
+        <p class="bb-hint">Only your real settled rounds are shown. There are no simulated players or invented wins.</p>
+        <div class="bb-history-list" id="historyList"></div>
+        <p class="bb-history-status" id="historyStatus">Loading…</p>
+        <button class="bb-dialog-secondary" type="button" data-close>Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="./js/game.js" defer></script>
+</body>
+</html>

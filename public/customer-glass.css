@@ -295,6 +295,243 @@ body.customer-theme[data-customer-theme="dark"] {
   --game-scene-border: rgba(255, 255, 255, .14);
 }
 
+/* Light mode uses a lilac paper backdrop and white surfaces with purple actions. */
+body.customer-theme[data-customer-theme="light"] {
+  color-scheme: light;
+
+  --bg: #F2E9FF;
+  --bg-alt: #F7F2FF;
+  --bg-secondary: rgba(255, 255, 255, .78);
+  --surface-panel: rgba(255, 255, 255, .86);
+  --surface-card: #FFFFFF;
+  --surface-hover: #E8D9FF;
+  --surface-active: #6A2FC8;
+  --surface: #FFFFFF;
+  --surface2: #D1B8FF;
+
+  --glass-bg: rgba(255, 255, 255, .72);
+  --glass-bg-strong: rgba(255, 255, 255, .92);
+  --glass-bg-soft: rgba(255, 255, 255, .56);
+  --glass-raised: rgba(209, 184, 255, .46);
+  --glass-raised-strong: rgba(209, 184, 255, .72);
+  --glass-solid: #FFFFFF;
+  --glass-solid-strong: #FFFFFF;
+  --glass-solid-soft: #F7F2FF;
+  --glass-raised-solid: #E8D9FF;
+  --glass-raised-solid-strong: #D1B8FF;
+
+  --text: #241C31;
+  --text-strong: #17121F;
+  --text-secondary: #514860;
+  --text-muted: #6C6578;
+  --disabled: #77707F;
+  --black: #17121F;
+  --white: #FFFFFF;
+
+  --accent: #6A2FC8;
+  --accent-hover: #7C45D8;
+  --accent-contrast: #FFFFFF;
+  --accent-soft: rgba(106, 47, 200, .10);
+  --accent-soft-strong: rgba(106, 47, 200, .16);
+  --accent-border: rgba(106, 47, 200, .30);
+  --accent-glow: rgba(106, 47, 200, .13);
+  --link: #5B22B8;
+
+  --gold: var(--accent);
+  --gold-bright: #6A2FC8;
+  --gold-muted: #9D71E8;
+  --gold-dark: #5B22B8;
+  --gold-bg: var(--accent-soft);
+  --gold-border: var(--accent-border);
+  --gold-light: #9D71E8;
+  --border-gold: var(--accent-border);
+
+  --border: rgba(54, 37, 77, .14);
+  --border-soft: rgba(54, 37, 77, .08);
+  --border-subtle: rgba(54, 37, 77, .20);
+  --glass-border: rgba(54, 37, 77, .13);
+  --glass-border-strong: rgba(54, 37, 77, .22);
+  --glass-highlight: rgba(255, 255, 255, .82);
+  --glass-shadow: rgba(44, 30, 66, .14);
+  --glass-shadow-soft: rgba(44, 30, 66, .09);
+  --glass-shadow-hover: rgba(44, 30, 66, .2);
+  --inset-highlight: inset 0 1px 0 var(--glass-highlight);
+
+  --page-glow-1: rgba(157, 113, 232, .12);
+  --page-glow-2: rgba(209, 184, 255, .20);
+  --page-glow-3: rgba(255, 255, 255, .62);
+  --page-bg: radial-gradient(ellipse 75% 48% at 8% -10%, var(--page-glow-1), transparent 62%),
+    radial-gradient(ellipse 58% 42% at 96% 4%, var(--page-glow-2), transparent 68%),
+    linear-gradient(180deg, #F2E9FF, #F7F2FF 56%, #F2E9FF);
+
+  --header-bg: rgba(255, 255, 255, .86);
+  --header-border: var(--glass-border);
+  --header-shadow: 0 12px 32px var(--glass-shadow-soft), var(--inset-highlight);
+  --nav-bg: rgba(255, 255, 255, .68);
+  --bottom-nav-bg: rgba(255, 255, 255, .94);
+  --nav-item-hover: var(--glass-raised);
+  --nav-active-bg: #6A2FC8;
+  --nav-active-text: #FFFFFF;
+  --nav-active-shadow: 0 7px 20px rgba(106, 47, 200, .18);
+
+  --chip-bg: rgba(255, 255, 255, .74);
+  --chip-text: var(--text);
+  --chip-hover-bg: #F1E8FF;
+  --chip-active-bg: #6A2FC8;
+  --chip-active-text: #FFFFFF;
+  --primary-bg: #6A2FC8;
+  --primary-bg-hover: #7C45D8;
+  --primary-text: #FFFFFF;
+  --primary-border: rgba(106, 47, 200, .44);
+  --primary-shadow: 0 8px 20px rgba(106, 47, 200, .16);
+  --secondary-bg: rgba(255, 255, 255, .76);
+  --secondary-hover-bg: #F1E8FF;
+  --secondary-text: #241C31;
+  --secondary-border: var(--glass-border-strong);
+
+  --input-bg: rgba(255, 255, 255, .92);
+  --input-border: rgba(54, 37, 77, .20);
+  --input-focus-shadow: 0 0 0 3px rgba(106, 47, 200, .15);
+  --placeholder: #716A7E;
+  --panel-bg: rgba(255, 255, 255, .76);
+  --panel-border: var(--glass-border);
+  --panel-shadow: 0 12px 32px var(--glass-shadow-soft), var(--inset-highlight);
+  --panel-shadow-hover: 0 18px 42px var(--glass-shadow), var(--inset-highlight);
+  --table-head-bg: rgba(209, 184, 255, .42);
+  --row-hover-bg: rgba(106, 47, 200, .045);
+
+  --notice-bg: rgba(106, 47, 200, .075);
+  --notice-border: rgba(106, 47, 200, .22);
+  --notice-text: #35234E;
+  --notice-icon: #6A2FC8;
+  --success: #18744A;
+  --success-bright: #12623E;
+  --success-bg: rgba(24, 116, 74, .09);
+  --success-border: rgba(24, 116, 74, .25);
+  --danger: #B52D42;
+  --danger-bright: #9D2035;
+  --danger-bg: rgba(181, 45, 66, .08);
+  --danger-border: rgba(181, 45, 66, .24);
+  --warning: #795700;
+  --warning-bg: rgba(199, 143, 18, .10);
+  --warning-border: rgba(158, 112, 5, .26);
+  --info: #3B5795;
+  --info-bg: rgba(59, 87, 149, .08);
+  --info-border: rgba(59, 87, 149, .24);
+  --green: var(--success);
+  --green-bright: var(--success-bright);
+  --green-bg: var(--success-bg);
+  --green-border: var(--success-border);
+  --red: var(--danger);
+  --red-bright: var(--danger-bright);
+  --red-bg: var(--danger-bg);
+  --red-border: var(--danger-border);
+
+  --logo-bg: linear-gradient(145deg, #6A2FC8, #9D71E8);
+  --logo-text: #FFFFFF;
+  --logo-shadow: 0 6px 18px rgba(106, 47, 200, .16);
+  --avatar-bg: linear-gradient(145deg, #D1B8FF, #F6F0FF);
+  --avatar-border: var(--accent-border);
+  --avatar-text: #4A2182;
+  --stat-value: #241C31;
+  --icon-bg: rgba(209, 184, 255, .46);
+  --badge-bg: rgba(255, 255, 255, .92);
+  --badge-text: #35234E;
+
+  --hero-bg: radial-gradient(ellipse at 78% 15%, rgba(157, 113, 232, .13), transparent 44%),
+    linear-gradient(120deg, rgba(255, 255, 255, .92), rgba(241, 232, 255, .82));
+  --hero-border: rgba(54, 37, 77, .16);
+  --hero-shadow: 0 18px 44px var(--glass-shadow-soft), var(--inset-highlight);
+  --hero-orbit-border: rgba(106, 47, 200, .16);
+  --hero-orbit-glow: rgba(157, 113, 232, .10);
+  --hero-art-border: rgba(54, 37, 77, .14);
+  --hero-art-shadow: 0 16px 36px rgba(44, 30, 66, .18);
+  --hero-badge-bg: rgba(106, 47, 200, .08);
+  --hero-pill-bg: rgba(255, 255, 255, .66);
+  --hero-pill-border: rgba(54, 37, 77, .13);
+  --hero-caption: #6C6578;
+  --hero-glow-line: rgba(106, 47, 200, .16);
+  --promo-frame-bg: rgba(255, 255, 255, .86);
+  --promo-slide-bg: linear-gradient(115deg, #FFFFFF, #F3ECFF);
+  --promo-art-glow: radial-gradient(circle, rgba(157, 113, 232, .18), transparent 70%);
+  --promo-token-bg: rgba(255, 255, 255, .92);
+  --promo-strip-bg: rgba(255, 255, 255, .92);
+  --promo-dot: rgba(54, 37, 77, .20);
+  --promo-dot-active: #6A2FC8;
+  --modal-backdrop: rgba(28, 19, 42, .48);
+  --modal-bg: rgba(255, 255, 255, .96);
+  --modal-border: rgba(54, 37, 77, .18);
+  --modal-shadow: 0 24px 70px rgba(44, 30, 66, .25);
+  --auth-showcase-bg: linear-gradient(145deg, #E9DBFF, #D1B8FF);
+  --auth-form-bg: rgba(255, 255, 255, .96);
+  --toast-bg: rgba(255, 255, 255, .96);
+  --chat-bg: rgba(255, 255, 255, .52);
+  --chat-header-bg: rgba(255, 255, 255, .78);
+  --chat-ai-bg: rgba(209, 184, 255, .34);
+  --chat-user-bg: #6A2FC8;
+  --chat-user-text: #FFFFFF;
+  --chat-agent-bg: var(--success-bg);
+  --chat-agent-text: #174E35;
+  --chat-input-bg: var(--input-bg);
+  --game-topbar-bg: rgba(255, 255, 255, .94);
+  --game-shell-bg: var(--page-bg);
+  --result-card-bg: rgba(255, 255, 255, .96);
+  --result-overlay-bg: rgba(28, 19, 42, .56);
+  --toggle-track-bg: #D1B8FF;
+  --toggle-thumb-bg: #FFFFFF;
+  --toggle-thumb-text: #4A2182;
+  --toggle-thumb-active-bg: #6A2FC8;
+  --toggle-thumb-active-text: #FFFFFF;
+  --toggle-shadow: 0 2px 8px rgba(44, 30, 66, .14);
+  --scroll-thumb: rgba(54, 37, 77, .24);
+  --selection-bg: rgba(106, 47, 200, .20);
+  --selection-text: #241C31;
+
+  --game-surface-bg: rgba(255, 255, 255, .70);
+  --game-surface-strong-bg: rgba(255, 255, 255, .90);
+  --game-surface-soft-bg: rgba(255, 255, 255, .52);
+  --game-raised-bg: rgba(209, 184, 255, .38);
+  --game-raised-strong-bg: rgba(209, 184, 255, .62);
+  --game-border-color: rgba(54, 37, 77, .16);
+  --game-border-strong-color: rgba(54, 37, 77, .25);
+  --game-text-color: #514860;
+  --game-text-strong-color: #241C31;
+  --game-muted-color: #6C6578;
+  --game-tile-bg: rgba(209, 184, 255, .5);
+  --game-tile-edge: rgba(106, 47, 200, .16);
+  --game-tile-hover-bg: rgba(209, 184, 255, .78);
+  --game-tile-hover-edge: rgba(106, 47, 200, .28);
+  --game-tile-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+  --game-safe-bg: rgba(24, 116, 74, .14);
+  --game-mine-bg: rgba(181, 45, 66, .12);
+  --game-selected-bg: #6A2FC8;
+  --game-selected-text: #FFFFFF;
+  --game-chip-border: rgba(54, 37, 77, .20);
+  --game-chip-shadow: rgba(44, 30, 66, .16);
+  --chip-1-from: #6A2FC8;
+  --chip-1-to: #4E1F9B;
+  --chip-1-text: #FFFFFF;
+  --chip-5-from: #9D71E8;
+  --chip-5-to: #6A2FC8;
+  --chip-5-text: #FFFFFF;
+  --chip-10-from: #D1B8FF;
+  --chip-10-to: #9D71E8;
+  --chip-10-text: #241C31;
+  --chip-50-from: #E8D9FF;
+  --chip-50-to: #B99AEF;
+  --chip-50-text: #241C31;
+  --chip-100-from: #FFFFFF;
+  --chip-100-to: #D1B8FF;
+  --chip-100-text: #241C31;
+  --game-slot-bg: linear-gradient(180deg, rgba(209, 184, 255, .56), rgba(255, 255, 255, .94));
+  --game-slot-border: var(--game-border-strong-color);
+  --game-slot-glow: rgba(106, 47, 200, .12);
+  --game-slot-reel-bg: linear-gradient(180deg, #E8D9FF, #FFFFFF 25%, #FFFFFF 75%, #E8D9FF);
+  --game-payline: #B52D42;
+  --game-scene-bg: linear-gradient(145deg, #ECE4F6, #DCD2E9);
+  --game-scene-border: rgba(54, 37, 77, .16);
+}
+
 /* ---------------------------------------------------------------------------
    4. Page chrome: scrollbars, selection, header, navigation
    --------------------------------------------------------------------------- */
