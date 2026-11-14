@@ -9,6 +9,7 @@ window.FetanGameShell = (() => {
   function markup(title, t, esc, game) {
     const supportedActions = {
       road: ['how', 'history', 'fair'],
+      crash: ['how', 'history', 'fair'],
       'chicken-road-2': ['how', 'history'],
       'b2b-bomber': ['how', 'history', 'fair'],
       penalty: ['how', 'history'],

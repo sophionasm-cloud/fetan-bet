@@ -14,7 +14,7 @@
       const theme = savedTheme === 'light' ? 'light' : 'dark';
       document.documentElement.dataset.customerTheme = theme;
     } catch (_) {}
-    if (/^#\/game\/(?:road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.test(location.hash)) {
+    if (/^#\/game\/(?:road|road-dash|crash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.test(location.hash)) {
       document.documentElement.classList.add('fetan-game-immersive');
     }
   </script>

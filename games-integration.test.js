@@ -33,15 +33,24 @@ for (const route of [
   "app.get('/api/games/b2b-bomber/history'",
   "app.get('/api/games/b2b-bomber/rounds/:roundId/fairness'",
   "app.post('/api/games/b2b-bomber/verify'",
+  "app.get('/api/games/crash/availability'",
+  "app.get('/api/games/crash/state'",
+  "app.get('/api/games/crash/history'",
+  "app.get('/api/games/crash/my-bets'",
+  "app.get('/api/games/crash/rounds/:id/verify'",
+  "app.post('/api/games/crash/bet'",
+  "app.post('/api/games/crash/cashout'",
+  "app.get('/api/games/crash/stream'",
 ]) assert.ok(server.includes(route), `customer route exists: ${route}`);
 
 const lobbyCatalog = catalog.match(/const LOBBY_GAME_CATALOG = Object\.freeze\(\[([\s\S]*?)\n  \]\);/);
 assert.ok(lobbyCatalog, 'customer lobby uses a scalable game catalog');
-for (const game of ['chicken-road-2', 'b2b-bomber', 'star', 'roulette', 'mines', 'plinko', 'penalty', 'keno']) {
+for (const game of ['crash', 'chicken-road-2', 'b2b-bomber', 'star', 'roulette', 'mines', 'plinko', 'penalty', 'keno']) {
   const launchId = game === 'chicken-road-2' ? 'chicken-road-2' : game;
   assert.match(lobbyCatalog[1], new RegExp(`id: '${game}'.*status: 'available'.*gameUrl: '${launchId}'`),
     `${game} remains available through its existing launch reference`);
 }
+assert.match(lobbyCatalog[1], /id: 'crash'.*name: 'Rocket Crash'/);
 assert.match(lobbyCatalog[1], /id: 'chicken-road-2'.*name: 'Chicken Road Dash'/);
 assert.match(lobbyCatalog[1], /id: 'b2b-bomber'.*name: 'B2B Bomber'/);
 assert.match(lobbyCatalog[1], /id: 'penalty'.*name: 'Penalty Unlimited'/);
@@ -100,7 +109,7 @@ assert.doesNotMatch(read('public/site-config.js'), /supportHours:\s*'24\/7'/,
   'the public page does not claim unverified round-the-clock support');
 assert.match(catalog, /frame\.src = `\/games\/\$\{game\}\/\?fetan=1&fetan-shell=1`/);
 assert.match(index, /fetan-game-immersive/);
-assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\|b2b-bomber\)/,
+assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\|b2b-bomber\|crash\)/,
   'direct game routes include every game so the shared immersive shell can render them');
 assert.match(app, /gameRoute\?\.\[1\] === 'bingo'[\s\S]*?bingoRouteState\?\.active/,
   'only users with an active Bingo round remain on the legacy game route');
@@ -302,5 +311,60 @@ for (const source of [chicken, penalty]) {
     'preview rounds down exactly as server settlement does');
   assert.equal(preview(3, 3.37), grossPayoutFromMultiplierCents(300, 337n) / 100);
 }
+
+// --- Rocket Crash integration ---------------------------------------------
+const crashHtml = read('public/games/crash/index.html');
+const crashCss = read('public/games/crash/crash.css');
+const crashFrontend = fs.readdirSync(path.join(root, 'public/games/crash/js'))
+  .filter((file) => file.endsWith('.js'))
+  .sort()
+  .map((file) => read(`public/games/crash/js/${file}`))
+  .join('\n');
+const crashService = read('crash-service.js');
+const crashEngine = read('crash-engine.js');
+const crashMigration = read('migrations/007_crash_game.sql');
+
+assert.ok(fs.statSync(path.join(root, 'public/img/rocket-crash-card.svg')).size > 0, 'Rocket Crash poster exists');
+assert.match(catalog, /crash: '\/img\/rocket-crash-card\.svg'/, 'Rocket Crash has its own original poster');
+assert.match(catalog, /crash: \(body\) => integratedFrame\(body, 'crash', 'Rocket Crash'\)/,
+  'Rocket Crash launches through the shared integrated frame');
+assert.match(catalog, /'crash', 'chicken-road-2'[\s\S]{0,120}?includes\(game\)[\s\S]{0,120}?postFrameAction/,
+  'Rocket Crash accepts shared-shell menu and cash-out actions');
+assert.match(sharedShell, /crash: \['how', 'history', 'fair'\]/, 'Rocket Crash advertises its shell actions');
+assert.match(immersiveCss, /data-game="crash"/, 'immersive layout gives the crash frame a full-height stage');
+assert.match(crashCss, /html\.fetan-integrated \.topbar\s*\{\s*display:\s*none !important;/,
+  'embedded Crash hides the duplicated in-game top bar');
+assert.match(crashCss, /html\.fetan-integrated \.crash-app[\s\S]*?100dvh/, 'embedded Crash fills the shared frame');
+
+assert.match(crashHtml, /data-panel="1"/);
+assert.match(crashHtml, /data-panel="2"/, 'Rocket Crash exposes two independent bet panels');
+assert.match(crashHtml, /id="historyStrip"/);
+assert.match(crashHtml, /id="autoDialog"/);
+assert.match(crashHtml, /role="status"/);
+assert.match(crashFrontend, /new EventSource\('\/api\/games\/crash\/stream', \{ withCredentials: true \}\)/,
+  'Rocket Crash reads its shared-round stream with same-origin cookies');
+assert.match(crashFrontend, /credentials: 'same-origin'/, 'Rocket Crash API calls use the authenticated cookie');
+assert.match(crashFrontend, /\/api\/games\/crash\/bet/);
+assert.match(crashFrontend, /\/api\/games\/crash\/cashout/);
+assert.match(crashFrontend, /fetan-shell-action/, 'Rocket Crash accepts shared-shell actions');
+assert.match(crashFrontend, /fetan-wallet-refresh/, 'Rocket Crash asks the shell to refresh the wallet after settlement');
+assert.doesNotMatch(crashFrontend, /Math\.random|toFixed/, 'client maths never uses floats or unseeded randomness');
+assert.doesNotMatch(crashFrontend, /localhost:4173|127\.0\.0\.1:4173/);
+
+assert.match(crashService, /ledger\s*=\s*db\.postLedger/, 'Crash settlement reuses the existing ledger');
+assert.match(crashService, /withTx\(async \(client\) =>[\s\S]*?findAcceptingRound[\s\S]*?getBalance\(userId, client, \{ forUpdate: true \}\)/,
+  'Crash bet debits lock the wallet row before checking the balance');
+assert.match(crashService, /M\.publicRound\(display\)/, 'pre-crash state is projected through the seed-safe public round');
+assert.match(crashService, /pg_try_advisory_lock\(\$1\)/, 'only one process runs the shared round loop');
+assert.match(crashService, /CRASH_ENABLED/, 'the operator kill switch is wired');
+assert.match(crashEngine, /allocateRoundId/, 'round ids are preallocated before the seed commitment');
+assert.match(crashMigration, /CREATE TABLE IF NOT EXISTS crash_rounds/);
+assert.match(crashMigration, /CREATE TABLE IF NOT EXISTS crash_bets/);
+assert.match(crashMigration, /CONSTRAINT crash_bets_round_user_panel_uq UNIQUE \(crash_round_id, user_id, panel\)/,
+  'a user can hold at most one bet per panel in a round');
+assert.match(crashMigration, /CONSTRAINT crash_bets_user_request_uq UNIQUE \(user_id, request_id\)/,
+  'bet requests are idempotent');
+assert.doesNotMatch(crashMigration, /ALTER TABLE|DROP TABLE|UPDATE wallets|INSERT INTO ledger/,
+  'migration 007 is additive and does not rewrite existing financial data');
 
 console.log('games-integration.test.js: customer game integration checks passed');

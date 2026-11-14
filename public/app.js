@@ -649,7 +649,7 @@ function nav() {
 
 async function render(subMode = '') {
   clearPromoSlider();
-  let gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.exec(location.hash);
+  let gameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber|crash)$/.exec(location.hash);
   await refreshMe();
   let bingoRouteState = null;
   if (gameRoute?.[1] === 'bingo') {
@@ -793,7 +793,7 @@ function setAppViewportHeight() {
   document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`);
   document.body.classList.toggle('mobile-app', window.innerWidth <= 1024);
   document.body.classList.toggle('game-landscape', window.innerWidth > height);
-  const routeIsGame = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.test(location.hash);
+  const routeIsGame = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber|crash)$/.test(location.hash);
   const shouldOpenShell = routeIsGame && me?.role === 'user';
   syncTelegramShell(shouldOpenShell);
   if (document.body.classList.contains('game-open') !== shouldOpenShell) {
@@ -2499,7 +2499,7 @@ async function adminView(app) {
 }
 
 // A direct game link still gets an in-app lobby entry for Back navigation.
-const initialGameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber)$/.test(location.hash);
+const initialGameRoute = /^#\/game\/(road|road-dash|chicken-road-2|penalty|mines|plinko|keno|bingo|roulette|star|b2b-bomber|crash)$/.test(location.hash);
 if (initialGameRoute) {
   const deepLink = location.hash;
   history.replaceState({ fetanPage: 'lobby' }, '', `${location.pathname}${location.search}#/lobby`);

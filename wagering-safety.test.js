@@ -104,6 +104,7 @@ const nonStakePosts = [
   '/api/games/bingo/abandon',
   '/api/games/b2b-bomber/cashout',
   '/api/games/b2b-bomber/verify',
+  '/api/games/crash/cashout',
 ];
 for (const route of nonStakePosts) {
   assert.equal(isNewStakeRequest('POST', route), false, `settlement/demo route stays available: ${route}`);

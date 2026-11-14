@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { query, withTx, postLedger, createUser, audit, seed } = require('./db');
+const { query, withTx, postLedger, createUser, audit, seed, pool } = require('./db');
 const games = require('./games');
 const { createChickenRoadDemoService } = require('./chicken-road-demo-service');
 const chickenRoadDemo = createChickenRoadDemoService({ query, withTx });
@@ -17,6 +17,8 @@ const { createChickenRoadRealService } = require('./chicken-road-real-service');
 const chickenRoadReal = createChickenRoadRealService({ query, withTx, ledger: postLedger });
 const { createB2BBomberService } = require('./b2b-bomber-service');
 const b2bBomber = createB2BBomberService({ query, withTx, ledger: postLedger });
+const { createCrashService } = require('./crash-service');
+const crash = createCrashService({ query, withTx, ledger: postLedger, pool });
 const { getAiResponse } = require('./ai-support');
 const { hasPermission } = require('./permissions');
 const { createHealthHandler } = require('./health-check');
@@ -1526,6 +1528,21 @@ app.post('/api/games/b2b-bomber/cashout', ...g((req) => b2bBomber.cashout(req.us
 app.get('/api/games/b2b-bomber/history', ...g((req) => b2bBomber.history(req.user.id)));
 app.get('/api/games/b2b-bomber/rounds/:roundId/fairness', ...g((req) => b2bBomber.verifyOwned(req.user.id, req.params.roundId)));
 app.post('/api/games/b2b-bomber/verify', ...g((req) => Promise.resolve(b2bBomber.verifyPayload(req.body))));
+// Rocket Crash shared rounds. The SSE route must bypass wrap because it writes
+// a long-lived raw stream; every other route keeps the auth/need/wrap chain.
+app.use('/api/games/crash', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+const crashG = (fn) => [auth, need('customer'), wrap((req, res) => fn(req, res))];
+app.get('/api/games/crash/availability', ...crashG((req, res) => crash.httpAvailability(req, res)));
+app.get('/api/games/crash/state', ...crashG((req, res) => crash.httpState(req, res)));
+app.get('/api/games/crash/history', ...crashG((req, res) => crash.httpHistory(req, res)));
+app.get('/api/games/crash/my-bets', ...crashG((req, res) => crash.httpMyBets(req, res)));
+app.get('/api/games/crash/rounds/:id/verify', ...crashG((req, res) => crash.httpVerify(req, res)));
+app.post('/api/games/crash/bet', ...crashG((req, res) => crash.httpBet(req, res)));
+app.post('/api/games/crash/cashout', ...crashG((req, res) => crash.httpCashout(req, res)));
+app.get('/api/games/crash/stream', auth, need('customer'), (req, res) => crash.httpStream(req, res));
 app.get('/api/games/mines', ...g((req) => games.minesState(req.user.id)));
 app.post('/api/games/mines/start', ...g((req) => games.minesStart(req.user.id, Number(req.body.bet), req.body.mines, req.body.grid, req.body.client_seed)));
 app.post('/api/games/mines/step', ...g((req) => games.minesStep(req.user.id, req.body.cell)));
@@ -3292,6 +3309,7 @@ const PORT = process.env.PORT || 3000;
 if (require.main === module) {
   b2bBomber.startSweeper();
   b2bBomber.sweep().catch((err) => console.error('[b2b-bomber] startup sweep:', err.message));
+  crash.start();
   app.listen(PORT, () => console.log(`ፈጣን ቤት / Fetan Bet running at http://localhost:${PORT}`));
 }
 module.exports = app;

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" role="img" aria-labelledby="posterTitle posterDesc">
+  <title id="posterTitle">Rocket Crash arcade poster</title>
+  <desc id="posterDesc">An original dark poster with a yellow and white rocket climbing a glowing curve through a star field above a faint horizon grid.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#07090d"/>
+      <stop offset=".55" stop-color="#101318"/>
+      <stop offset="1" stop-color="#1a1408"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#f3d21b" stop-opacity=".32"/>
+      <stop offset=".5" stop-color="#f3d21b" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#f3d21b" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="curve" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff9a1f" stop-opacity=".1"/>
+      <stop offset=".55" stop-color="#f3d21b"/>
+      <stop offset="1" stop-color="#fff6b0"/>
+    </linearGradient>
+    <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".6" stop-color="#e9edf2"/>
+      <stop offset="1" stop-color="#9aa6b2"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff4a8"/>
+      <stop offset=".45" stop-color="#ffa11f"/>
+      <stop offset="1" stop-color="#ff3b30" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3d21b" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#f3d21b" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1000" height="1000" fill="url(#sky)"/>
+
+  <g fill="#f5f5f7" opacity=".8">
+    <circle cx="118" cy="182" r="4"/>
+    <circle cx="232" cy="310" r="2.6"/>
+    <circle cx="344" cy="142" r="3.6"/>
+    <circle cx="470" cy="248" r="2.2"/>
+    <circle cx="596" cy="118" r="3.2"/>
+    <circle cx="716" cy="272" r="2.4"/>
+    <circle cx="842" cy="164" r="4.2"/>
+    <circle cx="922" cy="330" r="2.8"/>
+    <circle cx="786" cy="420" r="2.2"/>
+    <circle cx="406" cy="420" r="2.8"/>
+    <circle cx="172" cy="470" r="2.2"/>
+    <circle cx="868" cy="560" r="2.4"/>
+    <circle cx="272" cy="596" r="2"/>
+    <circle cx="652" cy="486" r="2.6"/>
+  </g>
+
+  <circle cx="660" cy="330" r="360" fill="url(#glow)"/>
+
+  <g opacity=".5">
+    <path d="M0 790h1000" stroke="#f3d21b" stroke-opacity=".18" stroke-width="2"/>
+    <path d="M0 860h1000M0 930h1000" stroke="#f3d21b" stroke-opacity=".1" stroke-width="2"/>
+    <path d="M500 720 150 1000M500 720l350 280M500 720 40 880M500 720l960 160" stroke="#f3d21b" stroke-opacity=".08" stroke-width="2"/>
+  </g>
+  <rect y="700" width="1000" height="300" fill="url(#floor)"/>
+
+  <path d="M56 792C234 770 374 668 510 474c88-126 180-224 336-302" fill="none" stroke="url(#curve)" stroke-width="26" stroke-linecap="round"/>
+  <path d="M56 792C234 770 374 668 510 474c88-126 180-224 336-302" fill="none" stroke="#fff6b0" stroke-opacity=".7" stroke-width="6" stroke-linecap="round"/>
+
+  <g transform="translate(548 436) rotate(-43)">
+    <path d="M-44-16C-92-28-148-10-196 44c46 20 102 28 154 20l-2-80Z" fill="url(#flame)"/>
+    <path d="M-44-8c-38-8-72 0-104 22 30 14 66 20 104 16V-8Z" fill="#ffcf5c" opacity=".85"/>
+    <path d="M-52-46 16-132l18 14-28 78-58 6v-12Z" fill="#f3d21b"/>
+    <path d="M-52 46 16 132l18-14-28-78-58-6v12Z" fill="#f3d21b"/>
+    <path d="M-64-40C-34-58 30-54 76-28l14 28-14 28c-46 26-110 30-140 12-12-20-12-60 0-80Z" fill="url(#hull)" stroke="#cfd7e0" stroke-width="4"/>
+    <path d="M-58-16h44v32h-44z" rx="6" fill="#f3d21b"/>
+    <circle cx="18" cy="0" r="18" fill="#47a7ff" stroke="#f5f5f7" stroke-width="5"/>
+    <path d="M76-28c34 6 62 18 78 28-16 10-44 22-78 28V-28Z" fill="#f3d21b"/>
+  </g>
+
+  <g transform="translate(500 806)" text-anchor="middle" font-family="Arial Black, Arial, sans-serif">
+    <text x="0" y="0" font-size="94" font-weight="900" letter-spacing="6" fill="#f5f5f7">ROCKET</text>
+    <text x="0" y="92" font-size="94" font-weight="900" letter-spacing="14" fill="#f3d21b">CRASH</text>
+    <rect x="-186" y="126" width="372" height="4" rx="2" fill="#f3d21b" opacity=".7"/>
+    <text x="0" y="176" font-size="27" font-weight="700" letter-spacing="9" fill="#c9ced6">CASH OUT BEFORE IT GOES</text>
+  </g>
+</svg>

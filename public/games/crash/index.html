@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f0f11" />
+  <meta name="description" content="Rocket Crash — an original shared-round crash game on Fetan Bet. Watch the multiplier climb and cash out before the rocket flies away." />
+  <title>Rocket Crash — Fetan Bet</title>
+  <script>
+    if (new URLSearchParams(location.search).get('fetan') === '1') {
+      document.documentElement.classList.add('fetan-integrated');
+      if (new URLSearchParams(location.search).get('fetan-shell') === '1') document.documentElement.classList.add('fetan-shared-shell');
+      try { document.documentElement.dataset.customerTheme = localStorage.getItem('fetan-theme') || 'dark'; } catch (_) { document.documentElement.dataset.customerTheme = 'dark'; }
+    }
+  </script>
+  <link rel="icon" href="../../shared/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../../shared/fonts.css" />
+  <link rel="stylesheet" href="./crash.css" />
+</head>
+<body>
+  <div class="crash-app" id="app">
+    <header class="topbar">
+      <div class="topbar-left">
+        <a class="platform-mark" href="/" data-fetan-back aria-label="Fetan Bet home">
+          <svg viewBox="0 0 40 32" aria-hidden="true"><path d="M6 16h10M4 9h10M4 23h10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M20 5h6a11 11 0 0 1 0 22h-6V5Z" fill="currentColor"/><path d="M28 11a5 5 0 0 1 0 10" stroke="#f3d21b" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+          <span>Fetan Bet</span>
+        </a>
+        <div class="topbar-tools">
+          <button class="icon-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menuDrawer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="Mute sound" title="Sound">
+            <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path d="m16 9 5 6m0-6-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <button class="trophy" id="trophyBtn" type="button" title="Largest payout of this round">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" fill="currentColor"/><path d="M8 6H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4M12 13v4m-4 3h8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+          <span class="trophy-value" id="trophyValue">0.00</span>
+          <span class="trophy-cur">ETB</span>
+        </button>
+      </div>
+
+      <div class="brand" aria-label="Rocket Crash">
+        <svg class="brand-svg" viewBox="0 0 414 76" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="brandYellow" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#f3d21b"/><stop offset="1" stop-color="#ffe76a"/>
+            </linearGradient>
+          </defs>
+          <g transform="translate(16 10) rotate(18)">
+            <path d="M2 28c8-15 23-23 40-23 1 10-5 22-16 29l-9 5-3-8-12-3Z" fill="#f5f5f7"/>
+            <path d="M42 5c6-1 12 1 16 5-4 4-9 6-15 6l-1-11Z" fill="#ff9a1f"/>
+            <circle cx="23" cy="18" r="5" fill="#47a7ff"/>
+            <path d="M8 30 1 42l13-4-6-8Zm9 6 2 13 8-11-10-2Z" fill="#ff9a1f"/>
+            <path d="M0 32c-5 3-8 8-9 13 5-2 9-2 13-1l-4-12Z" fill="#ff4d2e"/>
+          </g>
+          <text x="86" y="48" fill="url(#brandYellow)" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="42" font-weight="800" font-style="italic" letter-spacing="-1.5">ROCKET</text>
+          <text x="255" y="48" fill="#f5f5f7" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="42" font-weight="800" font-style="italic" letter-spacing="-1.5">CRASH</text>
+        </svg>
+      </div>
+
+      <div class="topbar-right">
+        <div class="conn" id="conn" data-state="connecting" title="Connecting">
+          <span class="conn-dot" id="connDot" aria-hidden="true"></span>
+          <span id="currencyCode">ETB</span>
+        </div>
+        <time class="clock" id="clock">--:--</time>
+      </div>
+    </header>
+
+    <div class="history-row">
+      <div class="strip-mask">
+        <div class="strip" id="historyStrip" role="list" aria-label="Recent crash multipliers"></div>
+      </div>
+      <button class="icon-btn history-btn" id="historyBtn" type="button" aria-label="Open round history" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2M4.5 12a7.5 7.5 0 1 0 2-5.2M4 4v4h4" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <main class="stage-grid">
+      <section class="bets-panel" aria-label="Live bets">
+        <button class="bets-toggle" id="betsToggle" type="button" aria-expanded="true" aria-controls="feed">
+          <span data-i18n="live_bets">Live bets</span>
+          <span class="bets-toggle-count" id="betsToggleCount">0</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <div class="feed" id="feed" role="list" aria-label="Bets in the current round"></div>
+        <div class="feed-empty" id="feedEmpty"><span data-i18n="no_bets_yet">Waiting for the first bet of this round.</span></div>
+      </section>
+
+      <section class="chart-panel" aria-label="Rocket flight chart">
+        <canvas id="chart" aria-hidden="true"></canvas>
+        <div class="readout" id="readout">
+          <div class="readout-kicker" id="readoutKicker">NEXT ROUND</div>
+          <div class="readout-mult" id="multiplier"><span class="mult-value">1.00</span><span class="x">×</span></div>
+          <div class="readout-track"><i id="countdownBar"></i></div>
+          <div class="readout-sub">
+            <span id="readoutLabel">BETS</span>
+            <strong id="openBets">0</strong>
+          </div>
+        </div>
+        <div class="paused-banner" id="pausedBanner" role="status" hidden>
+          <strong data-i18n="betting_paused">Betting is paused</strong>
+          <span data-i18n="betting_paused_hint">You can keep watching. Cashing out stays available.</span>
+        </div>
+        <div class="demo-badge" id="demoBadge" hidden>DEMO</div>
+      </section>
+    </main>
+
+    <footer class="control-bar">
+      <div class="balance-block">
+        <span class="balance-label" data-i18n="balance">Balance</span>
+        <strong id="balanceValue">—</strong>
+        <span class="balance-cur" id="balanceCurrency">ETB</span>
+      </div>
+
+      <button class="auto-btn" id="autoBtn" type="button" aria-haspopup="dialog" aria-controls="autoDialog">
+        <span>AUTO</span>
+        <small id="autoRemaining" hidden></small>
+      </button>
+
+      <div class="bet-panel" data-panel="1">
+        <button class="stake-box" type="button" data-stake-toggle aria-label="Edit stake for panel A" aria-haspopup="dialog">
+          <strong data-stake>1.00</strong>
+          <span data-stake-cur>ETB</span>
+        </button>
+        <button class="auto-box" type="button" data-auto-toggle aria-label="Set auto cash-out for panel A" aria-haspopup="dialog">
+          <span data-auto-value>— — —</span>
+          <span class="auto-x">×</span>
+        </button>
+        <button class="action-btn" type="button" data-action>PLACE BET</button>
+        <div class="pop stake-pop" data-stake-pop hidden>
+          <div class="pop-head"><span data-i18n="stake">Stake</span><button type="button" data-close aria-label="Close">×</button></div>
+          <div class="stepper">
+            <button type="button" data-step="-">−</button>
+            <input data-stake-input type="text" inputmode="decimal" autocomplete="off" aria-label="Stake amount in ETB" />
+            <button type="button" data-step="+">+</button>
+          </div>
+          <div class="chips" data-chips>
+            <button type="button" data-chip="100">1</button>
+            <button type="button" data-chip="500">5</button>
+            <button type="button" data-chip="1000">10</button>
+            <button type="button" data-chip="5000">50</button>
+            <button type="button" data-chip="10000">100</button>
+          </div>
+          <div class="pop-actions">
+            <button type="button" data-half>½</button>
+            <button type="button" data-double>2×</button>
+          </div>
+        </div>
+        <div class="pop auto-pop" data-auto-pop hidden>
+          <div class="pop-head"><span data-i18n="auto_cashout">Auto cash out</span><button type="button" data-clear aria-label="Turn off auto cash-out">×</button></div>
+          <div class="stepper">
+            <input data-auto-input type="text" inputmode="decimal" autocomplete="off" aria-label="Auto cash-out multiplier" placeholder="2.00" />
+            <span class="stepper-x">×</span>
+          </div>
+          <div class="chips" data-auto-chips>
+            <button type="button" data-mult="150">1.50</button>
+            <button type="button" data-mult="200">2.00</button>
+            <button type="button" data-mult="300">3.00</button>
+            <button type="button" data-mult="500">5.00</button>
+            <button type="button" data-mult="1000">10.00</button>
+          </div>
+          <button class="pop-confirm" type="button" data-auto-confirm data-i18n="set_auto">Set auto cash out</button>
+        </div>
+      </div>
+
+      <div class="bet-panel" data-panel="2">
+        <button class="stake-box" type="button" data-stake-toggle aria-label="Edit stake for panel B" aria-haspopup="dialog">
+          <strong data-stake>1.00</strong>
+          <span data-stake-cur>ETB</span>
+        </button>
+        <button class="auto-box" type="button" data-auto-toggle aria-label="Set auto cash-out for panel B" aria-haspopup="dialog">
+          <span data-auto-value>— — —</span>
+          <span class="auto-x">×</span>
+        </button>
+        <button class="action-btn" type="button" data-action>PLACE BET</button>
+        <div class="pop stake-pop" data-stake-pop hidden>
+          <div class="pop-head"><span data-i18n="stake">Stake</span><button type="button" data-close aria-label="Close">×</button></div>
+          <div class="stepper">
+            <button type="button" data-step="-">−</button>
+            <input data-stake-input type="text" inputmode="decimal" autocomplete="off" aria-label="Stake amount in ETB" />
+            <button type="button" data-step="+">+</button>
+          </div>
+          <div class="chips" data-chips>
+            <button type="button" data-chip="100">1</button>
+            <button type="button" data-chip="500">5</button>
+            <button type="button" data-chip="1000">10</button>
+            <button type="button" data-chip="5000">50</button>
+            <button type="button" data-chip="10000">100</button>
+          </div>
+          <div class="pop-actions">
+            <button type="button" data-half>½</button>
+            <button type="button" data-double>2×</button>
+          </div>
+        </div>
+        <div class="pop auto-pop" data-auto-pop hidden>
+          <div class="pop-head"><span data-i18n="auto_cashout">Auto cash out</span><button type="button" data-clear aria-label="Turn off auto cash-out">×</button></div>
+          <div class="stepper">
+            <input data-auto-input type="text" inputmode="decimal" autocomplete="off" aria-label="Auto cash-out multiplier" placeholder="2.00" />
+            <span class="stepper-x">×</span>
+          </div>
+          <div class="chips" data-auto-chips>
+            <button type="button" data-mult="150">1.50</button>
+            <button type="button" data-mult="200">2.00</button>
+            <button type="button" data-mult="300">3.00</button>
+            <button type="button" data-mult="500">5.00</button>
+            <button type="button" data-mult="1000">10.00</button>
+          </div>
+          <button class="pop-confirm" type="button" data-auto-confirm data-i18n="set_auto">Set auto cash out</button>
+        </div>
+      </div>
+
+      <button class="fullscreen-btn" id="fullscreenBtn" type="button" aria-label="Toggle fullscreen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M8 20H4v-4m12 4h4v-4" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round"/></svg>
+      </button>
+    </footer>
+  </div>
+
+  <aside class="drawer" id="menuDrawer" hidden aria-label="Game menu">
+    <div class="drawer-head">
+      <strong>Rocket Crash</strong>
+      <button class="icon-btn" id="menuClose" type="button" aria-label="Close menu">×</button>
+    </div>
+    <nav class="drawer-tabs" aria-label="Menu sections">
+      <button type="button" data-tab="how" class="is-active" data-i18n="how_to_play">How to play</button>
+      <button type="button" data-tab="fair" data-i18n="fairness">Fairness</button>
+      <button type="button" data-tab="settings" data-i18n="settings">Settings</button>
+    </nav>
+    <div class="drawer-panel" data-panel-content="how">
+      <ol class="how-list">
+        <li data-i18n="how_1">Place one bet in each panel, or pre-bet during the previous flight.</li>
+        <li data-i18n="how_2">The multiplier climbs from 1.00× while the rocket is in the air.</li>
+        <li data-i18n="how_3">Cash out before the rocket flies away. Your payout is stake × cash-out multiplier.</li>
+        <li data-i18n="how_4">Set an auto cash-out and the server settles it at exactly your target if the rocket reaches it.</li>
+        <li data-i18n="how_5">Crash shows nothing about the next round. Every result is committed before betting opens.</li>
+      </ol>
+    </div>
+    <div class="drawer-panel" data-panel-content="fair" hidden>
+      <p data-i18n="fair_p1">Each round publishes a SHA-256 commitment before betting opens. The server seed, client seed and round nonce produce the crash point with HMAC-SHA-256.</p>
+      <p data-i18n="fair_p2">After the crash the full server seed is revealed, so you can recompute the result in your browser.</p>
+      <p class="fair-caveat" data-i18n="fair_p3">The commitment proves the outcome was fixed before bets were accepted. It does not prove how the seed was chosen. A hash chain or external beacon is a future owner decision.</p>
+      <button class="text-btn" type="button" id="fairVerifyBtn" data-i18n="open_verifier">Open the verifier</button>
+    </div>
+    <div class="drawer-panel" data-panel-content="settings" hidden>
+      <label class="toggle-row"><span data-i18n="sound">Sound</span><input type="checkbox" id="settingSound" checked /><i></i></label>
+      <label class="toggle-row"><span data-i18n="reduced_effects">Reduced effects</span><input type="checkbox" id="settingReduced" /><i></i></label>
+    </div>
+  </aside>
+  <div class="drawer-scrim" id="drawerScrim" hidden></div>
+
+  <dialog class="modal history-modal" id="historyDialog" aria-labelledby="historyTitle">
+    <div class="modal-head">
+      <h2 id="historyTitle" data-i18n="history">History</h2>
+      <button class="icon-btn" type="button" data-dialog-close aria-label="Close history">×</button>
+    </div>
+    <div class="modal-tabs" role="tablist" aria-label="History type">
+      <button type="button" role="tab" aria-selected="true" data-history-tab="rounds" data-i18n="rounds">Rounds</button>
+      <button type="button" role="tab" aria-selected="false" data-history-tab="mine" data-i18n="my_bets">My bets</button>
+    </div>
+    <div class="modal-body" id="historyBody"></div>
+  </dialog>
+
+  <dialog class="modal verify-modal" id="verifyDialog" aria-labelledby="verifyTitle">
+    <div class="modal-head">
+      <h2 id="verifyTitle" data-i18n="verify_round">Verify round</h2>
+      <button class="icon-btn" type="button" data-dialog-close aria-label="Close verifier">×</button>
+    </div>
+    <div class="modal-body" id="verifyBody"></div>
+  </dialog>
+
+  <dialog class="modal auto-modal" id="autoDialog" aria-labelledby="autoTitle">
+    <div class="modal-head">
+      <h2 id="autoTitle">AUTO</h2>
+      <button class="icon-btn" type="button" data-dialog-close aria-label="Close auto settings">×</button>
+    </div>
+    <div class="auto-sheet">
+      <p class="auto-copy" data-i18n="auto_copy">Auto places the current stake and auto cash-out on both panels for the chosen number of rounds.</p>
+      <div class="field-label" data-i18n="number_of_rounds">Number of rounds</div>
+      <div class="chips auto-counts" id="autoCounts">
+        <button type="button" data-count="10">10</button>
+        <button type="button" data-count="25">25</button>
+        <button type="button" data-count="50">50</button>
+        <button type="button" data-count="100">100</button>
+      </div>
+      <label class="field-label" for="autoStopBelow" data-i18n="stop_balance">Stop when balance is below (ETB)</label>
+      <input class="field-input" id="autoStopBelow" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" />
+      <label class="field-label" for="autoStopWin" data-i18n="stop_win">Stop after a single win above (ETB)</label>
+      <input class="field-input" id="autoStopWin" type="text" inputmode="decimal" autocomplete="off" placeholder="—" />
+      <label class="field-label" for="autoStopLoss" data-i18n="stop_loss">Stop after a single loss above (ETB)</label>
+      <input class="field-input" id="autoStopLoss" type="text" inputmode="decimal" autocomplete="off" placeholder="—" />
+      <button class="auto-start" id="autoStartBtn" type="button" data-i18n="start_auto">Start AUTO</button>
+      <p class="auto-hint" data-i18n="auto_hint">AUTO stops on any error, when betting is paused, or when funds are insufficient.</p>
+    </div>
+  </dialog>
+
+  <div class="toast-region" id="toastRegion" aria-hidden="true"></div>
+  <div class="sr-only" id="liveRegion" role="status" aria-live="polite"></div>
+
+  <script src="./js/i18n.js"></script>
+  <script src="./js/config.js"></script>
+  <script src="./js/format.js"></script>
+  <script src="./js/curve.js"></script>
+  <script src="./js/store.js"></script>
+  <script src="./js/mock.js"></script>
+  <script src="./js/net.js"></script>
+  <script src="./js/chart.js"></script>
+  <script src="./js/feed.js"></script>
+  <script src="./js/controls.js"></script>
+  <script src="./js/history.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/main.js"></script>
+</body>
+</html>

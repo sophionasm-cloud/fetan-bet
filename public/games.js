@@ -26,6 +26,7 @@ window.Games = (function () {
   const GAME_TARGET_RTP_CENTS = 30n;
   const GAME_POSTERS = {
     road: '/img/road-dash.webp.jpg',
+    crash: '/img/rocket-crash-card.svg',
     'chicken-road-2': '/img/chicken-road-2-card.jpg',
     'b2b-bomber': '/img/b2b-bomber-card.svg',
     penalty: '/img/penalty-unlimited-preview.jpg',
@@ -38,6 +39,7 @@ window.Games = (function () {
   };
   const GAME_ART = {
     road: '<svg viewBox="0 0 64 64" fill="none"><path d="M18 42c0-11 7-19 18-19 7 0 13 4 16 10l-6 11H18Z" fill="#F2D98B"/><path d="m22 45-5 8m24-8 4 8" stroke="#F2D98B" stroke-width="4" stroke-linecap="round"/><path d="m26 22 4-7 5 6 5-5 2 8" fill="#E66A45"/><circle cx="44" cy="29" r="2" fill="#0B0E0D"/><path d="m51 34 9 3-9 4" fill="#E9A23B"/></svg>',
+    crash: '<svg viewBox="0 0 64 64" fill="none"><rect width="64" height="64" rx="14" fill="#101318"/><circle cx="45" cy="15" r="3" fill="#F3D21B"/><circle cx="16" cy="23" r="1.7" fill="#F3D21B"/><circle cx="53" cy="36" r="1.4" fill="#F3D21B"/><path d="M13 49c9-1 16-7 21-18l4 2c-4 12-12 20-23 22l-2-6Z" fill="#FF9A1F"/><path d="m32 37 15-20 4 3-13 23-6-6Z" fill="#F5F5F7"/><path d="m41 23 8-9 3 3-7 9-4-3Z" fill="#F3D21B"/><circle cx="35" cy="38" r="4" fill="#47A7FF"/><path d="M17 53c-3 1-6 2-9 1 2-3 4-6 7-7l2 6Z" fill="#FF3B30"/></svg>',
     'chicken-road-2': '<svg viewBox="0 0 64 64" fill="none"><path d="M18 42c0-11 7-19 18-19 7 0 13 4 16 10l-6 11H18Z" fill="#F2D98B"/><path d="m22 45-5 8m24-8 4 8" stroke="#F2D98B" stroke-width="4" stroke-linecap="round"/><path d="m26 22 4-7 5 6 5-5 2 8" fill="#E66A45"/><circle cx="44" cy="29" r="2" fill="#0B0E0D"/><path d="m51 34 9 3-9 4" fill="#E9A23B"/></svg>',
     'b2b-bomber': '<svg viewBox="0 0 64 64" fill="none"><rect width="64" height="64" rx="14" fill="#102747"/><circle cx="45" cy="18" r="6" fill="#F5C52B"/><path d="M49 16c-8 2-16 7-22 14L12 34l8 4 5 8 4-10c7-6 12-14 20-20Z" fill="#F7FAFF"/><path d="m39 26 7-8 3 3-7 8-3-3Z" fill="#2467B9"/><path d="m20 40 10 10" stroke="#F5C52B" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="49" r="4" fill="#D93643"/></svg>',
     penalty: '<svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="23" stroke="#D6BD72" stroke-width="3"/><path d="M32 14v8m17 10h-8M32 50v-8M15 32h8M20 20l6 6m18 18-6-6m6-18-6 6M20 44l6-6" stroke="#F2D98B" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="32" r="8" fill="#F2D98B"/></svg>',
@@ -66,6 +68,7 @@ window.Games = (function () {
   // One lobby catalog drives sections, filters, poster art and launch routes.
   // A null player count means there is no verified live source for that game.
   const LOBBY_GAME_CATALOG = Object.freeze([
+    { id: 'crash', name: 'Rocket Crash', category: 'crash', image: GAME_POSTERS.crash, status: 'available', gameUrl: 'crash', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 5 },
     { id: 'chicken-road-2', name: 'Chicken Road Dash', category: 'crash', image: GAME_POSTERS['chicken-road-2'], status: 'available', gameUrl: 'chicken-road-2', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 10 },
     { id: 'b2b-bomber', name: 'B2B Bomber', category: 'crash', image: GAME_POSTERS['b2b-bomber'], status: 'available', gameUrl: 'b2b-bomber', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 15 },
     { id: 'star', name: 'Star Spin', nameKey: 'star_title', category: 'slots', image: GAME_POSTERS.star, status: 'available', gameUrl: 'star', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 20 },
@@ -532,6 +535,15 @@ window.Games = (function () {
       carouselStates.clear();
     };
     lobbyCleanup = app._homeCarouselCleanup;
+
+    // The crash game can be switched off server-side. Hide its lobby tile
+    // rather than offering an entry that can only return a paused screen.
+    if (typeof C.api === 'function') {
+      C.api('/games/crash/availability').then((result) => {
+        if (!result || result.enabled !== false) return;
+        app.querySelectorAll('[data-game="crash"]').forEach((card) => card.remove());
+      }).catch(() => { /* the entry remains and shows the paused screen */ });
+    }
   }
 
   let stopFns = [];
@@ -562,6 +574,7 @@ window.Games = (function () {
     document.body.classList.add('game-open');
     const titles = {
       road: '🐔 ' + C.t('road_title'),
+      crash: '🚀 Rocket Crash',
       'chicken-road-2': '🐔 Chicken Road Dash',
       'b2b-bomber': '💣 B2B Bomber',
       penalty: '⚽ Penalty Unlimited',
@@ -586,6 +599,7 @@ window.Games = (function () {
     soundBtn($('sbtn'));
     const gameView = {
       road, roulette, star, mines, plinko, keno, bingo,
+      crash: (body) => integratedFrame(body, 'crash', 'Rocket Crash'),
       'chicken-road-2': (body) => integratedFrame(body, 'chicken-road-2', 'Chicken Road Dash'),
       'b2b-bomber': (body) => integratedFrame(body, 'b2b-bomber', 'B2B Bomber'),
       penalty: (body) => integratedFrame(body, 'penalty', 'Penalty Unlimited')
@@ -629,7 +643,7 @@ window.Games = (function () {
       }
     };
     const action = (name) => {
-      if (['chicken-road-2', 'penalty', 'b2b-bomber'].includes(game)) {
+      if (['crash', 'chicken-road-2', 'penalty', 'b2b-bomber'].includes(game)) {
         shell?.postFrameAction(name);
         return;
       }

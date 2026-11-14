@@ -38,6 +38,9 @@ const NON_STAKE_POST_PATHS = Object.freeze([
   '/mines/step',
   '/mines/cashout',
   '/mines/verify',
+  // Crash cash-out only settles an existing stake at a server-owned clock,
+  // so it must stay available while new stakes are paused.
+  '/crash/cashout',
   '/plinko/verify',
   '/bingo/call',
   '/bingo/abandon',
