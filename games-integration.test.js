@@ -349,6 +349,10 @@ assert.match(crashFrontend, /\/api\/games\/crash\/cashout/);
 assert.match(crashFrontend, /fetan-shell-action/, 'Rocket Crash accepts shared-shell actions');
 assert.match(crashFrontend, /fetan-wallet-refresh/, 'Rocket Crash asks the shell to refresh the wallet after settlement');
 assert.doesNotMatch(crashFrontend, /Math\.random|toFixed/, 'client maths never uses floats or unseeded randomness');
+assert.match(crashFrontend, /savedReduced == null \? prefersReduced : savedReduced === '1'/,
+  'first visit follows the operating-system reduced-motion preference');
+assert.match(crashFrontend, /if \('reducedEffects' in patch\) localStorage\.setItem\('crash-reduced'/,
+  'only an explicit reduced-effects choice overrides the system preference');
 assert.doesNotMatch(crashFrontend, /localhost:4173|127\.0\.0\.1:4173/);
 
 assert.match(crashService, /ledger\s*=\s*db\.postLedger/, 'Crash settlement reuses the existing ledger');

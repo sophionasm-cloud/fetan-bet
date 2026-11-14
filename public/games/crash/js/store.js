@@ -27,10 +27,8 @@ window.CrashStore = (function () {
     const savedSound = localStorage.getItem('crash-sound');
     const savedReduced = localStorage.getItem('crash-reduced');
     if (savedSound != null) state.settings.sound = savedSound === '1';
-    if (savedReduced != null) {
-      state.settings.reducedEffects = savedReduced === '1' ||
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
-    }
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+    state.settings.reducedEffects = savedReduced == null ? prefersReduced : savedReduced === '1';
   } catch (_) { /* storage can be unavailable in private frames */ }
 
   function notify(kind) {
@@ -167,8 +165,8 @@ window.CrashStore = (function () {
   function setSettings(patch) {
     state.settings = Object.assign({}, state.settings, patch);
     try {
-      localStorage.setItem('crash-sound', state.settings.sound ? '1' : '0');
-      localStorage.setItem('crash-reduced', state.settings.reducedEffects ? '1' : '0');
+      if ('sound' in patch) localStorage.setItem('crash-sound', state.settings.sound ? '1' : '0');
+      if ('reducedEffects' in patch) localStorage.setItem('crash-reduced', state.settings.reducedEffects ? '1' : '0');
     } catch (_) { /* ignore */ }
     notify('settings');
   }

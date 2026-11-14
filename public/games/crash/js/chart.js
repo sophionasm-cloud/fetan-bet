@@ -462,7 +462,7 @@ window.CrashChart = (function () {
     const growthK = state.config ? state.config.growthK : CFG.growthK;
     let elapsed = 0;
     if (phase === 'flying' && round.startedAt) {
-      elapsed = Math.max(0, state.now() - round.startedAt);
+      elapsed = Math.max(0, window.CrashStore.now() - round.startedAt);
     } else if (phase === 'crashed') {
       elapsed = CURVE.crashDurationMs(round.crashHundredths, growthK);
     }
@@ -508,12 +508,12 @@ window.CrashChart = (function () {
       drawRocket(headX, headY, angle, width < 600 ? 0.62 : 0.82, 1);
     } else if (phase === 'crashed') {
       if (!crashVisual) {
-        const crashAt = Number(round.crashedAt) || state.now();
-        const recent = Math.abs(state.now() - crashAt) < 12000;
+        const crashAt = Number(round.crashedAt) || window.CrashStore.now();
+        const recent = Math.abs(window.CrashStore.now() - crashAt) < 12000;
         crashVisual = {
           x: headX,
           y: headY,
-          at: recent ? ts - Math.max(0, state.now() - crashAt) : ts - 2000
+          at: recent ? ts - Math.max(0, window.CrashStore.now() - crashAt) : ts - 2000
         };
         sparks = makeSparks(headX, headY);
       }
