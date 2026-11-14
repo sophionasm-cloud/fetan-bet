@@ -224,6 +224,12 @@ window.Games = (function () {
     };
     const comingSoonGames = games.filter((game) => game.status === 'coming_soon');
     const rows = [
+      {
+        id: 'available-games',
+        filterCategory: 'all',
+        title: lang === 'am' ? 'የሚገኙ ጨዋታዎች' : 'Available Games',
+        games: games.filter((game) => game.status === 'available'),
+      },
       ...LOBBY_CATEGORIES.map((category) => ({
         id: category.id,
         filterCategory: category.id,
@@ -253,7 +259,7 @@ window.Games = (function () {
         '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' poster" loading="' + (eager ? 'eager' : 'lazy') + '" decoding="async"' + (eager ? ' fetchpriority="high"' : '') + '>' +
         '<span class="home-card-fallback" aria-hidden="true">' + (GAME_ART[game.id] || '') + '</span>' +
         '<span class="home-card-shade" aria-hidden="true"></span>' + livePlayerMarkup(game) +
-        '<span class="home-card-title">' + esc(game.title) + '</span></a>';
+        '</a>';
     };
     const comingSoonCardMarkup = (game) => '<article class="home-coming-card" data-category="' + esc(game.category) + '" data-status="coming_soon" aria-label="' + esc(game.title) + ', ' + (lang === 'am' ? 'በቅርብ ቀን' : 'coming soon') + '">' +
       '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' promotional poster" loading="lazy" decoding="async">' +
@@ -317,8 +323,11 @@ window.Games = (function () {
     filterButtons.forEach((button) => button.addEventListener('click', () => applyFilter(button.dataset.cat)));
     app.querySelectorAll('[data-view-category]').forEach((button) => button.addEventListener('click', () => {
       const category = button.dataset.viewCategory;
-      applyFilter(category === 'coming-soon' ? 'all' : category);
-      app.querySelector('#home-row-' + category)?.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+      applyFilter(category === 'coming-soon' || category === 'all' ? 'all' : category);
+      const target = category === 'all'
+        ? app.querySelector('[data-home-row="available-games"]')
+        : app.querySelector('#home-row-' + category);
+      target?.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
     }));
 
     const installPosterFallback = (image) => {
@@ -549,6 +558,14 @@ window.Games = (function () {
   let stopFns = [];
   let shell = null;
   function open(app, game, pushHistory = false) {
+    if (pushHistory && !document.fullscreenElement) {
+      try {
+        const request = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' });
+        request?.catch(() => {});
+      } catch (_) {
+        // CSS immersive mode remains full-screen on browsers without this API.
+      }
+    }
     lobbyCleanup?.();
     lobbyCleanup = null;
     app._homeCarouselCleanup = null;

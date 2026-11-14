@@ -347,7 +347,7 @@ a:focus-visible,
 .demo-badge {
   position: absolute;
   right: 10px;
-  bottom: 10px;
+  top: 8px;
   z-index: 5;
   padding: 3px 7px;
   border-radius: 4px;
