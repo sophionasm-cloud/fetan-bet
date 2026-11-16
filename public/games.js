@@ -259,7 +259,7 @@ window.Games = (function () {
         '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' poster" loading="' + (eager ? 'eager' : 'lazy') + '" decoding="async"' + (eager ? ' fetchpriority="high"' : '') + '>' +
         '<span class="home-card-fallback" aria-hidden="true">' + (GAME_ART[game.id] || '') + '</span>' +
         '<span class="home-card-shade" aria-hidden="true"></span>' +
-        '<span class="home-card-title">' + esc(game.title) + '</span>' + livePlayerMarkup(game) +
+        livePlayerMarkup(game) +
         '</a>';
     };
     const comingSoonCardMarkup = (game) => '<article class="home-coming-card" data-category="' + esc(game.category) + '" data-status="coming_soon" aria-label="' + esc(game.title) + ', ' + (lang === 'am' ? 'በቅርብ ቀን' : 'coming soon') + '">' +
@@ -588,6 +588,7 @@ window.Games = (function () {
       history.replaceState({ fetanPage: 'lobby', gameReturnEntry: true }, '', lobbyUrl);
       history.pushState({ fetanPage: 'game', game }, '', `#/game/${routeSlug}`);
     }
+    document.body.classList.remove('home-view');
     window.setFetanGameImmersive?.(true);
     document.body.classList.add('game-open');
     const titles = {

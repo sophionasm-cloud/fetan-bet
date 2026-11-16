@@ -115,6 +115,8 @@ assert.match(catalog, /document\.documentElement\.requestFullscreen\?\.\(\{ navi
   'tapping a game requests native fullscreen where supported');
 assert.match(catalog, /window\.setFetanGameImmersive\?\.\(true\)/,
   'game routes enter the CSS immersive layout even where native fullscreen is unavailable');
+assert.match(catalog, /document\.body\.classList\.remove\('home-view'\)[\s\S]*?window\.setFetanGameImmersive\?\.\(true\)/,
+  'opening a game removes homepage-only padding before the immersive shell mounts');
 assert.match(index, /fetan-game-immersive/);
 assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\|b2b-bomber\|crash\)/,
   'direct game routes include every game so the shared immersive shell can render them');
