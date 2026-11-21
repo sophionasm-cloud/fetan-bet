@@ -47,14 +47,14 @@ const REELS = Object.freeze(Array.from({ length: REEL_COUNT }, (_, index) => Obj
 })));
 
 const PAYTABLE = Object.freeze({
-  heart: Object.freeze({ 3: 10000, 4: 33400, 5: 250800 }),
-  diamond: Object.freeze({ 3: 10000, 4: 33400, 5: 250800 }),
-  spade: Object.freeze({ 3: 10000, 4: 33400, 5: 250800 }),
-  club: Object.freeze({ 3: 10000, 4: 33400, 5: 250800 }),
-  seven: Object.freeze({ 3: 16700, 4: 56100, 5: 381200 }),
-  bar: Object.freeze({ 3: 26700, 4: 80200, 5: 548400 }),
-  bell: Object.freeze({ 3: 26700, 4: 80200, 5: 548400 }),
-  wild: Object.freeze({ 3: 46800, 4: 668800, 5: 2006000 }),
+  heart: Object.freeze({ 3: 4200, 4: 13900, 5: 104300 }),
+  diamond: Object.freeze({ 3: 4200, 4: 13900, 5: 104300 }),
+  spade: Object.freeze({ 3: 4200, 4: 13900, 5: 104300 }),
+  club: Object.freeze({ 3: 4200, 4: 13900, 5: 104300 }),
+  seven: Object.freeze({ 3: 7000, 4: 23400, 5: 159000 }),
+  bar: Object.freeze({ 3: 11100, 4: 33400, 5: 228400 }),
+  bell: Object.freeze({ 3: 11100, 4: 33400, 5: 228400 }),
+  wild: Object.freeze({ 3: 19500, 4: 279000, 5: 836500 }),
 });
 
 const SLOT_CONFIG = Object.freeze({
@@ -69,7 +69,8 @@ const SLOT_CONFIG = Object.freeze({
   REELS,
   PAYTABLE,
   PAYOUT_MULTIPLIER_SCALE: 10000,
-  RTP_TARGET_PERCENT: 96,
+  RTP_TARGET_PERCENT: 40,
+  HOUSE_EDGE_PERCENT: 60,
   HIT_RATE_MIN_PERCENT: 25,
   HIT_RATE_MAX_PERCENT: 30,
   MAX_WIN_MULTIPLIER: 1000,

@@ -78,7 +78,10 @@
       byId('slotLocalPreview').textContent = t('localPreview');
       nodes.spin.textContent = t('spin');
       const soundEnabled = localStorage.getItem('slot-sound') == null ? config.SOUND_DEFAULT : localStorage.getItem('slot-sound') === '1';
-      nodes.sound.textContent = soundEnabled ? t('soundOn') : t('soundOff');
+      const soundText = nodes.sound.querySelector('.slot-sound-text') || nodes.sound;
+      soundText.textContent = soundEnabled ? t('soundOn') : t('soundOff');
+      const soundIcon = byId('soundIcon');
+      if (soundIcon) soundIcon.src = soundEnabled ? './assets/sound-on.svg' : './assets/sound-off.svg';
       nodes.sound.setAttribute('aria-pressed', String(soundEnabled));
       nodes.autoCount.replaceChildren(...config.AUTO_COUNTS.map((count) => {
         const option = document.createElement('option');
@@ -107,8 +110,11 @@
       cell.classList.add(`slot-symbol-${symbol.id}`);
       cell.setAttribute('role', 'img');
       cell.setAttribute('aria-label', locale.symbols?.[symbol.id] || symbol.label);
-      if (symbol.id === 'bell') cell.innerHTML = bellSvg;
-      else cell.textContent = symbol.glyph;
+      const img = document.createElement('img');
+      img.src = `./assets/${symbol.id}.svg`;
+      img.alt = '';
+      img.className = 'slot-symbol-art';
+      cell.append(img);
       cell.dataset.position = `${row}:${reelIndex}`;
     }
     function drawPayline(line) {
@@ -158,7 +164,14 @@
         const row = document.createElement('div');
         row.className = 'slot-paytable-row';
         const label = document.createElement('span');
-        label.textContent = locale.symbols?.[symbol.id] || symbol.label;
+        label.className = 'slot-paytable-label';
+        const icon = document.createElement('img');
+        icon.src = `./assets/${symbol.id}.svg`;
+        icon.alt = '';
+        icon.className = 'slot-paytable-icon';
+        const text = document.createElement('span');
+        text.textContent = locale.symbols?.[symbol.id] || symbol.label;
+        label.append(icon, text);
         row.append(label);
         for (const count of [3, 4, 5]) {
           const amount = document.createElement('strong');
@@ -245,7 +258,10 @@
       const enabled = !current;
       localStorage.setItem('slot-sound', enabled ? '1' : '0');
       nodes.sound.setAttribute('aria-pressed', String(enabled));
-      nodes.sound.textContent = enabled ? t('soundOn') : t('soundOff');
+      const soundText = nodes.sound.querySelector('.slot-sound-text') || nodes.sound;
+      soundText.textContent = enabled ? t('soundOn') : t('soundOff');
+      const soundIcon = byId('soundIcon');
+      if (soundIcon) soundIcon.src = enabled ? './assets/sound-on.svg' : './assets/sound-off.svg';
       window.dispatchEvent(new CustomEvent('slot-sound-change', { detail: { enabled } }));
       onAction('sound', enabled);
     };

@@ -17,14 +17,14 @@
       requestAnimationFrame(update);
     });
   }
-  function coinBurst(cabinet) {
+  function coinBurst(cabinet, count = config.COIN_BURST_COUNT) {
     if (reducedMotion()) return;
-    const coins = Array.from({ length: config.COIN_BURST_COUNT }, (_, index) => {
+    const coins = Array.from({ length: count }, (_, index) => {
       const coin = document.createElement('span');
       coin.className = 'slot-coin';
       coin.setAttribute('aria-hidden', 'true');
-      const angle = Math.PI * 2 * index / config.COIN_BURST_COUNT;
-      const distance = index % 2 ? 88 : 122;
+      const angle = Math.PI * 2 * index / count;
+      const distance = index % 2 ? 88 : 130;
       coin.style.setProperty('--coin-x', `${Math.cos(angle) * distance}px`);
       coin.style.setProperty('--coin-y', `${Math.sin(angle) * distance}px`);
       coin.style.animationDuration = `${config.COIN_BURST_MS}ms`;
@@ -33,14 +33,20 @@
     });
     setTimeout(() => coins.forEach((coin) => coin.remove()), config.COIN_BURST_MS + 40);
   }
-  function present({ result, bet, previousWin, winElement, cabinet, banner, format }) {
-    const multiple = result.totalPayout / bet;
+  async function present({ result, bet, previousWin, winElement, cabinet, banner, format }) {
     cabinet.classList.remove('has-big-win', 'is-big-win', 'is-mega-win', 'show-win-banner');
     if (!result.totalPayout) {
       winElement.dataset.santim = '0';
       winElement.textContent = format(0);
-      return Promise.resolve();
+      return;
     }
+
+    // Stage 1: Highlight winning symbols/paylines and count up the actual payout
+    await countWin(winElement, previousWin, result.totalPayout, format);
+    winElement.dataset.santim = String(result.totalPayout);
+
+    // Stage 2: Show celebratory pop-out banner with tier-based intensity
+    const multiple = result.totalPayout / bet;
     const tier = multiple >= config.MEGA_WIN_MULTIPLE ? 'mega' : multiple >= config.BIG_WIN_MULTIPLE ? 'big' : 'win';
     cabinet.classList.add('has-big-win');
     if (tier !== 'win') cabinet.classList.add('is-big-win');
@@ -48,14 +54,28 @@
     banner.textContent = tier === 'mega' ? 'MEGA WIN' : tier === 'big' ? 'BIG WIN' : 'WIN';
     banner.hidden = false;
     cabinet.classList.add('show-win-banner');
-    winElement.dataset.santim = String(result.totalPayout);
-    coinBurst(cabinet);
-    const timer = setTimeout(() => {
+
+    if (tier === 'mega') {
+      coinBurst(cabinet, config.COIN_BURST_COUNT * 2);
+    } else if (tier === 'big') {
+      coinBurst(cabinet, config.COIN_BURST_COUNT);
+    } else {
+      coinBurst(cabinet, Math.max(6, Math.floor(config.COIN_BURST_COUNT / 2)));
+    }
+
+    if (reducedMotion()) {
       cabinet.classList.remove('show-win-banner');
       banner.hidden = true;
-    }, config.WIN_BANNER_MS);
-    timer.unref?.();
-    return countWin(winElement, previousWin, result.totalPayout, format);
+      return;
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        cabinet.classList.remove('show-win-banner');
+        banner.hidden = true;
+        resolve();
+      }, config.WIN_BANNER_MS);
+    });
   }
   window.SLOT_EFFECTS = Object.freeze({ present });
 })();

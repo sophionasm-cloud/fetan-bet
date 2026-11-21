@@ -23,11 +23,11 @@ assert.equal(math.isValidBet(99), false);
 assert.equal(math.isValidBet(100000.5), false);
 
 const horizontal = Array.from({ length: 3 }, () => ['wild', 'heart', 'wild', 'heart', 'heart']);
-assert.deepEqual(math.evaluateGrid(horizontal, 101).wins[0], { line: 1, symbol: 'heart', count: 5, payout: 2533 });
+assert.deepEqual(math.evaluateGrid(horizontal, 101).wins[0], { line: 1, symbol: 'heart', count: 5, payout: 1053 });
 const wildOnly = Array.from({ length: 3 }, () => Array(5).fill('wild'));
 const jackpot = math.evaluateGrid(wildOnly, 100);
-assert.equal(jackpot.wins.length, 5);
-assert.equal(jackpot.totalPayout, 100000);
+assert.equal(jackpot.wins.length, 10);
+assert.equal(jackpot.totalPayout, 83650);
 assert.equal(Number.isInteger(jackpot.totalPayout), true);
 assert.ok(jackpot.totalPayout <= 100 * config.MAX_WIN_MULTIPLIER);
 

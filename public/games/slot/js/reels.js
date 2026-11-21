@@ -12,8 +12,13 @@
     element.className = `slot-cell slot-symbol-${symbolId}`;
     element.dataset.symbol = symbolId;
     element.setAttribute('aria-hidden', 'true');
-    if (symbolId === 'bell') element.innerHTML = bellSvg;
-    else element.textContent = symbol?.glyph || '';
+    if (symbol) {
+      const img = document.createElement('img');
+      img.src = `./assets/${symbolId}.svg`;
+      img.alt = '';
+      img.className = 'slot-symbol-art';
+      element.append(img);
+    }
     return element;
   }
 

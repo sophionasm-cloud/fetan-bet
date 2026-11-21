@@ -80,16 +80,22 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px
 .slot-tools { position: static; display: flex; justify-content: center; gap: 6px; }
 .slot-tool {
   min-height: 44px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid rgba(210, 201, 255, .3);
   border-radius: 9px;
   background: rgba(7, 4, 25, .55);
   color: #d9d3ef;
   font-size: 12px;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 .slot-tool:hover { border-color: var(--slot-gold); color: #fff3a4; }
-.slot-sound { min-width: 82px; }
+.slot-tool-icon { width: 15px; height: 15px; object-fit: contain; opacity: .88; pointer-events: none; }
+.slot-opt-icon { width: 16px; height: 16px; object-fit: contain; opacity: .9; pointer-events: none; vertical-align: middle; margin-right: 2px; }
+.slot-sound { min-width: 90px; }
 
 .slot-window {
   padding: 12px;
@@ -133,17 +139,28 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px
 }
 .slot-cell.is-winning { position: relative; z-index: 1; color: #fff1a0; text-shadow: 0 0 12px #ffd34f, 0 0 25px rgba(255, 187, 42, .8); }
 .slot-cell.is-empty { color: #44355f; font-size: 18px; }
+.slot-symbol-art {
+  width: clamp(38px, 7.5vw, 68px);
+  height: clamp(38px, 7.5vw, 68px);
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .5));
+  transition: transform .2s ease, filter .2s ease;
+}
+.slot-cell.is-winning .slot-symbol-art {
+  filter: drop-shadow(0 0 10px #ffd34f) drop-shadow(0 0 20px rgba(255, 187, 42, .8));
+  transform: scale(1.08);
+}
 .slot-reel:not(.is-spinning) .slot-cell:not(.is-empty) { animation: symbol-shimmer 5s ease-in-out infinite; }
 .slot-reel:nth-child(2) .slot-cell { animation-delay: .7s; }
 .slot-reel:nth-child(4) .slot-cell { animation-delay: 1.4s; }
 .slot-symbol-heart { color: #f05cac; text-shadow: 0 2px 8px #a72768; }
 .slot-symbol-diamond { color: #55d9ee; text-shadow: 0 2px 8px #1174a0; }
 .slot-symbol-spade, .slot-symbol-club { color: #9bf071; text-shadow: 0 2px 9px #4f913b; }
-.slot-symbol-seven { color: #f05132; font-size: clamp(35px, 6.8vw, 66px); text-shadow: 0 2px 8px #9f241a; }
-.slot-symbol-bar { color: #ebe9f7; font-size: clamp(15px, 2.9vw, 26px); letter-spacing: -.04em; }
+.slot-symbol-seven { color: #f05132; text-shadow: 0 2px 8px #9f241a; }
+.slot-symbol-bar { color: #ebe9f7; }
 .slot-symbol-bell { color: #ffd96a; }
 .slot-symbol-wild { color: #ffd94e; text-shadow: 0 2px 11px #c58220; }
-.slot-symbol-bell svg { width: .72em; height: .72em; }
 .slot-payline { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .slot-payline polyline { fill: none; stroke: #ffd34f; stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0; }
 
@@ -156,12 +173,14 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px
 }
 .slot-status[data-kind="error"] { color: #ff9b91; }
 .slot-status[data-kind="win"] { color: #f5df79; font-weight: 700; }
-.slot-win-banner { position: absolute; z-index: 3; top: 39%; left: 50%; min-width: min(70%, 290px); padding: 10px 20px; border: 1px solid #ffe16b; border-radius: 12px; background: linear-gradient(100deg, #fb861b, #f5d14a, #fb861b); box-shadow: 0 0 32px rgba(255, 197, 49, .72); color: #291200; font-size: clamp(20px, 5vw, 31px); font-weight: 1000; letter-spacing: .06em; text-align: center; transform: translate3d(-50%, -50%, 0) scale(.72); opacity: 0; pointer-events: none; }
+.slot-win-banner { position: absolute; z-index: 3; top: 39%; left: 50%; min-width: min(70%, 290px); padding: 12px 24px; border: 2px solid #ffe16b; border-radius: 14px; background: linear-gradient(100deg, #fb861b, #f5d14a, #fb861b); box-shadow: 0 0 32px rgba(255, 197, 49, .72); color: #291200; font-size: clamp(22px, 5.5vw, 34px); font-weight: 1000; letter-spacing: .06em; text-align: center; transform: translate3d(-50%, -50%, 0) scale(.72); opacity: 0; pointer-events: none; }
+.slot-cabinet.is-big-win .slot-win-banner { background: linear-gradient(105deg, #ff4d00, #ffba08, #ff4d00); border-color: #fff07a; box-shadow: 0 0 48px rgba(255, 186, 8, .85); }
+.slot-cabinet.is-mega-win .slot-win-banner { background: linear-gradient(110deg, #d90429, #ffbe0b, #9d4edd); border-color: #ffffff; box-shadow: 0 0 64px rgba(255, 222, 33, .95); animation: win-banner-mega 1.2s cubic-bezier(.2,.85,.22,1) both; }
 .slot-cabinet.has-big-win .slot-cabinet-frame { animation-duration: .62s; }
 .slot-cabinet.is-big-win { box-shadow: 0 0 42px rgba(245, 203, 78, .52), 0 26px 80px rgba(0, 0, 0, .58), inset 0 1px rgba(255, 255, 255, .08); }
 .slot-cabinet.is-mega-win { box-shadow: 0 0 58px rgba(255, 205, 80, .74), 0 26px 80px rgba(0, 0, 0, .58), inset 0 1px rgba(255, 255, 255, .08); }
 .slot-cabinet.show-win-banner .slot-win-banner { animation: win-banner 1.05s cubic-bezier(.2,.85,.22,1) both; }
-.slot-coin { position: absolute; z-index: 4; left: 50%; top: 61%; width: 15px; height: 15px; display: grid; place-items: center; border: 2px solid #fff0a1; border-radius: 50%; background: linear-gradient(135deg, #fff28b, #eab330 68%, #b96d0a); box-shadow: 0 0 8px rgba(255, 218, 85, .72); pointer-events: none; animation: coin-pop 1.1s ease-out both; }
+.slot-coin { position: absolute; z-index: 4; left: 50%; top: 61%; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: url('./assets/coin.svg') center/contain no-repeat; filter: drop-shadow(0 0 8px rgba(255, 218, 85, .85)); pointer-events: none; animation: coin-pop 1.1s ease-out both; }
 .slot-local-preview {
   margin: -5px auto 10px;
   color: #f5df79;
@@ -239,6 +258,8 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px
 .slot-dialog form { position: sticky; top: 0; display: flex; justify-content: flex-end; height: 0; }
 .slot-dialog-close { width: 44px; height: 44px; margin: -8px -8px 0 0; border: 0; border-radius: 50%; background: #2a1c63; color: #fff; font-size: 27px; }
 .slot-paytable-row { display: grid; grid-template-columns: 1fr repeat(3, minmax(48px, .7fr)); gap: 8px; align-items: center; min-height: 42px; border-top: 1px solid rgba(211, 195, 255, .12); font-size: 13px; }
+.slot-paytable-label { display: flex; align-items: center; gap: 8px; }
+.slot-paytable-icon { width: 22px; height: 22px; object-fit: contain; pointer-events: none; }
 .slot-paytable-row strong { color: #f2df81; text-align: right; }
 .slot-dialog-note { margin-bottom: 0; }
 
