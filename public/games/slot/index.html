@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#170d3b">
+  <meta name="description" content="Lucky Royale, an original Fetan Bet slot game.">
+  <title>Lucky Royale · Fetan Bet</title>
+  <script>
+    const slotQuery = new URLSearchParams(location.search);
+    if (slotQuery.get('fetan') === '1') {
+      document.documentElement.classList.add('fetan-integrated');
+      if (slotQuery.get('fetan-shell') === '1') document.documentElement.classList.add('fetan-shared-shell');
+      try { document.documentElement.dataset.customerTheme = localStorage.getItem('fetan-theme') || 'dark'; }
+      catch (_) { document.documentElement.dataset.customerTheme = 'dark'; }
+    }
+  </script>
+  <script src="/games/slot/runtime-config.js"></script>
+  <link rel="icon" href="/shared/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/shared/fonts.css">
+  <link rel="stylesheet" href="./slot.css">
+  <script defer src="./js/slot-config.js"></script>
+  <script defer src="./js/slot-math.js"></script>
+  <script defer src="./js/reels.js"></script>
+  <script defer src="./js/effects.js"></script>
+  <script defer src="./js/i18n.js"></script>
+  <script defer src="./js/mock.js"></script>
+  <script defer src="./js/net.js"></script>
+  <script defer src="./js/ui.js"></script>
+  <script defer src="./js/main.js"></script>
+</head>
+<body>
+  <main class="slot-page" id="slotPage">
+    <section class="slot-cabinet" id="slotCabinet" aria-labelledby="slotTitle">
+      <div class="slot-cabinet-frame" aria-hidden="true"></div>
+      <header class="slot-heading">
+        <h1 id="slotTitle">LUCKY ROYALE</h1>
+        <div class="slot-tools">
+          <button class="slot-tool" id="paytableButton" type="button" data-copy="paytable">Paytable</button>
+          <button class="slot-tool" id="fairnessButton" type="button" data-copy="fairness">Fairness</button>
+          <button class="slot-tool slot-sound" id="soundButton" type="button" aria-pressed="false" data-copy="soundOff">Sound off</button>
+        </div>
+      </header>
+
+      <section class="slot-window" aria-label="Slot machine result" data-label="slotResult">
+        <div class="slot-reels" id="slotReels" role="group" aria-label="Five reels with three symbols each" data-label="reelsLabel">
+          <div class="slot-reel" data-reel="0"><div class="slot-reel-track"><span class="slot-cell"></span><span class="slot-cell"></span><span class="slot-cell"></span></div></div>
+          <div class="slot-reel" data-reel="1"><div class="slot-reel-track"><span class="slot-cell"></span><span class="slot-cell"></span><span class="slot-cell"></span></div></div>
+          <div class="slot-reel" data-reel="2"><div class="slot-reel-track"><span class="slot-cell"></span><span class="slot-cell"></span><span class="slot-cell"></span></div></div>
+          <div class="slot-reel" data-reel="3"><div class="slot-reel-track"><span class="slot-cell"></span><span class="slot-cell"></span><span class="slot-cell"></span></div></div>
+          <div class="slot-reel" data-reel="4"><div class="slot-reel-track"><span class="slot-cell"></span><span class="slot-cell"></span><span class="slot-cell"></span></div></div>
+          <svg class="slot-payline" id="slotPayline" viewBox="0 0 500 300" preserveAspectRatio="none" aria-hidden="true"><polyline points=""></polyline></svg>
+        </div>
+      </section>
+
+      <div class="slot-win-banner" id="slotWinBanner" aria-hidden="true" hidden></div>
+      <p class="slot-status" id="slotStatus" role="status" aria-live="polite" aria-atomic="true">Loading your balance…</p>
+      <p class="slot-local-preview" id="slotLocalPreview" hidden>LOCAL PREVIEW · Mock results only</p>
+
+      <section class="slot-hud" aria-label="Game controls">
+        <div class="slot-readout">
+          <span class="slot-label" data-copy="balance">BALANCE</span>
+          <strong id="slotBalance">—</strong>
+        </div>
+        <div class="slot-bet-panel">
+          <span class="slot-label" data-copy="bet">BET</span>
+          <div class="slot-bet-control">
+            <button class="slot-adjust" id="betDown" type="button" aria-label="Decrease bet" data-label="decreaseBet">−</button>
+            <strong id="slotBet">1.00</strong>
+            <button class="slot-adjust" id="betUp" type="button" aria-label="Increase bet" data-label="increaseBet">+</button>
+          </div>
+          <div class="slot-quick-bets" id="quickBets" role="group" aria-label="Quick bet options"></div>
+        </div>
+        <button class="slot-spin" id="spinButton" type="button" data-copy="spin" disabled>SPIN</button>
+        <div class="slot-readout slot-win-readout">
+          <span class="slot-label" data-copy="win">WIN</span>
+          <strong id="slotWin">0.00</strong>
+        </div>
+      </section>
+
+      <section class="slot-options" aria-label="Additional controls">
+        <label class="slot-option"><input id="turboToggle" type="checkbox"><span data-copy="turbo">Turbo</span></label>
+        <label class="slot-auto"><span data-copy="auto">Auto</span><select id="autoCount" aria-label="Automatic spin count" data-label="autoCount" disabled></select><button id="autoButton" type="button" data-copy="startAuto" disabled>Start</button></label>
+      </section>
+
+      <details class="slot-fairness" id="fairnessDetails" hidden>
+        <summary data-copy="fairness">Fairness</summary>
+        <dl><dt data-copy="seedHash">Server seed hash</dt><dd id="serverSeedHash">—</dd><dt data-copy="clientSeed">Client seed</dt><dd id="clientSeed">—</dd><dt data-copy="nonce">Next nonce</dt><dd id="nonceValue">—</dd><dt data-copy="revealedSeed">Revealed server seed</dt><dd id="revealedSeed">Not revealed until seed rotation</dd><dt data-copy="nextCommitment">Next server seed hash</dt><dd id="nextServerSeedHash">—</dd><dt data-copy="algorithm">Fairness method</dt><dd id="fairnessAlgorithm">—</dd></dl>
+      </details>
+      <dialog class="slot-dialog" id="paytableDialog" aria-labelledby="paytableTitle">
+        <form method="dialog"><button class="slot-dialog-close" aria-label="Close paytable" data-label="closePaytable">×</button></form>
+        <h2 id="paytableTitle" data-copy="paytable">Paytable</h2>
+        <p data-copy="paytableHelp">Pays are per line, left to right. Wild substitutes for other symbols.</p>
+        <div id="paytableRows"></div>
+        <p class="slot-dialog-note" data-copy="paylineHelp">All 10 paylines are active on every spin.</p>
+      </dialog>
+    </section>
+  </main>
+</body>
+</html>

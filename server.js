@@ -19,6 +19,9 @@ const { createB2BBomberService } = require('./b2b-bomber-service');
 const b2bBomber = createB2BBomberService({ query, withTx, ledger: postLedger });
 const { createCrashService } = require('./crash-service');
 const crash = createCrashService({ query, withTx, ledger: postLedger, pool });
+const { createSlotService } = require('./slot-service');
+const slot = createSlotService({ withTx, ledger: postLedger });
+const slotConfig = require('./public/games/slot/js/slot-config');
 const { getAiResponse } = require('./ai-support');
 const { hasPermission } = require('./permissions');
 const { createHealthHandler } = require('./health-check');
@@ -39,6 +42,13 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { error: 'RATE' } });
 const receiptStorage = createReceiptStorage();
+const slotSpinLimiter = rateLimit({
+  windowMs: slotConfig.SPIN_RATE_WINDOW_MS,
+  max: slotConfig.SPIN_RATE_MAX_REQUESTS,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({ error: 'RATE_LIMITED' }),
+});
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const receiptFormats = {
   jpeg: { mime: 'image/jpeg', ext: '.jpg' },
@@ -73,6 +83,9 @@ const wrap = (fn) => async (req, res) => {
     if (!res.headersSent && result !== res) res.json(result ?? { ok: true });
   } catch (e) {
     const known = ['INSUFFICIENT', 'INSUFFICIENT_DEMO', 'INVALID', 'INVALID_FILE', 'VERIFICATION_REQUIRED', 'REAUTH_REQUIRED', 'PROMO_INVALID', 'PROMO_SUSPENDED', 'INVALID_NAME', 'INVALID_PHONE', 'INVALID_PASSWORD', 'ACTIVE_ROUND', 'NOT_FOUND', 'DUP_REF', 'SELF', 'FORBIDDEN', 'EXISTS', 'LOGIN', 'SUSPENDED', 'RATE', 'PAYOUT_LIMIT', 'ROUND_SETTLED'];
+    if (e.message === 'SLOT_INSUFFICIENT') return res.status(402).json({ error: 'INSUFFICIENT' });
+    if (e.message === 'SLOT_SPIN_IN_PROGRESS') return res.status(409).json({ error: 'SPIN_IN_PROGRESS' });
+    if (e.message === 'SLOT_REQUEST_REUSED') return res.status(409).json({ error: 'REQUEST_ID_REUSED' });
     if (e.message === 'STALE_ACTION') return res.status(409).json({ error: 'STALE_ACTION' });
     if (e.message === 'SETTLEMENT_GAP') return res.status(409).json({ error: 'SETTLEMENT_GAP' });
     if (known.includes(e.message)) return res.status(400).json({ error: e.message });
@@ -1528,6 +1541,18 @@ app.post('/api/games/b2b-bomber/cashout', ...g((req) => b2bBomber.cashout(req.us
 app.get('/api/games/b2b-bomber/history', ...g((req) => b2bBomber.history(req.user.id)));
 app.get('/api/games/b2b-bomber/rounds/:roundId/fairness', ...g((req) => b2bBomber.verifyOwned(req.user.id, req.params.roundId)));
 app.post('/api/games/b2b-bomber/verify', ...g((req) => Promise.resolve(b2bBomber.verifyPayload(req.body))));
+app.use('/api/games/slot', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+app.get('/games/slot/runtime-config.js', (req, res) => {
+  const localHost = new Set(['localhost', '127.0.0.1', '::1']).has(String(req.hostname || '').replace(/^\[|\]$/g, '').toLowerCase());
+  const mockAllowed = process.env.NODE_ENV !== 'production' && localHost;
+  res.set('Cache-Control', 'no-store').type('application/javascript').send(`window.SLOT_RUNTIME=Object.freeze({mockAllowed:${mockAllowed}});`);
+});
+app.get('/api/games/slot/state', ...g((req) => slot.state(req.user.id, req.user.lang)));
+app.get('/api/games/slot/paytable', ...g(() => slot.paytable()));
+app.post('/api/games/slot/spin', slotSpinLimiter, ...g((req) => slot.spin(req.user.id, req.body)));
 // Rocket Crash shared rounds. The SSE route must bypass wrap because it writes
 // a long-lived raw stream; every other route keeps the auth/need/wrap chain.
 app.use('/api/games/crash', (req, res, next) => {

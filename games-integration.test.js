@@ -21,6 +21,11 @@ const sharedShell = read('public/game-shell.js');
 const immersiveCss = read('public/immersive-games.css');
 const bomberCss = read('public/games/b2b-bomber/css/style.css');
 const workspace = read('public/workspace.js');
+const slotServerFiles = ['slot-engine.js', 'slot-service.js', 'public/games/slot/js/slot-config.js', 'public/games/slot/js/slot-math.js']
+  .map(read).join('\n');
+const slotMigration = read('migrations/008_slot_game.sql');
+const slotReels = read('public/games/slot/js/reels.js');
+const slotMain = read('public/games/slot/js/main.js');
 
 assert.match(server, /const g = \(fn\) => \[auth, need\('customer'\), wrap/);
 for (const route of [
@@ -42,11 +47,39 @@ for (const route of [
   "app.post('/api/games/crash/bet'",
   "app.post('/api/games/crash/cashout'",
   "app.get('/api/games/crash/stream'",
+  "app.get('/api/games/slot/state'",
+  "app.get('/api/games/slot/paytable'",
+  "app.post('/api/games/slot/spin'",
+  "app.get('/games/slot/runtime-config.js'",
 ]) assert.ok(server.includes(route), `customer route exists: ${route}`);
+assert.match(server, /app\.post\('\/api\/games\/slot\/spin', slotSpinLimiter, \.\.\.g\(/,
+  'slot spins keep the existing customer auth chain and have a per-route limiter');
+assert.match(server, /app\.use\('\/api\/games', wageringGuard\)[\s\S]*?app\.get\('\/api\/games\/slot\/state'/,
+  'slot routes remain behind the existing wagering pause guard');
+assert.doesNotMatch(slotMigration, /\b(?:ALTER|DROP|TRUNCATE)\s+(?:TABLE|INDEX)/i,
+  'slot migration is additive');
+assert.match(slotMigration, /uq_slot_round_request[\s\S]*?WHERE game = 'slot'/,
+  'slot request IDs have a database uniqueness guard');
+assert.match(slotMigration, /uq_slot_active_seed_epoch[\s\S]*?WHERE retired_at IS NULL/,
+  'each player can have only one active seed epoch');
+assert.doesNotMatch(slotServerFiles, /Math\.random\s*\(|\.toFixed\s*\(/,
+  'server slot code uses no browser randomness or float currency formatting');
+assert.match(server, /process\.env\.NODE_ENV !== 'production' && localHost/,
+  'the localhost mock transport is disabled in production');
+assert.match(read('public/games/slot/js/net.js'), /window\.SLOT_RUNTIME\?\.mockAllowed && isLocalHost && query\.get\('mock'\) === '1'/,
+  'mock transport requires an explicit local preview flag');
+assert.match(slotReels, /result\.stops\[reelIndex\]/,
+  'reel animation uses each stop returned by the server');
+assert.match(slotMain, /SLOT_MATH\.evaluateStops\(result\.stops, bet\)/,
+  'the client checks the displayed grid against the server stops');
+assert.match(slotReels, /prefers-reduced-motion: reduce/,
+  'reduced motion skips the reel animation');
+assert.match(read('public/games/slot/js/main.js'), /AUTO_STOP_ON_BALANCE_DEFAULT[\s\S]*?AUTO_STOP_ON_BIG_WIN_DEFAULT[\s\S]*?AUTO_STOP_ON_SINGLE_LOSS_DEFAULT/,
+  'auto play stops on balance limits, big wins and a single loss');
 
 const lobbyCatalog = catalog.match(/const LOBBY_GAME_CATALOG = Object\.freeze\(\[([\s\S]*?)\n  \]\);/);
 assert.ok(lobbyCatalog, 'customer lobby uses a scalable game catalog');
-for (const game of ['crash', 'chicken-road-2', 'b2b-bomber', 'star', 'roulette', 'mines', 'plinko', 'penalty', 'keno']) {
+for (const game of ['crash', 'chicken-road-2', 'b2b-bomber', 'slot', 'star', 'roulette', 'mines', 'plinko', 'penalty', 'keno']) {
   const launchId = game === 'chicken-road-2' ? 'chicken-road-2' : game;
   assert.match(lobbyCatalog[1], new RegExp(`id: '${game}'.*status: 'available'.*gameUrl: '${launchId}'`),
     `${game} remains available through its existing launch reference`);
@@ -118,7 +151,7 @@ assert.match(catalog, /window\.setFetanGameImmersive\?\.\(true\)/,
 assert.match(catalog, /document\.body\.classList\.remove\('home-view'\)[\s\S]*?window\.setFetanGameImmersive\?\.\(true\)/,
   'opening a game removes homepage-only padding before the immersive shell mounts');
 assert.match(index, /fetan-game-immersive/);
-assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\|b2b-bomber\|crash\)/,
+assert.match(app, /#\\\/game\\\/\(road\|road-dash\|chicken-road-2\|penalty\|mines\|plinko\|keno\|bingo\|roulette\|star\|slot\|b2b-bomber\|crash\)/,
   'direct game routes include every game so the shared immersive shell can render them');
 assert.match(app, /gameRoute\?\.\[1\] === 'bingo'[\s\S]*?bingoRouteState\?\.active/,
   'only users with an active Bingo round remain on the legacy game route');
