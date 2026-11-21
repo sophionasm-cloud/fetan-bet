@@ -106,6 +106,10 @@
       ui.setLocalPreview(SLOT_NET.mockEnabled);
       initialized = true;
     } catch (error) {
+      try {
+        const fallbackLocale = await SLOT_I18N.load(localStorage.getItem('lang') || config.DEFAULT_LANGUAGE);
+        ui.setLocale(fallbackLocale);
+      } catch (_) {}
       ui.setStatus(mapError(error), 'error');
       ui.setLocalPreview(SLOT_NET.mockEnabled);
     }

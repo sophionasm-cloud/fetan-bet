@@ -95,6 +95,17 @@
       if (balance !== null) nodes.balance.textContent = `${format(balance)} ${locale.currency}`;
       updateBetControls();
     }
+    function defaultInitialGrid() {
+      try {
+        return window.SLOT_MATH.gridFromStops([0, 0, 0, 0, 0]);
+      } catch (_) {
+        return [
+          ['heart', 'diamond', 'spade', 'club', 'seven'],
+          ['diamond', 'spade', 'club', 'seven', 'bar'],
+          ['spade', 'club', 'seven', 'bar', 'bell']
+        ];
+      }
+    }
     function showSymbol(cell, symbolId, row, reelIndex) {
       cell.replaceChildren();
       cell.className = 'slot-cell';
@@ -114,6 +125,7 @@
       img.src = `./assets/${symbol.id}.svg`;
       img.alt = '';
       img.className = 'slot-symbol-art';
+      img.onerror = () => { img.remove(); cell.textContent = symbol.glyph || ''; };
       cell.append(img);
       cell.dataset.position = `${row}:${reelIndex}`;
     }
@@ -216,6 +228,8 @@
         renderGrid(state.preview.grid, state.preview.wins || []);
         nodes.win.textContent = format(state.preview.totalPayout);
         nodes.win.dataset.santim = String(state.preview.totalPayout);
+      } else {
+        renderGrid(defaultInitialGrid());
       }
       announce('ready');
       updateBetControls();
@@ -272,7 +286,7 @@
     };
     nodes.auto.onclick = () => onAction(nodes.auto.dataset.active === 'true' ? 'stop-auto' : 'start-auto', Number(nodes.autoCount.value));
     setLocale(locale);
-    renderGrid(null);
+    renderGrid(defaultInitialGrid());
 
     return Object.freeze({
       setLocale, setState, setResult, setBusy, setStatus, setAuto, setLocalPreview, showFairness, setRetryLocked,

@@ -159,6 +159,10 @@ function createSlotService({ withTx, ledger = postLedger, createEpoch = () => en
           fairness_version: config.FAIRNESS_VERSION,
           algorithm: config.FAIRNESS_ALGORITHM,
         },
+        preview: {
+          stops: [0, 0, 0, 0, 0],
+          ...math.evaluateStops([0, 0, 0, 0, 0], config.DEFAULT_BET_SANTIM),
+        },
         recent: recent.rows.map((row) => {
           const detail = parseDetail(row);
           const retired = Boolean(row.epoch_retired_at);

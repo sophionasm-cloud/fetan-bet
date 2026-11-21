@@ -17,6 +17,7 @@
       img.src = `./assets/${symbolId}.svg`;
       img.alt = '';
       img.className = 'slot-symbol-art';
+      img.onerror = () => { img.remove(); element.textContent = symbol.glyph || ''; };
       element.append(img);
     }
     return element;
