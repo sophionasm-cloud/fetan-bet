@@ -203,9 +203,11 @@ window.CrashChart = (function () {
   }
 
   function buildPoints(round, phase, elapsed) {
-    const growthK = (window.CrashStore.state.config || CFG).growthK;
+    const gameConfig = window.CrashStore.state.config || CFG;
+    const growthK = gameConfig.growthK;
     const crash = Number(round.crashHundredths) || 100;
-    const cap = phase === 'flying' ? Math.max(100, crash - 1) : crash;
+    // The flying snapshot hides the crash point, so use the public game cap.
+    const cap = phase === 'crashed' ? crash : (Number(gameConfig.maxHundredths) || CFG.maxHundredths);
     const total = Math.max(0, elapsed);
     const steps = Math.max(10, Math.min(CFG.maxCurvePoints, Math.ceil(total / 40)));
     const pts = [];
