@@ -26,16 +26,16 @@ window.Games = (function () {
   const GAME_TARGET_RTP_CENTS = 30n;
   const GAME_POSTERS = {
     road: '/img/road-dash.webp.jpg',
-    crash: '/img/rocket-crash-card.svg',
-    'chicken-road-2': '/img/chicken-road-2-card.jpg',
-    'b2b-bomber': '/img/b2b-bomber-card.svg',
-    slot: '/games/slot/poster.svg',
-    penalty: '/img/penalty-unlimited-preview.jpg',
-    mines: '/img/mines.webp.jpg',
-    plinko: '/img/plinko.webp.jpg',
-    keno: '/img/keno.webp.jpg',
+    crash: '/img/posters/rocket-crash.webp',
+    'chicken-road-2': '/img/posters/chicken-road.webp',
+    'b2b-bomber': '/img/posters/b2b-bomber.webp',
+    slot: '/img/posters/lucky-royale.webp',
+    penalty: '/img/posters/penalty.webp',
+    mines: '/img/posters/mines.webp',
+    plinko: '/img/posters/plinko.webp',
+    keno: '/img/posters/keno.webp',
     bingo: '/img/ethiopian-bingo.webp.jpg',
-    roulette: '/img/roulette.webp.jpg',
+    roulette: '/img/posters/roulette.webp',
     star: '/img/star-spin.webp.jpg',
   };
   const GAME_ART = {
@@ -59,27 +59,25 @@ window.Games = (function () {
     </div>`;
 
   const LOBBY_CATEGORIES = Object.freeze([
-    { id: 'crash', en: 'Crash Games', am: 'የክራሽ ጨዋታዎች', icon: 'crash' },
+    { id: 'crash', en: 'Crash', am: 'ክራሽ', icon: 'crash' },
     { id: 'slots', en: 'Slots', am: 'ስሎቶች', icon: 'slots' },
-    { id: 'roulette', en: 'Roulette', am: 'ሩሌት', icon: 'roulette' },
     { id: 'table', en: 'Table Games', am: 'የጠረጴዛ ጨዋታዎች', icon: 'table' },
-    { id: 'live', en: 'Live Casino', am: 'ላይቭ ካሲኖ', icon: 'live' },
-    { id: 'more', en: 'More Games', am: 'ተጨማሪ ጨዋታዎች', icon: 'more' },
+    { id: 'arcade', en: 'Arcade', am: 'አርኬድ', icon: 'more' },
   ]);
 
   // One lobby catalog drives sections, filters, poster art and launch routes.
   // A null player count means there is no verified live source for that game.
   const LOBBY_GAME_CATALOG = Object.freeze([
-    { id: 'crash', name: 'Rocket Crash', category: 'crash', image: GAME_POSTERS.crash, status: 'available', gameUrl: 'crash', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 5 },
-    { id: 'chicken-road-2', name: 'Chicken Road Dash', category: 'crash', image: GAME_POSTERS['chicken-road-2'], status: 'available', gameUrl: 'chicken-road-2', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 10 },
-    { id: 'b2b-bomber', name: 'B2B Bomber', category: 'crash', image: GAME_POSTERS['b2b-bomber'], status: 'available', gameUrl: 'b2b-bomber', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 15 },
-    { id: 'slot', name: 'Lucky Royale', category: 'slots', image: GAME_POSTERS.slot, status: 'available', gameUrl: 'slot', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 18 },
-    { id: 'star', name: 'Star Spin', nameKey: 'star_title', category: 'slots', image: GAME_POSTERS.star, status: 'available', gameUrl: 'star', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 20 },
-    { id: 'roulette', name: 'Roulette', nameKey: 'roulette_title', category: 'roulette', image: GAME_POSTERS.roulette, status: 'available', gameUrl: 'roulette', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 30 },
-    { id: 'mines', name: 'Mines', nameKey: 'mines_title', category: 'more', image: GAME_POSTERS.mines, status: 'available', gameUrl: 'mines', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 40 },
-    { id: 'plinko', name: 'Plinko', nameKey: 'plinko_title', category: 'more', image: GAME_POSTERS.plinko, status: 'available', gameUrl: 'plinko', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 50 },
-    { id: 'penalty', name: 'Penalty Unlimited', category: 'more', image: GAME_POSTERS.penalty, status: 'available', gameUrl: 'penalty', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 60 },
-    { id: 'keno', name: 'Keno', nameKey: 'keno_title', category: 'more', image: GAME_POSTERS.keno, status: 'available', gameUrl: 'keno', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 70 },
+    { id: 'crash', name: 'Rocket Crash', category: 'crash', discoveryCategory: 'crash', image: GAME_POSTERS.crash, status: 'available', gameUrl: 'crash', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 5 },
+    { id: 'chicken-road-2', name: 'Chicken Road Dash', category: 'crash', discoveryCategory: 'crash', image: GAME_POSTERS['chicken-road-2'], status: 'available', gameUrl: 'chicken-road-2', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 10 },
+    { id: 'b2b-bomber', name: 'B2B Bomber', category: 'crash', discoveryCategory: 'crash', image: GAME_POSTERS['b2b-bomber'], status: 'available', gameUrl: 'b2b-bomber', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 15 },
+    { id: 'slot', name: 'Lucky Royale', category: 'slots', discoveryCategory: 'slots', image: GAME_POSTERS.slot, status: 'available', gameUrl: 'slot', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 18 },
+    { id: 'star', name: 'Star Spin', nameKey: 'star_title', category: 'slots', discoveryCategory: 'slots', image: GAME_POSTERS.star, status: 'available', gameUrl: 'star', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 20 },
+    { id: 'roulette', name: 'Roulette', nameKey: 'roulette_title', category: 'roulette', discoveryCategory: 'table', image: GAME_POSTERS.roulette, status: 'available', gameUrl: 'roulette', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 30 },
+    { id: 'mines', name: 'Mines', nameKey: 'mines_title', category: 'more', discoveryCategory: 'arcade', image: GAME_POSTERS.mines, status: 'available', gameUrl: 'mines', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 40 },
+    { id: 'plinko', name: 'Plinko', nameKey: 'plinko_title', category: 'more', discoveryCategory: 'arcade', image: GAME_POSTERS.plinko, status: 'available', gameUrl: 'plinko', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 50 },
+    { id: 'penalty', name: 'Penalty Unlimited', category: 'more', discoveryCategory: 'arcade', image: GAME_POSTERS.penalty, status: 'available', gameUrl: 'penalty', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 60 },
+    { id: 'keno', name: 'Keno', nameKey: 'keno_title', category: 'more', discoveryCategory: 'table', image: GAME_POSTERS.keno, status: 'available', gameUrl: 'keno', provider: 'Fetan Bet', livePlayerCount: null, displayOrder: 70 },
     { id: 'aviator-coming', name: 'Aviator', category: 'crash', image: '/images/coming-soon/aviator.svg', status: 'coming_soon', gameUrl: null, provider: null, livePlayerCount: null, displayOrder: 110 },
     { id: 'pharaoh-coming', name: 'Golden Pharaoh', category: 'slots', image: '/images/coming-soon/golden-pharaoh.svg', status: 'coming_soon', gameUrl: null, provider: null, livePlayerCount: null, displayOrder: 120 },
     { id: 'royal-roulette-coming', name: 'Royal Roulette', category: 'roulette', image: '/images/coming-soon/royal-roulette.svg', status: 'coming_soon', gameUrl: null, provider: null, livePlayerCount: null, displayOrder: 130 },
@@ -192,6 +190,16 @@ window.Games = (function () {
   // =========================================================
   // LOBBY
   // =========================================================
+  const lobbyStorageKey = (list, userId = C?.user?.id) => `fetan-bet:${list}:${userId ?? 'guest'}`;
+  const readLobbyIds = (key) => {
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(value) ? value.filter((id) => typeof id === 'string') : [];
+    } catch (_) { return []; }
+  };
+  const writeLobbyIds = (key, ids) => {
+    try { localStorage.setItem(key, JSON.stringify(ids)); } catch (_) { /* local preferences are optional */ }
+  };
   let lobbyCleanup = null;
   function mount(app, ctx) {
     C = ctx;
@@ -201,53 +209,41 @@ window.Games = (function () {
     previousCleanup?.();
     lobbyCleanup = null;
     app._homeCarouselCleanup = null;
-    app._homeRowObserver?.disconnect();
 
     const games = LOBBY_GAME_CATALOG
       .map((game) => ({ ...game, title: game.nameKey ? t(game.nameKey) : game.name }))
       .sort((a, b) => a.displayOrder - b.displayOrder);
+    const favoriteKey = lobbyStorageKey('favorites', ctx.user?.id);
+    const recentKey = lobbyStorageKey('recent', ctx.user?.id);
+    const favoriteIds = new Set(readLobbyIds(favoriteKey));
+    const latestIds = new Set(games.filter((game) => game.latestRelease).map((game) => game.id));
     const categoryNames = new Map(LOBBY_CATEGORIES.map((category) => [category.id, lang === 'am' ? category.am : category.en]));
-    const categoryTypes = {
-      crash: lang === 'am' ? 'የክራሽ ጨዋታ' : 'Crash game',
-      slots: lang === 'am' ? 'የስሎት ጨዋታ' : 'Slot game',
-      roulette: lang === 'am' ? 'ሩሌት' : 'Roulette',
-      table: lang === 'am' ? 'የጠረጴዛ ጨዋታ' : 'Table game',
-    };
     const categoryIcon = (id) => {
       const paths = {
         crash: '<path d="M4 18 10 12l4 3 6-9"/><path d="M15 6h5v5"/>',
         slots: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 9v6m4-6v6m4-6v6M4 10h16"/>',
-        roulette: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6m7.8 3H15m-3 9v-6m-9-3h6"/>',
         table: '<path d="M4 7h16l-2 10H6L4 7Z"/><path d="M8 17v3m8-3v3M8 11h.01M12 11h.01M16 11h.01"/>',
-        live: '<circle cx="12" cy="12" r="8"/><path d="M9 9a4 4 0 0 1 6 0m-4.5 1.5a2 2 0 0 1 3 0M12 13h.01"/>',
         more: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
-        soon: '<path d="M5 15c2-6 7-10 14-10-1 7-5 12-11 14l-3-4Z"/><path d="m9 16-4 4m8-8 3-3"/>',
       };
       return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (paths[id] || paths.more) + '</svg>';
     };
-    const comingSoonGames = games.filter((game) => game.status === 'coming_soon');
+    const availableGames = games.filter((game) => game.status === 'available');
     const rows = [
       {
-        id: 'available-games',
+        id: 'all-games',
         filterCategory: 'all',
-        title: lang === 'am' ? 'የሚገኙ ጨዋታዎች' : 'Available Games',
-        games: games.filter((game) => game.status === 'available'),
+        title: lang === 'am' ? 'ሁሉም ጨዋታዎች' : 'All Games',
+        games: availableGames,
       },
       ...LOBBY_CATEGORIES.map((category) => ({
         id: category.id,
         filterCategory: category.id,
         title: categoryNames.get(category.id),
-        games: games.filter((game) => game.category === category.id),
+        games: availableGames.filter((game) => game.discoveryCategory === category.id),
       })),
-      {
-        id: 'coming-soon',
-        filterCategory: 'coming-soon',
-        title: lang === 'am' ? 'በቅርብ ቀን የሚመጡ ጨዋታዎች' : 'Coming Soon',
-        games: comingSoonGames,
-      },
     ];
     const filters = [
-      { id: 'all', label: t('cat_all') },
+      { id: 'all', label: lang === 'am' ? 'ሎቢ' : 'Lobby' },
       ...LOBBY_CATEGORIES.map((category) => ({ id: category.id, label: categoryNames.get(category.id) })),
     ];
     const arrow = (direction) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' + (direction === 'prev' ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6') + '"/></svg>';
@@ -257,79 +253,275 @@ window.Games = (function () {
       return '<span class="home-live-pill" aria-label="' + (lang === 'am' ? 'በቀጥታ የሚጫወቱ ተጫዋቾች፡ ' : 'Live players: ') + esc(count) + '"><i aria-hidden="true"></i><span>LIVE</span><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm-4.5 5.5a4.5 4.5 0 0 1 9 0"/></svg><b>' + esc(count) + ' ' + (lang === 'am' ? 'በመጫወት ላይ' : 'PLAYING') + '</b></span>';
     };
     const gameCardMarkup = (game) => {
-      const eager = game.displayOrder === 10;
-      return '<a class="home-game-card" href="#/game/' + esc(game.gameUrl) + '" data-game="' + esc(game.id) + '" data-category="' + esc(game.category) + '" data-status="available" aria-label="' + (lang === 'am' ? 'ይጫወቱ' : 'Play') + ' ' + esc(game.title) + '">' +
+      const eager = game.id === 'crash';
+      const favorite = favoriteIds.has(game.id);
+      const favoriteLabel = favorite
+        ? (lang === 'am' ? 'ከተወዳጆች አስወግድ' : 'Remove from favourites')
+        : (lang === 'am' ? 'ወደ ተወዳጆች ጨምር' : 'Add to favourites');
+      return '<article class="home-game-tile" data-game="' + esc(game.id) + '" data-category="' + esc(game.discoveryCategory) + '" data-status="available" data-game-name="' + esc(game.title.toLocaleLowerCase()) + '">' +
+        '<a class="home-game-card" href="#/game/' + esc(game.gameUrl) + '" data-game="' + esc(game.id) + '" data-category="' + esc(game.discoveryCategory) + '" data-status="available" aria-label="' + (lang === 'am' ? 'ይጫወቱ' : 'Play') + ' ' + esc(game.title) + '">' +
         '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' poster" loading="' + (eager ? 'eager' : 'lazy') + '" decoding="async"' + (eager ? ' fetchpriority="high"' : '') + '>' +
         '<span class="home-card-fallback" aria-hidden="true">' + (GAME_ART[game.id] || '') + '</span>' +
         '<span class="home-card-shade" aria-hidden="true"></span>' +
+        '<span class="home-card-title">' + esc(game.title) + '</span>' +
         livePlayerMarkup(game) +
-        '</a>';
+        '</a><button type="button" class="home-game-favorite' + (favorite ? ' is-active' : '') + '" data-favorite="' + esc(game.id) + '" aria-label="' + esc(favoriteLabel) + ' ' + esc(game.title) + '" aria-pressed="' + String(favorite) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 20-1.4-1.3C5.6 14.2 2.5 11.4 2.5 8a4.8 4.8 0 0 1 8.1-3.4L12 6l1.4-1.4A4.8 4.8 0 0 1 21.5 8c0 3.4-3.1 6.2-8.1 10.7L12 20Z"/></svg></button></article>';
     };
-    const comingSoonCardMarkup = (game) => '<article class="home-coming-card" data-category="' + esc(game.category) + '" data-status="coming_soon" aria-label="' + esc(game.title) + ', ' + (lang === 'am' ? 'በቅርብ ቀን' : 'coming soon') + '">' +
-      '<img src="' + esc(game.image) + '" alt="' + esc(game.title) + ' promotional poster" loading="lazy" decoding="async">' +
-      '<span class="home-coming-shade" aria-hidden="true"></span><span class="home-coming-meta">' +
-      '<span class="home-coming-badge">' + (lang === 'am' ? 'በቅርብ ቀን' : 'COMING SOON') + '</span>' +
-      '<span class="home-coming-category">' + esc(categoryTypes[game.category] || categoryNames.get(game.category) || '') + '</span>' +
-      '<span class="home-coming-title">' + esc(game.title) + '</span></span></article>';
     const rowMarkup = (row) => {
       const hasCards = row.games.length > 0;
-      const cards = row.games.map((game) => game.status === 'available' ? gameCardMarkup(game) : comingSoonCardMarkup(game)).join('');
-      const emptyMessage = row.id === 'live'
-        ? (lang === 'am' ? 'የቀጥታ ካሲኖ ጨዋታዎች ገና አልተዋሃዱም።' : 'No live casino games are currently integrated.')
-        : (lang === 'am' ? 'ጨዋታዎች በቅርብ ቀን ይጨመራሉ።' : 'New games will be added here soon.');
+      const cards = row.games.map(gameCardMarkup).join('');
       const viewAllLabel = lang === 'am' ? 'ሁሉንም ይመልከቱ' : 'View all';
       const previousLabel = lang === 'am' ? 'ወደ ግራ ያንሸራትቱ' : 'Scroll ' + row.title + ' left';
       const nextLabel = lang === 'am' ? 'ወደ ቀኝ ያንሸራትቱ' : 'Scroll ' + row.title + ' right';
-      const iconId = row.id === 'coming-soon' ? 'soon' : row.id;
+      const iconId = row.id === 'arcade' ? 'more' : row.id;
       const arrows = hasCards ? '<div class="home-row-arrows">' +
         '<button type="button" class="home-row-arrow" data-scroll="prev" aria-label="' + esc(previousLabel) + '"' + (row.games.length < 2 ? ' disabled' : '') + '>' + arrow('prev') + '</button>' +
         '<button type="button" class="home-row-arrow" data-scroll="next" aria-label="' + esc(nextLabel) + '"' + (row.games.length < 2 ? ' disabled' : '') + '>' + arrow('next') + '</button></div>' : '';
       return '<section class="home-row' + (hasCards ? '' : ' is-empty') + '" data-home-row="' + esc(row.id) + '" data-filter-category="' + esc(row.filterCategory) + '" aria-labelledby="home-row-' + esc(row.id) + '">' +
-        '<div class="home-row-head"><h2 class="home-row-title" id="home-row-' + esc(row.id) + '"><span class="home-row-icon">' + categoryIcon(iconId) + '</span>' + esc(row.title) + '</h2>' +
+        '<div class="home-row-head"><h2 class="home-row-title" id="home-row-' + esc(row.id) + '" data-default-title="' + esc(row.title) + '"><span class="home-row-icon">' + categoryIcon(iconId) + '</span><span class="home-row-title-text">' + esc(row.title) + '</span></h2>' +
         '<div class="home-row-actions"><button type="button" class="home-view-all" data-view-category="' + esc(row.filterCategory) + '">' + esc(viewAllLabel) + ' <span aria-hidden="true">→</span></button>' + arrows + '</div></div>' +
-        (hasCards ? '<div class="home-row-scroller" data-row-scroller aria-label="' + esc(row.title) + ' games">' + cards + '</div>' : '<p class="home-row-empty">' + esc(emptyMessage) + '</p>') +
+        (hasCards ? '<div class="home-row-scroller" data-row-scroller aria-label="' + esc(row.title) + ' games">' + cards + '</div>' : '') +
+        '<p class="home-row-empty home-special-empty" hidden></p>' +
         '</section>';
     };
 
     app.innerHTML = `
-      <div class="home-ambient" aria-hidden="true">
-        <span class="ambient-gold-a"></span>
-        <span class="ambient-green"></span>
-        <span class="ambient-gold-b"></span>
-      </div>
       <div class="home-catalog" id="ggrid">
-        <div class="home-filters" id="gfilters" role="group" aria-label="${lang === 'am' ? 'ጨዋታዎችን ያጣሩ' : 'Filter games'}">
+        <div class="home-toolbar">
+          <div class="home-filters" id="gfilters" role="group" aria-label="${lang === 'am' ? 'ጨዋታዎችን ያጣሩ' : 'Filter games'}">
           ${filters.map((filter, index) => `<button type="button" class="home-filter${index === 0 ? ' is-active' : ''}" data-cat="${esc(filter.id)}" aria-pressed="${index === 0}">${esc(filter.label)}</button>`).join('')}
+          </div>
+          <label class="home-search" for="homeGameSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4 4"/></svg><input id="homeGameSearch" type="search" autocomplete="off" placeholder="${lang === 'am' ? 'ጨዋታዎችን ፈልግ' : 'Search games'}" aria-label="${lang === 'am' ? 'ጨዋታዎችን ፈልግ' : 'Search games'}"></label>
         </div>
         <div class="home-rows">${rows.map(rowMarkup).join('')}</div>
+        <p id="homeNoResults" class="home-row-empty home-no-results" role="status" hidden></p>
       </div>`;
 
     const filterButtons = [...app.querySelectorAll('.home-filter')];
     const rowElements = [...app.querySelectorAll('.home-row')];
     const cards = [...app.querySelectorAll('.home-game-card[data-status="available"]')];
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    const carouselStates = new Map();
     const scrollerFor = (row) => row.querySelector('[data-row-scroller]');
-    const applyFilter = (category) => {
+    const sidebar = document.getElementById('casinoSidebar');
+    const sidebarSearch = document.getElementById('casinoSidebarSearch');
+    const homeSearch = app.querySelector('#homeGameSearch');
+    const sidebarNav = [...(sidebar?.querySelectorAll('[data-lobby-view]') || [])];
+    const storedRecentIds = readLobbyIds(recentKey);
+    const specialTitles = {
+      favorites: lang === 'am' ? 'ተወዳጆች' : 'Favourites',
+      latest: lang === 'am' ? 'አዲስ የወጡ' : 'Latest Releases',
+      recent: lang === 'am' ? 'በቅርቡ የተጫወቱ' : 'Recently Played',
+    };
+    const emptyMessages = {
+      favorites: lang === 'am' ? 'ጨዋታን በልብ ምልክት ወደ ተወዳጆች ያክሉ።' : 'Tap the heart on a game to save it here.',
+      latest: lang === 'am' ? 'አዳዲስ ጨዋታዎች ሲጨመሩ እዚህ ይታያሉ።' : 'New releases will appear here when they are added.',
+      recent: lang === 'am' ? 'ጨዋታዎችን ከከፈቱ በኋላ እዚህ ይታያሉ።' : 'Games you open will appear here.',
+    };
+    let lobbyMode = 'all';
+    let activeCategory = 'all';
+    let activeNavView = 'home';
+    let searchQuery = '';
+    const setSidebarActive = () => sidebarNav.forEach((button) => {
+      const active = button.dataset.lobbyView === activeNavView;
+      button.classList.toggle('is-active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    const updateLobby = () => {
+      const specialMode = ['favorites', 'latest', 'recent'].includes(lobbyMode);
+      const onlyAllRow = specialMode || Boolean(searchQuery);
+      const recentIds = new Set(readLobbyIds(recentKey));
+      const allowedIds = new Set(availableGames.filter((game) => {
+        if (lobbyMode === 'favorites') return favoriteIds.has(game.id);
+        if (lobbyMode === 'latest') return latestIds.has(game.id);
+        if (lobbyMode === 'recent') return recentIds.has(game.id);
+        return activeCategory === 'all' || game.discoveryCategory === activeCategory;
+      }).filter((game) => !searchQuery || game.title.toLocaleLowerCase().includes(searchQuery)).map((game) => game.id));
+      app.querySelectorAll('.home-game-tile').forEach((tile) => {
+        tile.hidden = !allowedIds.has(tile.dataset.game);
+      });
+      rowElements.forEach((row) => {
+        const isAllRow = row.dataset.homeRow === 'all-games';
+        const categoryVisible = activeCategory === 'all' || row.dataset.filterCategory === activeCategory;
+        const modeVisible = onlyAllRow ? isAllRow : categoryVisible;
+        const visibleIds = new Set([...row.querySelectorAll('.home-game-tile:not([hidden])')].map((tile) => tile.dataset.game));
+        row.hidden = !modeVisible || (!onlyAllRow && visibleIds.size === 0);
+        const title = row.querySelector('.home-row-title-text');
+        if (title) title.textContent = specialMode && isAllRow ? specialTitles[lobbyMode] : row.querySelector('.home-row-title').dataset.defaultTitle;
+        const empty = row.querySelector('.home-special-empty');
+        if (empty) {
+          empty.hidden = !(specialMode && isAllRow && visibleIds.size === 0);
+          empty.textContent = emptyMessages[lobbyMode] || '';
+        }
+      });
+      const noResults = app.querySelector('#homeNoResults');
+      const matches = [...allowedIds].length;
+      noResults.hidden = matches > 0 || !searchQuery;
+      noResults.textContent = searchQuery
+        ? (lang === 'am' ? 'ተዛማጅ ጨዋታ አልተገኘም።' : 'No games match your search.')
+        : '';
       filterButtons.forEach((button) => {
-        const active = button.dataset.cat === category;
+        const active = !specialMode && button.dataset.cat === activeCategory;
         button.classList.toggle('is-active', active);
         button.setAttribute('aria-pressed', String(active));
       });
-      rowElements.forEach((row) => {
-        row.hidden = category !== 'all' && row.dataset.filterCategory !== category;
-        const state = carouselStates.get(row);
-        if (row.hidden) state?.stop();
-        else state?.start();
-      });
+      setSidebarActive();
     };
-    filterButtons.forEach((button) => button.addEventListener('click', () => applyFilter(button.dataset.cat)));
+    const selectView = (view) => {
+      lobbyMode = ['favorites', 'latest', 'recent'].includes(view) ? view : 'all';
+      activeNavView = view === 'home' ? 'home' : view === 'all' ? 'all' : view;
+      activeCategory = 'all';
+      updateLobby();
+      if (view === 'home') window.scrollTo({ top: 0, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+      else app.querySelector('#ggrid')?.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+    };
+    const setSearch = (value) => {
+      searchQuery = value.trim().toLocaleLowerCase();
+      [sidebarSearch, homeSearch].forEach((input) => { if (input && input.value !== value) input.value = value; });
+      lobbyMode = 'all';
+      activeNavView = 'all';
+      activeCategory = 'all';
+      updateLobby();
+    };
+    filterButtons.forEach((button) => button.addEventListener('click', () => {
+      lobbyMode = 'all';
+      activeNavView = '';
+      activeCategory = button.dataset.cat;
+      updateLobby();
+    }));
+    sidebarNav.forEach((button) => button.addEventListener('click', () => {
+      selectView(button.dataset.lobbyView);
+      if (window.matchMedia('(max-width: 700px)').matches) closeSidebar();
+    }));
+    if (sidebarSearch) sidebarSearch.oninput = () => setSearch(sidebarSearch.value);
+    if (homeSearch) homeSearch.oninput = () => setSearch(homeSearch.value);
+    const accountSummary = document.getElementById('casinoAccountSummary');
+    const accountActions = document.getElementById('casinoSidebarAccountActions');
+    const profileShortcut = document.getElementById('casinoProfileShortcut');
+    const historyShortcut = document.getElementById('casinoHistoryShortcut');
+    const notificationWrap = document.querySelector('.casino-notifications-wrap');
+    const notificationButton = document.getElementById('casinoNotificationsButton');
+    const notificationBadge = document.getElementById('casinoNotificationsBadge');
+    const notificationPanel = document.getElementById('casinoNotificationsPanel');
+    let notifications = [];
+    let unreadNotifications = 0;
+    const setUnreadNotifications = (value) => {
+      unreadNotifications = Math.max(0, Number(value) || 0);
+      if (!notificationBadge) return;
+      notificationBadge.hidden = unreadNotifications === 0;
+      notificationBadge.textContent = unreadNotifications > 9 ? '9+' : String(unreadNotifications);
+    };
+    const renderNotifications = () => {
+      if (!notificationPanel) return;
+      notificationPanel.innerHTML = `<div class="casino-notifications-head"><div><strong>${lang === 'am' ? 'ማሳወቂያዎች' : 'Notifications'}</strong><span>${unreadNotifications ? `${unreadNotifications} ${lang === 'am' ? 'ያልተነበቡ' : 'unread'}` : (lang === 'am' ? 'ሁሉም ተነብበዋል' : 'You are all caught up')}</span></div>${unreadNotifications ? `<button type="button" data-notifications-read-all>${lang === 'am' ? 'ሁሉንም አንብብ' : 'Mark all read'}</button>` : ''}</div><div class="casino-notifications-list">${notifications.length ? notifications.map((item) => {
+        const date = item.created_at ? new Date(item.created_at).toLocaleString(lang === 'am' ? 'am-ET' : 'en-ET', { dateStyle: 'short', timeStyle: 'short' }) : '';
+        return `<button type="button" class="casino-notification-item${item.is_read ? '' : ' is-unread'}" data-notification-id="${esc(item.id)}"><span class="casino-notification-dot" aria-hidden="true"></span><span><strong>${esc(item.title || '')}</strong><em>${esc(item.message || '')}</em>${date ? `<small>${esc(date)}</small>` : ''}</span></button>`;
+      }).join('') : `<p class="casino-notifications-empty">${lang === 'am' ? 'ምንም ማሳወቂያ የለም።' : 'No notifications yet.'}</p>`}</div>`;
+    };
+    const loadNotifications = async () => {
+      if (typeof C.api !== 'function') return;
+      try {
+        const result = await C.api('/notifications?limit=8');
+        notifications = Array.isArray(result.notifications) ? result.notifications : [];
+        setUnreadNotifications(result.unread);
+        renderNotifications();
+      } catch (_) { /* notifications are optional */ }
+    };
+    if (accountSummary && accountActions) {
+      const user = ctx.user;
+      const username = user ? String(user.username || user.name || user.phone || 'Player') : (lang === 'am' ? 'እንግዳ' : 'Guest player');
+      accountSummary.innerHTML = user
+        ? `<span class="casino-account-avatar" aria-hidden="true">${esc(username.trim().charAt(0).toUpperCase() || 'P')}</span><span class="casino-account-copy"><small>${lang === 'am' ? 'መለያ' : 'ACCOUNT'}</small><strong title="${esc(username)}">${esc(username)}</strong><span>${esc(C.fmt(C.getBalance?.() ?? 0))} ${esc(t('currency_etb'))}</span></span>`
+        : `<span class="casino-account-avatar" aria-hidden="true">${lang === 'am' ? 'እ' : 'G'}</span><span class="casino-account-copy"><small>${lang === 'am' ? 'እንኳን ደህና መጡ' : 'WELCOME'}</small><strong>${esc(username)}</strong><span>${lang === 'am' ? 'በመለያዎ ይግቡ' : 'Sign in to play'}</span></span>`;
+      accountActions.innerHTML = user?.role === 'user'
+        ? `<button type="button" data-account-action="wallet">${categoryIcon('table')}<span>${esc(t('wallet'))}</span></button><button type="button" data-account-action="deposit">${categoryIcon('slots')}<span>${esc(t('deposit'))}</span></button>`
+        : `<button type="button" data-account-action="login">${categoryIcon('crash')}<span>${esc(t('login'))}</span></button>`;
+      accountActions.onclick = (event) => {
+        const action = event.target.closest('[data-account-action]')?.dataset.accountAction;
+        if (action === 'login') C.onLogin?.();
+        else if (action) C.navigateCustomer?.(action);
+      };
+      if (profileShortcut) {
+        profileShortcut.hidden = user?.role !== 'user';
+        profileShortcut.onclick = () => C.navigateCustomer?.('profile');
+      }
+      if (historyShortcut) {
+        historyShortcut.hidden = user?.role !== 'user';
+        historyShortcut.onclick = () => C.navigateCustomer?.('history');
+      }
+      if (notificationButton) {
+        notificationButton.hidden = user?.role !== 'user';
+        notificationButton.onclick = async () => {
+          const isOpen = notificationPanel && !notificationPanel.hidden;
+          if (notificationPanel) notificationPanel.hidden = isOpen;
+          notificationButton.setAttribute('aria-expanded', String(!isOpen));
+          if (!isOpen) await loadNotifications();
+        };
+        if (user?.role === 'user' && typeof C.api === 'function') {
+          C.api('/notifications/unread-count').then((result) => setUnreadNotifications(result.unread)).catch(() => {});
+        }
+      }
+      if (notificationPanel) notificationPanel.onclick = async (event) => {
+        const markAll = event.target.closest('[data-notifications-read-all]');
+        const itemButton = event.target.closest('[data-notification-id]');
+        try {
+          if (markAll && unreadNotifications) {
+            await C.api('/notifications/read-all', {});
+            notifications.forEach((item) => { item.is_read = true; });
+            setUnreadNotifications(0);
+            renderNotifications();
+          } else if (itemButton) {
+            const item = notifications.find((entry) => String(entry.id) === itemButton.dataset.notificationId);
+            if (item && !item.is_read) {
+              const result = await C.api(`/notifications/${encodeURIComponent(item.id)}/read`, {});
+              item.is_read = true;
+              setUnreadNotifications(result.unread ?? unreadNotifications - 1);
+              renderNotifications();
+            }
+          }
+        } catch (_) { /* keep the notice visible if it could not be marked read */ }
+      };
+    }
+    const sidebarToggle = document.getElementById('casinoSidebarToggle');
+    const closeSidebar = () => {
+      document.body.classList.remove('casino-sidebar-open');
+      sidebarToggle?.setAttribute('aria-expanded', 'false');
+    };
+    const onSidebarToggle = () => {
+      if (window.matchMedia('(max-width: 700px)').matches) {
+        const open = document.body.classList.toggle('casino-sidebar-open');
+        sidebarToggle?.setAttribute('aria-expanded', String(open));
+        if (open) sidebar?.focus({ preventScroll: true });
+      } else if (window.matchMedia('(max-width: 1020px)').matches) {
+        const expanded = document.body.classList.toggle('casino-sidebar-expanded');
+        sidebarToggle?.setAttribute('aria-expanded', String(expanded));
+      } else {
+        const collapsed = document.body.classList.toggle('casino-sidebar-collapsed');
+        sidebarToggle?.setAttribute('aria-expanded', String(!collapsed));
+      }
+    };
+    if (sidebarToggle) sidebarToggle.onclick = onSidebarToggle;
+    const closeNotifications = () => {
+      if (notificationPanel) notificationPanel.hidden = true;
+      notificationButton?.setAttribute('aria-expanded', 'false');
+    };
+    const onSidebarEscape = (event) => { if (event.key === 'Escape') { closeSidebar(); closeNotifications(); } };
+    const onBackdropClick = (event) => {
+      if (event.target === document.body) closeSidebar();
+      if (notificationWrap && !notificationWrap.contains(event.target)) closeNotifications();
+    };
+    document.addEventListener('keydown', onSidebarEscape);
+    document.addEventListener('click', onBackdropClick);
+
+    updateLobby();
     app.querySelectorAll('[data-view-category]').forEach((button) => button.addEventListener('click', () => {
       const category = button.dataset.viewCategory;
-      applyFilter(category === 'coming-soon' || category === 'all' ? 'all' : category);
+      lobbyMode = 'all';
+      activeNavView = category === 'all' ? 'all' : '';
+      activeCategory = category;
+      updateLobby();
       const target = category === 'all'
-        ? app.querySelector('[data-home-row="available-games"]')
+        ? app.querySelector('[data-home-row="all-games"]')
         : app.querySelector('#home-row-' + category);
       target?.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
     }));
@@ -341,179 +533,13 @@ window.Games = (function () {
         card?.classList.add('poster-missing');
       }, { once: true });
     };
-    app.querySelectorAll('.home-game-card img, .home-coming-card img').forEach(installPosterFallback);
-    const makeDecorativeClone = (item) => {
-      const clone = document.createElement('div');
-      clone.className = item.className + ' home-carousel-clone';
-      clone.innerHTML = item.innerHTML;
-      clone.dataset.carouselClone = 'true';
-      if (item.dataset.game) clone.dataset.game = item.dataset.game;
-      if (item.dataset.category) clone.dataset.category = item.dataset.category;
-      if (item.dataset.status) clone.dataset.status = item.dataset.status;
-      clone.setAttribute('aria-hidden', 'true');
-      clone.querySelectorAll('a, button, input, select, textarea').forEach((control) => control.remove());
-      clone.querySelectorAll('img').forEach(installPosterFallback);
-      return clone;
-    };
-    const createCarouselState = (row) => {
-      const scroller = scrollerFor(row);
-      const originals = scroller ? [...scroller.children].filter((item) => !item.hasAttribute('data-carousel-clone')) : [];
-      if (!scroller || originals.length < 2 || scroller.clientWidth < 1) return null;
-      const style = getComputedStyle(scroller);
-      const gap = Number.parseFloat(style.columnGap || style.gap) || 0;
-      const cycleWidth = originals.reduce((sum, item) => sum + item.getBoundingClientRect().width, 0) + gap * originals.length;
-      if (!Number.isFinite(cycleWidth) || cycleWidth < 1) return null;
-      const repeats = Math.max(1, Math.ceil(scroller.clientWidth / cycleWidth) + 1);
-      for (let copy = 0; copy < repeats; copy++) originals.forEach((item) => scroller.append(makeDecorativeClone(item)));
-      scroller.classList.add('is-infinite');
-      scroller.dataset.loopWidth = String(cycleWidth);
-      const firstCardWidth = originals[0].getBoundingClientRect().width;
-      scroller.scrollLeft = cycleWidth + (firstCardWidth - scroller.clientWidth) / 2;
-
-      let frame = 0;
-      let lastFrame = 0;
-      let featureFrame = 0;
-      let scrollCarry = 0;
-      let resumeTimer = 0;
-      let scrollEndTimer = 0;
-      let interacting = false;
-      const normalize = () => {
-        if (scroller.scrollLeft < cycleWidth) scroller.scrollLeft += cycleWidth;
-        else if (scroller.scrollLeft >= cycleWidth * 2) scroller.scrollLeft -= cycleWidth;
-      };
-      const updateCenteredCard = () => {
-        featureFrame = 0;
-        const center = scroller.getBoundingClientRect().left + scroller.clientWidth / 2;
-        let nearest = null, nearestDistance = Infinity;
-        scroller.querySelectorAll('.home-game-card, .home-coming-card').forEach((item) => {
-          const rect = item.getBoundingClientRect();
-          if (rect.right < scroller.getBoundingClientRect().left || rect.left > scroller.getBoundingClientRect().right) return;
-          const distance = Math.abs((rect.left + rect.right) / 2 - center);
-          if (distance < nearestDistance) { nearest = item; nearestDistance = distance; }
-        });
-        scroller.querySelectorAll('.is-centered').forEach((item) => item.classList.toggle('is-centered', item === nearest));
-        nearest?.classList.add('is-centered');
-      };
-      const scheduleCenteredCard = () => {
-        if (!featureFrame) featureFrame = requestAnimationFrame(updateCenteredCard);
-      };
-      normalize();
-      scheduleCenteredCard();
-      const canAutoMove = () => !reduceMotion.matches && document.visibilityState === 'visible' && !row.hidden &&
-        !interacting && !(hoverCapable && scroller.matches(':hover')) && !scroller.contains(document.activeElement);
-      const stop = () => {
-        if (frame) cancelAnimationFrame(frame);
-        frame = 0;
-        lastFrame = 0;
-        scrollCarry = 0;
-        scroller.classList.remove('is-auto-scrolling');
-      };
-      const animate = (time) => {
-        if (!canAutoMove()) { stop(); return; }
-        if (lastFrame) {
-          scrollCarry += (time - lastFrame) * 0.014;
-          const wholePixels = Math.trunc(scrollCarry);
-          if (wholePixels) {
-            scroller.scrollLeft += wholePixels;
-            scrollCarry -= wholePixels;
-            normalize();
-          }
-        }
-        lastFrame = time;
-        frame = requestAnimationFrame(animate);
-      };
-      const start = () => {
-        clearTimeout(resumeTimer);
-        if (frame || !canAutoMove()) return;
-        scroller.classList.add('is-auto-scrolling');
-        frame = requestAnimationFrame(animate);
-      };
-      const scheduleResume = () => {
-        clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(start, 1300);
-      };
-      const onPointerEnter = () => { if (hoverCapable) stop(); };
-      const onPointerLeave = () => { if (hoverCapable && !interacting) scheduleResume(); };
-      const onPointerDown = () => { interacting = true; stop(); };
-      const onPointerUp = () => { interacting = false; scheduleResume(); };
-      const onFocusIn = () => stop();
-      const onFocusOut = (event) => { if (!scroller.contains(event.relatedTarget)) scheduleResume(); };
-      const onWheel = () => { stop(); scheduleResume(); };
-      const onScroll = () => {
-        scheduleCenteredCard();
-        if (!scroller.classList.contains('is-auto-scrolling')) {
-          clearTimeout(scrollEndTimer);
-          scrollEndTimer = setTimeout(normalize, 120);
-        }
-      };
-      const onVisibility = () => document.visibilityState === 'visible' ? start() : stop();
-      const onMotionChange = () => reduceMotion.matches ? stop() : start();
-      scroller.addEventListener('pointerenter', onPointerEnter);
-      scroller.addEventListener('pointerleave', onPointerLeave);
-      scroller.addEventListener('pointerdown', onPointerDown, { passive: true });
-      window.addEventListener('pointerup', onPointerUp, { passive: true });
-      window.addEventListener('pointercancel', onPointerUp, { passive: true });
-      scroller.addEventListener('focusin', onFocusIn);
-      scroller.addEventListener('focusout', onFocusOut);
-      scroller.addEventListener('wheel', onWheel, { passive: true });
-      scroller.addEventListener('scroll', onScroll, { passive: true });
-      document.addEventListener('visibilitychange', onVisibility);
-      reduceMotion.addEventListener?.('change', onMotionChange);
-      start();
-      return {
-        clientWidth: scroller.clientWidth,
-        start,
-        stop,
-        move: (direction) => {
-          stop();
-          normalize();
-          const distance = Math.min(Math.max(scroller.clientWidth * 0.82, 148), cycleWidth * 0.72);
-          let from = scroller.scrollLeft;
-          let to = from + direction * distance;
-          if (direction > 0 && to >= cycleWidth * 2) { from -= cycleWidth; to -= cycleWidth; }
-          if (direction < 0 && to < cycleWidth) { from += cycleWidth; to += cycleWidth; }
-          if (from !== scroller.scrollLeft) scroller.scrollLeft = from;
-          interacting = false;
-          scroller.scrollTo({ left: to, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
-          scheduleResume();
-        },
-        destroy: () => {
-          stop();
-          clearTimeout(resumeTimer);
-          clearTimeout(scrollEndTimer);
-          if (featureFrame) cancelAnimationFrame(featureFrame);
-          scroller.removeEventListener('pointerenter', onPointerEnter);
-          scroller.removeEventListener('pointerleave', onPointerLeave);
-          scroller.removeEventListener('pointerdown', onPointerDown);
-          window.removeEventListener('pointerup', onPointerUp);
-          window.removeEventListener('pointercancel', onPointerUp);
-          scroller.removeEventListener('focusin', onFocusIn);
-          scroller.removeEventListener('focusout', onFocusOut);
-          scroller.removeEventListener('wheel', onWheel);
-          scroller.removeEventListener('scroll', onScroll);
-          document.removeEventListener('visibilitychange', onVisibility);
-          reduceMotion.removeEventListener?.('change', onMotionChange);
-          scroller.querySelectorAll('[data-carousel-clone="true"]').forEach((clone) => clone.remove());
-          scroller.querySelectorAll('.is-centered').forEach((item) => item.classList.remove('is-centered'));
-          scroller.classList.remove('is-infinite', 'is-auto-scrolling');
-          delete scroller.dataset.loopWidth;
-        },
-      };
-    };
+      app.querySelectorAll('.home-game-card img').forEach(installPosterFallback);
     rowElements.forEach((row) => {
       const scroller = scrollerFor(row);
       if (!scroller) return;
-      const state = createCarouselState(row);
-      if (state) carouselStates.set(row, state);
       row.querySelectorAll('.home-row-arrow').forEach((button) => button.addEventListener('click', () => {
-        carouselStates.get(row)?.move(button.dataset.scroll === 'next' ? 1 : -1);
+        scroller.scrollBy({ left: (button.dataset.scroll === 'next' ? 1 : -1) * scroller.clientWidth * .82, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
       }));
-      scroller.addEventListener('click', (event) => {
-        const clone = event.target.closest('.home-carousel-clone[data-game][data-status="available"]');
-        if (!clone || !scroller.contains(clone)) return;
-        if (C.guest) { C.onLogin?.(); return; }
-        open(app, clone.dataset.game, true);
-      });
     });
 
     cards.forEach((card) => card.addEventListener('click', (event) => {
@@ -522,30 +548,37 @@ window.Games = (function () {
       open(app, card.dataset.game, true);
     }));
 
-    let resizeFrame = 0;
-    const observer = window.ResizeObserver ? new ResizeObserver((entries) => {
-      if (resizeFrame) cancelAnimationFrame(resizeFrame);
-      resizeFrame = requestAnimationFrame(() => entries.forEach((entry) => {
-        const row = entry.target.closest('.home-row');
-        const oldState = row && carouselStates.get(row);
-        if (!row || !entry.contentRect.width || Math.abs(entry.contentRect.width - (oldState?.clientWidth || 0)) <= 2) return;
-        oldState?.destroy();
-        carouselStates.delete(row);
-        const nextState = createCarouselState(row);
-        if (nextState) carouselStates.set(row, nextState);
-      }));
-    }) : null;
-    if (observer) rowElements.forEach((row) => {
-      const scroller = scrollerFor(row);
-      if (scroller) observer.observe(scroller);
+    const updateFavoriteButtons = (id) => app.querySelectorAll('.home-game-favorite').forEach((button) => {
+      if (button.dataset.favorite !== id) return;
+      const active = favoriteIds.has(id);
+      button.classList.toggle('is-active', active);
+      if (button.matches('button')) {
+        const game = availableGames.find((entry) => entry.id === id);
+        const label = active
+          ? (lang === 'am' ? 'ከተወዳጆች አስወግድ' : 'Remove from favourites')
+          : (lang === 'am' ? 'ወደ ተወዳጆች ጨምር' : 'Add to favourites');
+        button.setAttribute('aria-pressed', String(active));
+        button.setAttribute('aria-label', `${label} ${game?.title || ''}`.trim());
+      }
     });
-    app._homeRowObserver?.disconnect();
-    app._homeRowObserver = observer;
+    const onFavoriteClick = (event) => {
+      const button = event.target.closest('.home-game-favorite[data-favorite]');
+      if (!button || !app.contains(button)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const id = button.dataset.favorite;
+      if (favoriteIds.has(id)) favoriteIds.delete(id);
+      else favoriteIds.add(id);
+      writeLobbyIds(favoriteKey, [...favoriteIds]);
+      updateFavoriteButtons(id);
+      updateLobby();
+    };
+    app.addEventListener('click', onFavoriteClick, true);
+
     app._homeCarouselCleanup = () => {
-      observer?.disconnect();
-      if (resizeFrame) cancelAnimationFrame(resizeFrame);
-      carouselStates.forEach((state) => state.destroy());
-      carouselStates.clear();
+      app.removeEventListener('click', onFavoriteClick, true);
+      document.removeEventListener('keydown', onSidebarEscape);
+      document.removeEventListener('click', onBackdropClick);
     };
     lobbyCleanup = app._homeCarouselCleanup;
 
@@ -573,12 +606,16 @@ window.Games = (function () {
     lobbyCleanup?.();
     lobbyCleanup = null;
     app._homeCarouselCleanup = null;
-    app._homeRowObserver?.disconnect();
     if (shell) { shell.cleanup(); shell = null; }
     stopFns.forEach((stop) => stop());
     stopFns = [];
     let leaveStarted = false;
     const routeSlug = game === 'road' ? 'road-dash' : game;
+    const launchedGame = LOBBY_GAME_CATALOG.find((entry) => entry.gameUrl === game || entry.id === game);
+    if (launchedGame && C.user?.role === 'user') {
+      const key = lobbyStorageKey('recent', C.user.id);
+      writeLobbyIds(key, [launchedGame.id, ...readLobbyIds(key).filter((id) => id !== launchedGame.id)].slice(0, 10));
+    }
     if (pushHistory && location.hash !== `#/game/${routeSlug}`) {
       history.pushState({ fetanPage: 'game', game }, '', `#/game/${routeSlug}`);
     } else if (!pushHistory && location.hash === `#/game/${routeSlug}` &&

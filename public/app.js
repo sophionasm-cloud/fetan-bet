@@ -112,67 +112,42 @@ function toggleSound() {
 
 function mountPromoSlider(app) {
   clearPromoSlider();
-  const gameCount = new Set([...app.querySelectorAll('.home-game-card[data-status="available"][data-game]')].map((card) => card.dataset.game)).size;
-  const currentCustomer = me?.role === 'user';
-  const gameTokens = [
-    ['road', 'Chicken Road Dash'], ['mines', 'Mines'], ['plinko', 'Plinko'],
-    ['penalty', 'Penalty Unlimited'], ['keno', 'Keno'], ['roulette', 'Roulette'], ['star', 'Star Spin']
-  ];
-  const tokenMarkup = () => gameTokens.map(([key, label], index) => `
-    <span class="promo-game-token promo-game-token--${key}" style="--token-index:${index}" title="${esc(label)}">
-      <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><use href="/images/promotions/game-tokens.svg#token-${key}"></use></svg>
-    </span>`).join('');
   const am = lang === 'am';
   const slides = [
     {
-      key: 'daily-winning', image: '/images/promotions/daily-winning.svg',
-      title: am ? 'ለእያንዳንዱ ስሜት ጨዋታ አለ' : 'A game for every mood',
-      copy: am ? 'ኦሪጅናል፣ የቁጥር እና የጠረጴዛ ጨዋታዎችን በአንድ ቦታ ይመልከቱ።' : 'Explore original, number and table games in one lobby.',
-      note: am ? 'የጨዋታ ውጤቶች በአገልጋዩ ይወሰናሉ።' : 'Game results are determined by the server.',
-      action: 'games', cta: am ? 'ጨዋታዎችን ይመልከቱ' : 'Explore games'
+      key: 'rocket-crash', image: '/img/posters/rocket-crash.webp',
+      title: am ? 'Rocket Crash' : 'Rocket Crash',
+      copy: am ? 'የክራሽ ጨዋታውን ከሎቢው ይክፈቱ።' : 'Open the rocket flight game from the lobby.',
+      action: 'game:crash', cta: am ? 'ጨዋታውን ክፈት' : 'Play Rocket Crash'
     },
     {
-      key: 'six-games', image: '/images/promotions/six-games.svg',
-      title: am ? `${gameCount} ጨዋታዎች፣ አንድ ሎቢ` : `${gameCount} games, one lobby`,
-      copy: am ? 'የሚወዱትን ይምረጡ፤ ሁሉም ጨዋታዎች እዚህ ይገኛሉ።' : 'Browse the available games and choose what you feel like playing.',
-      note: am ? 'ምሳሌያዊ የጨዋታ ምስሎች።' : 'Illustrative artwork; the game posters are below.',
-      action: 'games', cta: am ? 'ሁሉንም ይመልከቱ' : 'Browse games'
+      key: 'lucky-royale', image: '/img/posters/lucky-royale.webp',
+      title: am ? 'Lucky Royale' : 'Lucky Royale',
+      copy: am ? 'አዲሱን የአምስት ሪል ስሎት ጨዋታ ይመልከቱ።' : 'Explore the five-reel slot game.',
+      action: 'game:slot', cta: am ? 'ጨዋታውን ክፈት' : 'Open Lucky Royale'
     },
     {
-      key: 'fast-withdrawals', image: '/images/promotions/fast-withdrawals.svg',
-      title: am ? 'ጥያቄዎን በኪስ ቦርሳ ይከታተሉ' : 'Keep up with your wallet',
-      copy: am ? 'የማውጣት ጥያቄ ያስገቡና ሁኔታውን በኪስ ቦርሳ ይመልከቱ።' : 'Submit a withdrawal request and follow its status in Wallet.',
-      note: am ? 'የጥያቄ ጊዜዎች ሊለያዩ ይችላሉ።' : 'Review and processing times vary.',
-      action: 'wallet', cta: am ? 'ኪስ ቦርሳ' : 'View wallet'
+      key: 'plinko', image: '/img/posters/plinko.webp',
+      title: am ? 'Plinko' : 'Plinko',
+      copy: am ? 'የአርኬድ ጨዋታውን ከሎቢው ይክፈቱ።' : 'Open the pegboard arcade game from the lobby.',
+      action: 'game:plinko', cta: am ? 'ጨዋታውን ክፈት' : 'Play Plinko'
     }
   ];
-  if (!currentCustomer) slides.push({
-    key: 'registration-bonus', image: '/images/promotions/registration-bonus.svg',
-    title: am ? 'በሪፈራል ኮድ ይመዝገቡ' : 'Register with an active referral code',
-    offer: am ? '2,000 የፕሮሞ ክሬዲት' : '2,000 promo credits',
-    copy: am ? 'ብቁ የሆኑ አዳዲስ መለያዎች ንቁ የወኪል ኮድ ሲጠቀሙ አንድ ጊዜ ይሸለማሉ።' : 'Eligible new accounts receive a one-time reward when they register with an active agent code.',
-    note: am ? 'የፕሮሞ ክሬዲት ከገንዘብ ቀሪ ሂሳብ የተለየ ሲሆን ለማውጣት አይቻልም።' : 'Promo credits are separate from cash balance and cannot be withdrawn.',
-    action: 'register', cta: am ? 'ይመዝገቡ' : 'Register now'
-  });
 
   const slider = document.createElement('section');
   slider.className = 'promo-slider';
   slider.id = 'promoSlider';
   slider.setAttribute('aria-label', am ? 'የፍጣን ቤት ማስታወቂያዎች' : 'Fetan Bet promotions');
   slider.setAttribute('aria-roledescription', 'carousel');
-  const promoCode = new URLSearchParams(location.search).get('promo') || new URLSearchParams(location.search).get('promo_code') || '';
-  const tokenHtml = tokenMarkup();
   const slideMarkup = (slide, logicalIndex, clone = false) => `
     <article class="promo-slide promo-slide--${slide.key}" role="group" aria-roledescription="slide" aria-label="${logicalIndex + 1} of ${slides.length}" data-slide-key="${slide.key}"${clone ? ' data-slide-clone="true" inert aria-hidden="true"' : ''}>
       <div class="promo-slide-copy">
-        <span class="promo-slide-kicker">FETAN BET <i></i> ${currentCustomer ? (am ? 'ለእርስዎ' : 'FOR YOU') : (am ? 'ማስታወቂያ' : 'PROMOTIONS')}</span>
+        <span class="promo-slide-kicker">FETAN BET <i></i> ${am ? 'ጨዋታዎች' : 'GAMES TO EXPLORE'}</span>
         <h2>${esc(slide.title)}</h2>
-        ${slide.offer ? `<strong class="promo-slide-offer">${esc(slide.offer)}</strong>` : ''}
         <p>${esc(slide.copy)}</p>
-        <small class="promo-slide-note">${esc(slide.note)}</small>
         <button type="button" class="promo-slide-cta" data-promo-action="${slide.action}">${esc(slide.cta)} <span aria-hidden="true">→</span></button>
       </div>
-      ${slide.key === 'six-games' ? `<div class="promo-slide-art promo-slide-art--showcase" aria-hidden="true"><span class="promo-art-glow"></span><div class="promo-showcase"><div class="promo-game-orbit">${tokenHtml}</div><img class="promo-showcase-collage" src="/images/promotions/game-collage.svg" width="640" height="520" alt="" loading="eager" decoding="async"></div></div><div class="promo-game-strip" aria-hidden="true">${tokenHtml}</div>` : `<div class="promo-slide-art" aria-hidden="true"><span class="promo-art-glow"></span><img src="${slide.image}" width="560" height="360" alt="" loading="eager" decoding="async"></div>`}
+      <div class="promo-slide-art" aria-hidden="true"><img src="${slide.image}" width="600" height="800" alt="" loading="eager" decoding="async"></div>
     </article>`;
   const copies = [slides[slides.length - 1], ...slides, slides[0]];
   slider.innerHTML = `
@@ -202,12 +177,16 @@ function mountPromoSlider(app) {
   let timer = null;
   let transitionTimer = null;
   let touchStart = null;
-  const setTrack = () => { track.style.transform = `translate3d(-${index * 100}%, 0, 0)`; };
+  const mobileCarousel = () => window.matchMedia('(max-width: 700px)').matches;
+  const setTrack = () => {
+    if (mobileCarousel()) track.style.transform = `translate3d(-${index * 100}%, 0, 0)`;
+    else track.style.removeProperty('transform');
+  };
   const realIndex = () => index === 0 ? realCount - 1 : index === realCount + 1 ? 0 : index - 1;
   const paint = () => {
     const active = realIndex();
     panels.forEach((panel, panelIndex) => {
-      const isActive = panelIndex === index;
+      const isActive = mobileCarousel() ? panelIndex === index : !panel.hasAttribute('data-slide-clone');
       panel.setAttribute('aria-hidden', String(!isActive));
       panel.inert = !isActive;
     });
@@ -240,7 +219,7 @@ function mountPromoSlider(app) {
   const pauseAuto = () => { clearInterval(timer); timer = null; };
   const startAuto = () => {
     pauseAuto();
-    if (!reduceMotion.matches && !slider.matches(':hover') && document.visibilityState === 'visible') {
+    if (mobileCarousel() && !reduceMotion.matches && !slider.matches(':hover') && document.visibilityState === 'visible') {
       timer = setInterval(() => slider.isConnected ? next() : cleanup(), 6000);
     }
   };
@@ -250,6 +229,7 @@ function mountPromoSlider(app) {
   const onFocusOut = (event) => { if (!slider.contains(event.relatedTarget)) startAuto(); };
   const onVisibility = () => document.visibilityState === 'visible' ? startAuto() : pauseAuto();
   const onMotionChange = () => startAuto();
+  const onResize = () => { setTrack(); paint(); startAuto(); };
   const onTransitionEnd = (event) => {
     if (event.target !== track || event.propertyName !== 'transform') return;
     if (index === 0) snap(realCount);
@@ -275,11 +255,15 @@ function mountPromoSlider(app) {
     if (!button) return;
     const action = button.dataset.promoAction;
     if (action === 'games') { scrollPublicTarget('ggrid'); return; }
+    if (action.startsWith('game:')) {
+      if (me?.role === 'user') location.hash = `#/game/${action.slice(5)}`;
+      else $('headerLoginBtn')?.click();
+      return;
+    }
     if (action === 'wallet') {
       if (me?.role === 'user') { tab = 'wallet'; render(); }
       else $('headerLoginBtn')?.click();
     }
-    if (action === 'register') authView(app, 'register', promoCode);
   };
   track.addEventListener('transitionend', onTransitionEnd);
   slider.addEventListener('click', onClick);
@@ -289,6 +273,7 @@ function mountPromoSlider(app) {
   slider.addEventListener('focusin', onFocusIn);
   slider.addEventListener('focusout', onFocusOut);
   document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('resize', onResize);
   reduceMotion.addEventListener?.('change', onMotionChange);
   setTrack();
   paint();
@@ -305,6 +290,7 @@ function mountPromoSlider(app) {
     slider.removeEventListener('focusin', onFocusIn);
     slider.removeEventListener('focusout', onFocusOut);
     document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('resize', onResize);
     reduceMotion.removeEventListener?.('change', onMotionChange);
   };
   homePromoCleanup = cleanup;

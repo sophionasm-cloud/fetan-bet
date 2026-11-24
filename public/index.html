@@ -26,6 +26,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="games.css">
   <link rel="stylesheet" href="dashboard.css">
@@ -42,7 +43,30 @@
       document.body.dataset.customerTheme = 'dark';
     }
   </script>
+  <aside id="casinoSidebar" class="casino-sidebar" aria-label="Casino navigation" tabindex="-1">
+    <div class="casino-sidebar-top">
+      <a class="casino-sidebar-brand" href="#/lobby" aria-label="Fetan Bet home">
+        <span class="casino-sidebar-logo" aria-hidden="true">ፈ</span>
+        <span class="casino-sidebar-wordmark">FETAN BET</span>
+      </a>
+      <span class="casino-product-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 6h9a4 4 0 0 1 3.8 2.8l1.1 3.6a2.7 2.7 0 0 1-4.2 2.9l-2.3-1.7H9.1l-2.3 1.7a2.7 2.7 0 0 1-4.2-2.9l1.1-3.6A4 4 0 0 1 7.5 6Z"/><path d="M8 10v4m-2-2h4m6-1h.01M18 13h.01"/></svg><span>CASINO</span></span>
+    </div>
+    <label class="casino-sidebar-search" for="casinoSidebarSearch">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4 4"/></svg>
+      <input id="casinoSidebarSearch" type="search" autocomplete="off" placeholder="Search games" aria-label="Search games">
+    </label>
+    <section id="casinoAccountSummary" class="casino-account-summary" aria-label="Account"></section>
+    <nav class="casino-sidebar-nav" aria-label="Casino sections">
+      <button type="button" data-lobby-view="home" class="is-active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg><span>Home</span></button>
+      <button type="button" data-lobby-view="favorites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 20-1.4-1.3C5.6 14.2 2.5 11.4 2.5 8a4.8 4.8 0 0 1 8.1-3.4L12 6l1.4-1.4A4.8 4.8 0 0 1 21.5 8c0 3.4-3.1 6.2-8.1 10.7L12 20Z"/></svg><span>Favourites</span></button>
+      <button type="button" data-lobby-view="latest"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="5"/></svg><span>Latest Releases</span></button>
+      <button type="button" data-lobby-view="recent"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>Recently Played</span></button>
+      <button type="button" data-lobby-view="all"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg><span>All Games</span></button>
+    </nav>
+    <div id="casinoSidebarAccountActions" class="casino-sidebar-account-actions"></div>
+  </aside>
   <header class="top">
+    <button id="casinoSidebarToggle" class="casino-sidebar-toggle" type="button" aria-label="Toggle casino navigation" aria-controls="casinoSidebar" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <div class="brand" id="brandBtn" role="button" tabindex="0" aria-label="Fetan Bet home">
       <span class="logo" aria-hidden="true">ፈ</span>
       <span class="brand-copy"><span id="brandName">FETAN BET</span></span>
@@ -51,14 +75,20 @@
     <div class="top-right">
       <button id="balanceBox" class="balance" type="button" hidden></button>
       <button id="quickDepositBtn" class="chip chip-gold" hidden>+ <span id="depTxt">Deposit</span></button>
+      <button id="casinoHistoryShortcut" class="casino-history-shortcut" type="button" hidden aria-label="Transaction history" title="Transaction history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></button>
+      <div class="casino-notifications-wrap">
+        <button id="casinoNotificationsButton" class="casino-notifications-button" type="button" hidden aria-label="Notifications" aria-expanded="false" aria-controls="casinoNotificationsPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span id="casinoNotificationsBadge" class="casino-notifications-badge" hidden></span></button>
+        <div id="casinoNotificationsPanel" class="casino-notifications-panel" role="region" aria-label="Notifications" hidden></div>
+      </div>
+      <button id="casinoProfileShortcut" class="casino-profile-shortcut" type="button" hidden aria-label="Profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span>Profile</span></button>
       <button id="themeBtn" class="chip theme-toggle" type="button" hidden aria-label="Switch to light mode" title="Switch to light mode"></button>
       <button id="headerLoginBtn" class="chip" hidden>Login</button>
       <button id="headerRegBtn" class="chip chip-gold" hidden>Register</button>
       <button id="langBtn" class="chip">አማ</button>
       <button id="logoutBtn" class="chip" hidden>Logout</button>
       <div class="mobile-header-menu">
-        <button id="mobileHeaderMenu" class="mobile-header-menu-button" type="button" aria-label="Menu" aria-expanded="false" aria-controls="mobileMenuPanel">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <button id="mobileHeaderMenu" class="mobile-header-menu-button" type="button" aria-label="Account menu" aria-expanded="false" aria-controls="mobileMenuPanel">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
         </button>
         <div id="mobileMenuPanel" class="mobile-header-menu-panel" role="menu" aria-label="Account menu" hidden></div>
       </div>
