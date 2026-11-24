@@ -4,8 +4,6 @@
   const config = window.SLOT_CONFIG;
   const symbols = new Map(config.SYMBOLS.map((symbol) => [symbol.id, symbol]));
   const bellSvg = '<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M12 33h24l-3.4-4.7V20a8.6 8.6 0 0 0-17.2 0v8.3L12 33Z" fill="currentColor"/><path d="M20 36a4 4 0 0 0 8 0" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
-  const wait = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
-
   function cell(symbolId) {
     const element = document.createElement('span');
     const symbol = symbols.get(symbolId);
@@ -35,46 +33,58 @@
     const speed = turbo ? config.TURBO_DURATION_DIVISOR : 1;
     const baseMs = config.SPIN_BASE_MS / speed;
     const stepMs = config.SPIN_REEL_STEP_MS / speed;
-    const accelMs = config.REEL_ACCEL_MS / speed;
+    const targetGrid = window.SLOT_MATH.gridFromStops(result.stops);
+    const accelerationMs = config.REEL_ACCEL_MS / speed;
+    const decelerationMs = config.REEL_DECEL_MS / speed;
     const bounceMs = config.REEL_BOUNCE_MS / speed;
 
-    await Promise.all(reels.map((reel, reelIndex) => new Promise((resolve) => {
+    await Promise.all(reels.map(async (reel, reelIndex) => {
       const track = reel.querySelector('.slot-reel-track');
       const strip = config.REELS[reelIndex].strip;
       const stop = result.stops[reelIndex];
-      const targetIndex = config.REEL_SPIN_CYCLES * config.REEL_STOP_COUNT + stop;
+      const targetIndex = config.SPIN_SYMBOL_STEPS + reelIndex * config.SPIN_REEL_STEP_SYMBOLS;
       const targetPx = targetIndex * height;
-      const items = Array.from({ length: targetIndex + config.ROWS }, (_, index) => strip[index % strip.length]);
+      const currentSymbols = Array.from(track.querySelectorAll('.slot-cell'))
+        .slice(0, config.ROWS)
+        .map((item) => item.dataset.symbol);
+      const fallbackGrid = window.SLOT_MATH.gridFromStops([0, 0, 0, 0, 0]);
+      const startSymbols = currentSymbols.length === config.ROWS && currentSymbols.every(Boolean)
+        ? currentSymbols
+        : fallbackGrid.map((row) => row[reelIndex]);
+      const items = [...startSymbols];
+      for (let index = config.ROWS; index < targetIndex; index += 1) {
+        const sourceStop = (stop + index - targetIndex + config.REEL_STOP_COUNT) % config.REEL_STOP_COUNT;
+        items.push(strip[sourceStop]);
+      }
+      items.push(...targetGrid.map((row) => row[reelIndex]));
       track.replaceChildren(...items.map(cell));
       track.setAttribute('aria-hidden', 'true');
       track.style.transition = 'none';
       track.style.transform = 'translate3d(0, 0, 0)';
       reel.classList.add('is-spinning');
 
-      setTimeout(() => {
-        const accelPx = Math.min(height * 8, targetPx - height);
-        const acceleration = track.animate([
-          { transform: 'translate3d(0, 0, 0)' },
-          { transform: `translate3d(0, ${-accelPx}px, 0)` },
-        ], { duration: accelMs, easing: 'cubic-bezier(.35,0,.75,.22)' });
-        acceleration.onfinish = () => {
-          track.style.transform = `translate3d(0, ${-accelPx}px, 0)`;
-          acceleration.cancel();
-          track.style.transition = `transform ${Math.max(1, baseMs - accelMs - bounceMs)}ms cubic-bezier(.08,.78,.13,1)`;
-          requestAnimationFrame(() => {
-            track.style.transform = `translate3d(0, ${-(targetPx + config.REEL_OVERSHOOT_PX)}px, 0)`;
-            setTimeout(() => {
-              track.style.transition = `transform ${bounceMs}ms cubic-bezier(.34,1.45,.64,1)`;
-              track.style.transform = `translate3d(0, ${-targetPx}px, 0)`;
-              setTimeout(() => {
-                reel.classList.remove('is-spinning');
-                resolve();
-              }, bounceMs);
-            }, Math.max(1, baseMs - accelMs - bounceMs));
-          });
-        };
-      }, reelIndex * stepMs);
-    })));
+      const duration = baseMs + reelIndex * stepMs;
+      const cruiseMs = duration - accelerationMs - decelerationMs - bounceMs;
+      const accelFraction = accelerationMs / duration;
+      const decelStart = 1 - (decelerationMs + bounceMs) / duration;
+      const bounceStart = 1 - bounceMs / duration;
+      const overshootPx = config.REEL_OVERSHOOT_PX;
+      const distancePx = targetPx + overshootPx;
+      const velocity = distancePx / (duration - (accelerationMs + decelerationMs) / 2 - bounceMs);
+      const accelerationPosition = velocity * accelerationMs / 2;
+      const decelerationPosition = accelerationPosition + velocity * cruiseMs;
+      const spin = track.animate([
+        { transform: 'translate3d(0, 0, 0)', easing: 'cubic-bezier(.22,0,.5,1)' },
+        { transform: `translate3d(0, ${-accelerationPosition}px, 0)`, offset: accelFraction, easing: 'linear' },
+        { transform: `translate3d(0, ${-decelerationPosition}px, 0)`, offset: decelStart, easing: 'cubic-bezier(.25,.5,.68,1)' },
+        { transform: `translate3d(0, ${-distancePx}px, 0)`, offset: bounceStart, easing: 'cubic-bezier(.34,1.25,.64,1)' },
+        { transform: `translate3d(0, ${-targetPx}px, 0)` },
+      ], { duration, easing: 'linear' });
+      await spin.finished;
+      track.style.transform = `translate3d(0, ${-targetPx}px, 0)`;
+      spin.cancel();
+      reel.classList.remove('is-spinning');
+    }));
   }
 
   window.SLOT_REELS = Object.freeze({ animate });

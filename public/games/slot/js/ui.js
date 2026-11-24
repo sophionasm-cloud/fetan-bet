@@ -244,8 +244,15 @@
     }
     function setBusy(value) {
       busy = Boolean(value);
+      if (busy) {
+        stopPaylineCycle();
+        nodes.reels.classList.remove('has-win');
+        nodes.reels.querySelectorAll('.slot-cell.is-winning').forEach((cell) => cell.classList.remove('is-winning'));
+        byId('slotPayline').querySelector('polyline').setAttribute('points', '');
+      }
       nodes.spin.disabled = busy || !loaded || balance < bet;
-      nodes.spin.textContent = busy ? t('spinning') : t('spin');
+      nodes.spin.textContent = t('spin');
+      nodes.spin.setAttribute('aria-busy', String(busy));
       nodes.auto.disabled = !loaded || (busy && nodes.auto.dataset.active !== 'true');
       nodes.autoCount.disabled = !loaded || busy || nodes.auto.dataset.active === 'true';
       byId('betDown').disabled = busy || retryLocked || bet <= config.MIN_BET_SANTIM;

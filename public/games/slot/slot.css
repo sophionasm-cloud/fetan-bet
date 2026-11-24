@@ -126,7 +126,7 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px
   transform: translateZ(0);
 }
 .slot-reel-track { display: grid; grid-auto-rows: var(--slot-cell-size); will-change: transform, opacity; transform: translate3d(0, 0, 0); }
-.slot-reel.is-spinning .slot-cell { filter: blur(.8px); opacity: .84; }
+.slot-reel.is-spinning .slot-cell { opacity: .78; }
 .slot-cell {
   display: grid;
   place-items: center;
@@ -276,9 +276,36 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px
 @media (max-width: 720px) {
   .slot-page { align-items: start; padding: max(20px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom)); }
   .slot-heading { display: flex; padding-top: 0; }
-  .slot-hud { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
-  .slot-spin { grid-column: 1 / -1; grid-row: 2; width: 86px; min-height: 86px; }
-  .slot-win-readout { grid-column: 1 / -1; }
+  .slot-hud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "balance win" "bet bet" "spin spin";
+    gap: 8px 10px;
+  }
+  .slot-hud > .slot-readout:not(.slot-win-readout) { grid-area: balance; }
+  .slot-bet-panel { grid-area: bet; }
+  .slot-spin { grid-area: spin; width: 86px; min-height: 86px; }
+  .slot-win-readout { grid-area: win; }
+  .slot-bet-panel {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "label controls" "quick-bets quick-bets";
+    align-items: center;
+    gap: 4px 8px;
+    min-height: 0;
+    padding: 6px 9px;
+  }
+  .slot-bet-panel .slot-label { grid-area: label; flex-basis: auto; margin: 0; }
+  .slot-bet-control { grid-area: controls; justify-self: end; gap: 4px; }
+  .slot-bet-control strong { min-width: 42px; font-size: 16px; }
+  .slot-quick-bets {
+    grid-area: quick-bets;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    width: min(100%, 390px);
+    margin-inline: auto;
+    gap: 0;
+  }
+  .slot-quick-bet { min-width: 0; padding: 0 2px; font-size: clamp(8px, 2.7vw, 10px); }
   .slot-cabinet { padding: 17px 12px 18px; border-radius: 25px; }
   .slot-cabinet-frame { inset: -7px; border-width: 5px; border-radius: 31px; }
 }
@@ -306,11 +333,15 @@ html.fetan-integrated, html.fetan-integrated body { min-height: 100%; background
 html.fetan-integrated .slot-page { min-height: auto; padding: 10px; }
 html.fetan-integrated .slot-cabinet { width: min(100%, 820px); }
 html.fetan-integrated .slot-hud { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) auto minmax(0, .8fr); }
-html.fetan-integrated .slot-spin { grid-column: auto; grid-row: auto; }
-html.fetan-integrated .slot-win-readout { grid-column: auto; }
 html.fetan-integrated .slot-sound { display: none; }
 @media (max-width: 720px) {
   html.fetan-integrated .slot-hud { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
-  html.fetan-integrated .slot-spin { grid-column: 1 / -1; grid-row: 2; }
-  html.fetan-integrated .slot-win-readout { grid-column: 1 / -1; }
+  html.fetan-integrated .slot-hud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "balance win" "bet bet" "spin spin";
+  }
+  html.fetan-integrated .slot-hud > .slot-readout:not(.slot-win-readout) { grid-area: balance; }
+  html.fetan-integrated .slot-bet-panel { grid-area: bet; }
+  html.fetan-integrated .slot-spin { grid-area: spin; }
+  html.fetan-integrated .slot-win-readout { grid-area: win; }
 }
