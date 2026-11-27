@@ -538,7 +538,7 @@ window.Games = (function () {
       const scroller = scrollerFor(row);
       if (!scroller) return;
       row.querySelectorAll('.home-row-arrow').forEach((button) => button.addEventListener('click', () => {
-        scroller.scrollBy({ left: (button.dataset.scroll === 'next' ? 1 : -1) * scroller.clientWidth * .82, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+        scroller.scrollBy({ left: (button.dataset.scroll === 'next' ? 1 : -1) * scroller.clientWidth * (window.matchMedia('(max-width: 700px)').matches ? 1 : .82), behavior: reduceMotion.matches ? 'auto' : 'smooth' });
       }));
     });
 

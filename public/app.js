@@ -171,10 +171,7 @@ function mountPromoSlider(app) {
   const dots = [...slider.querySelectorAll('[data-promo-dot]')];
   const counter = slider.querySelector('.promo-slider-counter');
   const realCount = slides.length;
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   let index = 1;
-  let timer = null;
   let transitionTimer = null;
   let touchStart = null;
   const mobileCarousel = () => window.matchMedia('(max-width: 700px)').matches;
@@ -216,20 +213,7 @@ function mountPromoSlider(app) {
   };
   const next = () => move(index >= realCount ? realCount + 1 : index + 1);
   const previous = () => move(index <= 1 ? 0 : index - 1);
-  const pauseAuto = () => { clearInterval(timer); timer = null; };
-  const startAuto = () => {
-    pauseAuto();
-    if (mobileCarousel() && !reduceMotion.matches && !slider.matches(':hover') && document.visibilityState === 'visible') {
-      timer = setInterval(() => slider.isConnected ? next() : cleanup(), 6000);
-    }
-  };
-  const onMouseEnter = () => pauseAuto();
-  const onMouseLeave = () => startAuto();
-  const onFocusIn = () => pauseAuto();
-  const onFocusOut = (event) => { if (!slider.contains(event.relatedTarget)) startAuto(); };
-  const onVisibility = () => document.visibilityState === 'visible' ? startAuto() : pauseAuto();
-  const onMotionChange = () => startAuto();
-  const onResize = () => { setTrack(); paint(); startAuto(); };
+  const onResize = () => { setTrack(); paint(); };
   const onTransitionEnd = (event) => {
     if (event.target !== track || event.propertyName !== 'transform') return;
     if (index === 0) snap(realCount);
@@ -244,13 +228,12 @@ function mountPromoSlider(app) {
     touchStart = null;
     if (Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return;
     dx < 0 ? next() : previous();
-    startAuto();
   };
   const onClick = (event) => {
-    if (event.target.closest('[data-promo-next]')) { next(); startAuto(); return; }
-    if (event.target.closest('[data-promo-prev]')) { previous(); startAuto(); return; }
+    if (event.target.closest('[data-promo-next]')) { next(); return; }
+    if (event.target.closest('[data-promo-prev]')) { previous(); return; }
     const dot = event.target.closest('[data-promo-dot]');
-    if (dot) { move(Number(dot.dataset.promoDot) + 1); startAuto(); return; }
+    if (dot) { move(Number(dot.dataset.promoDot) + 1); return; }
     const button = event.target.closest('[data-promo-action]');
     if (!button) return;
     const action = button.dataset.promoAction;
@@ -269,29 +252,16 @@ function mountPromoSlider(app) {
   slider.addEventListener('click', onClick);
   slider.addEventListener('touchstart', onTouchStart, { passive: true });
   slider.addEventListener('touchend', onTouchEnd, { passive: true });
-  if (hoverCapable) { slider.addEventListener('mouseenter', onMouseEnter); slider.addEventListener('mouseleave', onMouseLeave); }
-  slider.addEventListener('focusin', onFocusIn);
-  slider.addEventListener('focusout', onFocusOut);
-  document.addEventListener('visibilitychange', onVisibility);
   window.addEventListener('resize', onResize);
-  reduceMotion.addEventListener?.('change', onMotionChange);
   setTrack();
   paint();
-  startAuto();
   const cleanup = () => {
-    pauseAuto();
     clearTimeout(transitionTimer);
     track.removeEventListener('transitionend', onTransitionEnd);
     slider.removeEventListener('click', onClick);
     slider.removeEventListener('touchstart', onTouchStart);
     slider.removeEventListener('touchend', onTouchEnd);
-    slider.removeEventListener('mouseenter', onMouseEnter);
-    slider.removeEventListener('mouseleave', onMouseLeave);
-    slider.removeEventListener('focusin', onFocusIn);
-    slider.removeEventListener('focusout', onFocusOut);
-    document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('resize', onResize);
-    reduceMotion.removeEventListener?.('change', onMotionChange);
   };
   homePromoCleanup = cleanup;
 }

@@ -396,6 +396,23 @@ body.customer-theme[data-customer-theme][data-customer-theme] .mobile-header-men
   }
 }
 
+/* The lobby owns the desktop shell: sidebar + sticky header + scrolling content.
+   This has to outrank the legacy customer grid above (and in style.css). */
+@media (min-width: 1025px) {
+  body.customer-theme[data-customer-theme][data-customer-theme].home-view:not(.game-open):has(> #nav#nav#nav.app-bottom-tabs) {
+    display: grid !important;
+    grid-template-columns: 252px minmax(0, 1fr);
+    grid-template-rows: 68px minmax(0, 1fr);
+  }
+  body.customer-theme[data-customer-theme][data-customer-theme].home-view:not(.game-open):has(> #nav#nav#nav.app-bottom-tabs) > .top {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  body.casino-sidebar-collapsed.customer-theme[data-customer-theme][data-customer-theme].home-view:not(.game-open):has(> #nav#nav#nav.app-bottom-tabs) {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+}
+
 body.customer-theme[data-customer-theme][data-customer-theme] > #nav#nav#nav.app-bottom-tabs {
   position: fixed;
   top: auto;
@@ -1891,12 +1908,12 @@ body.customer-theme[data-customer-theme][data-customer-theme] #app .guest-info-g
   }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .brand { flex: 0 1 auto; gap: 5px; }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .brand-copy { display: block; min-width: max-content; }
-  body.customer-theme.home-view[data-customer-theme][data-customer-theme] .logo { width: 31px; height: 31px; font-size: 17px; }
-  body.customer-theme.home-view[data-customer-theme][data-customer-theme] > .top #brandName { font-size: 13px; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] .logo { width: 28px; height: 28px; font-size: 16px; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] > .top #brandName { font-size: 10px; }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .top-right { gap: 4px; }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .balance { max-width: 99px; min-height: 40px; gap: 4px; padding-inline: 6px; font-size: 10px; }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .balance-unit { font-size: 9px; }
-  body.customer-theme.home-view[data-customer-theme][data-customer-theme] .mobile-header-menu-button { width: 38px; height: 40px; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] .mobile-header-menu-button { width: 44px; height: 44px; }
   body.customer-theme.guest-mode[data-customer-theme][data-customer-theme] > .top { padding-inline: 9px; }
   body.customer-theme.guest-mode[data-customer-theme][data-customer-theme] .top-right > #headerLoginBtn,
   body.customer-theme.guest-mode[data-customer-theme][data-customer-theme] .top-right > #headerRegBtn { padding-inline: 8px; }
@@ -2122,7 +2139,7 @@ body.customer-theme[data-customer-theme="light"].home-view .home-live-pill {
 
 @media (max-width: 360px) {
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] #app { padding-inline: 10px; }
-  body.customer-theme.home-view[data-customer-theme][data-customer-theme] .home-filters { gap: 6px; margin-bottom: 16px; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] .home-filters { gap: 6px; }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .home-filter { min-height: 42px; padding-inline: 13px; font-size: 11px; }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .home-row-head { gap: 6px; }
   body.customer-theme.home-view[data-customer-theme][data-customer-theme] .home-row-actions { gap: 5px; }
@@ -2338,7 +2355,7 @@ body.customer-theme.home-view[data-customer-theme][data-customer-theme] > main#a
 
 body.customer-theme.home-view[data-customer-theme] #app .promo-slider { margin-bottom: 22px; }
 body.customer-theme.home-view[data-customer-theme] #app .promo-slider-frame { overflow: hidden; border: 0; border-radius: 14px; background: transparent; box-shadow: none; }
-body.customer-theme.home-view[data-customer-theme] #app .promo-slider-track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; width: 100%; transform: none !important; }
+body.customer-theme.home-view[data-customer-theme] #app .promo-slider-track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; width: 100%; transform: none; }
 body.customer-theme.home-view[data-customer-theme] #app .promo-slide[data-slide-clone="true"] { display: none; }
 body.customer-theme.home-view[data-customer-theme] #app .promo-slide { position: relative; display: block; min-width: 0; min-height: 0; height: clamp(150px, 17vw, 216px); padding: 0; overflow: hidden; isolation: isolate; border: 1px solid var(--home-border); border-radius: 14px; background: #161220; }
 body.customer-theme.home-view[data-customer-theme] #app .promo-slide::before { display: none; }
@@ -2466,30 +2483,30 @@ body.casino-sidebar-collapsed.customer-theme.home-view[data-customer-theme] .cas
   body.customer-theme.home-view[data-customer-theme] .casino-account-summary { justify-content: flex-start; }
   body.customer-theme.home-view[data-customer-theme] .casino-sidebar-nav button,
   body.customer-theme.home-view[data-customer-theme] .casino-sidebar-account-actions button { justify-content: flex-start; padding-inline: 11px; }
-  body.customer-theme.home-view[data-customer-theme][data-customer-theme] > .top { position: sticky; width: 100% !important; height: 62px; min-height: 62px; padding: 0 12px; gap: 8px; }
-  body.customer-theme.home-view[data-customer-theme] .casino-sidebar-toggle { flex: 0 0 42px; width: 42px; padding: 0; }
-  body.customer-theme.home-view[data-customer-theme] .brand { min-width: 0; gap: 7px; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] > .top { position: sticky; width: 100% !important; height: 60px; min-height: 60px; padding: 0 8px; gap: 5px; }
+  body.customer-theme.home-view[data-customer-theme] .casino-sidebar-toggle { flex: 0 0 44px; width: 44px; min-height: 44px; padding: 0; }
+  body.customer-theme.home-view[data-customer-theme] .brand { min-width: 0; gap: 5px; }
   body.customer-theme.home-view[data-customer-theme] .brand-copy { flex: 0 0 auto; width: max-content !important; min-width: max-content !important; }
   body.customer-theme.home-view[data-customer-theme] > .top #brandName { max-width: none !important; white-space: nowrap; }
-  body.customer-theme.home-view[data-customer-theme] .logo { width: 30px; height: 30px; }
-  body.customer-theme.home-view[data-customer-theme] > .top #brandName { max-width: none; font-size: 12px; white-space: nowrap; }
-  body.customer-theme.home-view[data-customer-theme] .top-right { gap: 5px; }
-  body.customer-theme.home-view[data-customer-theme] .top-right > #balanceBox:not([hidden]) { max-width: 90px; min-height: 38px; gap: 4px; padding-inline: 6px; font-size: 10px; }
-  body.customer-theme.home-view[data-customer-theme] .top-right > #quickDepositBtn:not([hidden]) { min-height: 38px; padding-inline: 9px; font-size: 10px; }
-  body.customer-theme.home-view[data-customer-theme] .top-right > #casinoProfileShortcut:not([hidden]) { min-width: 38px; min-height: 38px; padding-inline: 8px; }
+  body.customer-theme.home-view[data-customer-theme] .logo { width: 28px; height: 28px; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] > .top #brandName { max-width: none; font-size: 11px; white-space: nowrap; }
+  body.customer-theme.home-view[data-customer-theme] .top-right { gap: 4px; }
+  body.customer-theme.home-view[data-customer-theme] .top-right > #balanceBox:not([hidden]) { max-width: 82px; min-height: 44px; gap: 4px; padding-inline: 6px; font-size: 10px; }
+  body.customer-theme.home-view[data-customer-theme] .top-right > #quickDepositBtn:not([hidden]) { min-height: 44px; padding-inline: 8px; font-size: 10px; }
+  body.customer-theme.home-view[data-customer-theme] .top-right > #casinoProfileShortcut:not([hidden]) { min-width: 44px; min-height: 44px; padding-inline: 8px; }
   body.customer-theme.home-view[data-customer-theme] .casino-profile-shortcut span { display: none; }
-  body.customer-theme.home-view[data-customer-theme] .top-right > #casinoProfileShortcut { display: none !important; }
-  body.customer-theme.home-view[data-customer-theme] .top-right > #casinoHistoryShortcut,
+  body.customer-theme.home-view[data-customer-theme] .top-right > #casinoProfileShortcut:not([hidden]) { display: none !important; }
+  body.customer-theme.home-view[data-customer-theme] .top-right > #casinoHistoryShortcut:not([hidden]),
   body.customer-theme.home-view[data-customer-theme] .top-right > .casino-notifications-wrap { display: none !important; }
   body.customer-theme.guest-mode.home-view[data-customer-theme] .top-right > #headerLoginBtn { display: none !important; }
   body.customer-theme.guest-mode.home-view[data-customer-theme][data-customer-theme] .top-right > #headerRegBtn { display: none !important; }
-  body.customer-theme.home-view[data-customer-theme] .mobile-header-menu-button { width: 38px; height: 38px; }
-  body.customer-theme.home-view[data-customer-theme][data-customer-theme] > main#app { width: 100%; max-width: none; padding: 14px 12px calc(94px + env(safe-area-inset-bottom)); }
-  body.customer-theme.home-view[data-customer-theme] #app .promo-slider { margin-bottom: 15px; }
+  body.customer-theme.home-view[data-customer-theme] .mobile-header-menu-button { width: 44px; height: 44px; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] > main#app { width: 100%; max-width: none; padding: 12px 12px calc(94px + env(safe-area-inset-bottom)); }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider { margin-bottom: 10px; }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slider-frame { border-radius: 13px; }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slider-track { display: flex; gap: 0; width: 100%; transform: translate3d(-100%, 0, 0); }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slide,
-  body.customer-theme.home-view[data-customer-theme] #app .promo-slide[data-slide-clone="true"] { display: block; flex: 0 0 100%; height: clamp(190px, 52vw, 230px); padding: 0; border-radius: 13px; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slide[data-slide-clone="true"] { display: block; flex: 0 0 100%; height: clamp(156px, 43vw, 190px); padding: 0; border-radius: 13px; }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slide::after { background: linear-gradient(90deg, rgba(9, 11, 14, .97) 0%, rgba(9, 11, 14, .76) 55%, rgba(9, 11, 14, .08) 100%); }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slide-art { width: 100%; }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slide-art img { object-position: center 38%; }
@@ -2498,28 +2515,41 @@ body.casino-sidebar-collapsed.customer-theme.home-view[data-customer-theme] .cas
   body.customer-theme.home-view[data-customer-theme] #app .promo-slide h2 { font-size: clamp(20px, 5.4vw, 26px); }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slide-copy > p { display: block; max-width: 220px; margin-top: 5px; font-size: 10px; }
   body.customer-theme.home-view[data-customer-theme] #app .promo-slide-cta { min-height: 35px; margin-top: 8px; font-size: 10px; }
-  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-bar { display: flex; align-items: center; justify-content: space-between; padding: 5px 2px 0; }
-  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-counter { color: var(--home-muted); }
-  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-arrow { width: 36px; height: 36px; border-color: var(--home-border); background: var(--home-surface); color: var(--home-text); }
-  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-dots button.is-active { background: var(--home-primary); }
-  .home-toolbar { display: grid; gap: 10px; margin-bottom: 16px; }
-  .home-toolbar .home-filters { width: 100%; gap: 7px; }
-  .home-toolbar .home-filter { min-height: 42px; padding-inline: 13px; font-size: 11px; }
-  .home-search { width: 100%; min-height: 44px; }
-  body.customer-theme.home-view[data-customer-theme] #app .home-rows { gap: 21px; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider { position: relative; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-bar { position: absolute; right: 8px; bottom: 6px; z-index: 5; display: flex; justify-content: flex-end; padding: 0; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-counter,
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-arrow { display: none; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-controls { gap: 0; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-dots button { position: relative; display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; background: transparent; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-dots button::before { width: 8px; height: 8px; border-radius: 99px; background: rgba(255,255,255,.48); box-shadow: 0 1px 4px rgba(0,0,0,.45); content: ''; transition: width .2s ease, background-color .2s ease; }
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] #app .promo-slider-dots button.is-active { width: 44px; background: transparent; }
+  body.customer-theme.home-view[data-customer-theme] #app .promo-slider-dots button.is-active::before { width: 21px; background: var(--home-primary); }
+  .home-toolbar { display: grid; gap: 8px; margin-bottom: 14px; }
+  .home-toolbar .home-filters { width: 100%; gap: 6px; margin: 0; padding: 0; }
+  .home-toolbar .home-filter { min-height: 44px; padding-inline: 12px; font-size: 11px; }
+  .home-toolbar .home-search { width: 100%; min-height: 44px; margin: 0; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-rows { gap: 18px; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-row-head { margin-bottom: 8px; }
   body.customer-theme.home-view[data-customer-theme] #app .home-row-title { font-size: 15px; }
   body.customer-theme.home-view[data-customer-theme] #app .home-row-icon { width: 26px; height: 26px; }
-  .home-game-tile { flex-basis: clamp(136px, 40vw, 172px); width: clamp(136px, 40vw, 172px); }
-  body.customer-theme.home-view[data-customer-theme] #app .home-card-title { font-size: 12px; }
-  .home-game-favorite { top: 7px; right: 7px; width: 42px; height: 42px; }
-  body.customer-theme.home-view[data-customer-theme] > #nav#nav#nav.app-bottom-tabs { display: flex !important; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-row-scroller { gap: 8px; padding-bottom: 8px; scroll-snap-type: x proximity; }
+  .home-game-tile { flex: 0 0 calc((100% - 16px) / 3); width: calc((100% - 16px) / 3); scroll-snap-align: start; scroll-snap-stop: always; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-card-title { inset-inline: 7px; font-size: 11px; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-row-actions { gap: 4px; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-view-all { display: none; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-game-favorite { top: 6px; right: 6px; width: 44px; height: 44px; }
+  body.customer-theme.home-view[data-customer-theme] > #nav#nav#nav.app-bottom-tabs { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 @media (max-width: 370px) {
-  body.customer-theme.home-view[data-customer-theme] .top-right > #balanceBox:not([hidden]) { max-width: 76px; }
+  body.customer-theme.home-view[data-customer-theme] .top-right > #balanceBox:not([hidden]) { max-width: 72px; }
   body.customer-theme.home-view[data-customer-theme] .top-right > #quickDepositBtn:not([hidden]) { padding-inline: 7px; }
-  body.customer-theme.home-view[data-customer-theme] > .top #brandName { font-size: 11px; }
-  .home-toolbar .home-filter { padding-inline: 10px; }
+  body.customer-theme.home-view[data-customer-theme] > .top #brandName { font-size: 10px; }
+  body.customer-theme.home-view[data-customer-theme] #app .home-toolbar .home-filter { padding-inline: 10px; }
+}
+
+@media (max-width: 350px) {
+  body.customer-theme.home-view[data-customer-theme][data-customer-theme] .brand .logo { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
